@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/screen/keranjang.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -499,11 +500,21 @@ class HomeScreen extends StatelessWidget {
         currentIndex: 0,
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
+        onTap: (index) {
+          if (index == 1) {
+            // Navigate to Cart Screen
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const CartScreen()),
+            );
+          }
+          // Add navigation for other tabs here
+        },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Belanja'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.category),
-            label: 'Kategori',
+            icon: Icon(Icons.shopping_cart_outlined),
+            label: 'Keranjang',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite_border),
