@@ -1,6 +1,8 @@
 // screen/keranjang.dart
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/favorit.dart';
+import 'package:indosemecb2b/screen/homescreen.dart';
+import 'package:indosemecb2b/screen/main_navigasi.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({Key? key}) : super(key: key);
@@ -440,7 +442,12 @@ class _CartScreenState extends State<CartScreen>
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MainNavigation(),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue[700],
