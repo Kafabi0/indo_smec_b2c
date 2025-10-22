@@ -81,11 +81,11 @@ class _MainNavigationState extends State<MainNavigation> {
                     color:
                         _currentIndex == 2
                             ? Colors.blue[100] // aktif → biru muda
-                            : Colors.white, // nonaktif → putih
+                            : Colors.blue[50], // nonaktif → putih
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
+                        color: Colors.black.withOpacity(0.1),
                         blurRadius: 6,
                         offset: const Offset(0, 3),
                       ),
@@ -97,7 +97,7 @@ class _MainNavigationState extends State<MainNavigation> {
                     color:
                         _currentIndex == 2
                             ? Colors.blue[700]
-                            : Colors.grey[600],
+                            : Colors.blue[600],
                   ),
                 ),
               ),
@@ -120,7 +120,3 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 }
-
-// ==================== FAVORIT SCREEN ====================
-
-// ==================== PROFILE SCREEN ====================
