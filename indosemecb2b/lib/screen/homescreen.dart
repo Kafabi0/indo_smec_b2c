@@ -563,53 +563,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: Offset(0, -5),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          currentIndex: 0,
-          selectedItemColor: Colors.blue[700],
-          unselectedItemColor: Colors.grey[500],
-          selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-          unselectedLabelStyle: TextStyle(fontSize: 12),
-          elevation: 0,
-          backgroundColor: Colors.white,
-          onTap: (index) {
-            if (index == 1) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CartScreen()),
-              );
-            }
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded, size: 26),
-              label: 'Belanja',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart_rounded, size: 26),
-              label: 'Keranjang',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long_rounded, size: 26),
-              label: 'Transaksi',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_rounded, size: 26),
-              label: 'Profil',
-            ),
-          ],
-        ),
-      ),
     );
   }
 
