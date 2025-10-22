@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/favorit.dart';
 import 'package:indosemecb2b/screen/homescreen.dart';
 import 'package:indosemecb2b/screen/keranjang.dart';
+import 'package:indosemecb2b/screen/poinku.dart';
 import 'package:indosemecb2b/screen/profile.dart';
 import 'package:indosemecb2b/screen/transaksi.dart';
 
@@ -20,7 +21,7 @@ class _MainNavigationState extends State<MainNavigation> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const CartScreen(),
-    const FavoritScreen(),
+    const PoinkuScreen(),
      TransaksiScreen(),
     const ProfileScreen(),
   ];
