@@ -978,7 +978,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Nama Produk Bayi Premium Quality',
+                  'Produk UMKM ',
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.black87,
