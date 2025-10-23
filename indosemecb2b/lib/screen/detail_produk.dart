@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
+import '../services/favorite_service.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
@@ -12,6 +13,21 @@ class ProductDetailPage extends StatefulWidget {
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
   bool isFavorite = false;
+  final FavoriteService _favoriteService = FavoriteService();
+  @override
+  void initState() {
+    super.initState();
+    _loadFavoriteStatus();
+  }
+
+  Future<void> _loadFavoriteStatus() async {
+    final status = await _favoriteService.isFavorite(widget.product.id);
+    if (mounted) {
+      setState(() {
+        isFavorite = status;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +60,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ),
             ),
             actions: [
+              // Tombol Favorite
               Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -62,10 +79,28 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     isFavorite ? Icons.favorite : Icons.favorite_border,
                     color: isFavorite ? Colors.red : Colors.black87,
                   ),
-                  onPressed: () {
-                    setState(() {
-                      isFavorite = !isFavorite;
-                    });
+                  onPressed: () async {
+                    final newStatus = await _favoriteService.toggleFavorite(
+                      widget.product.id,
+                    );
+                    if (mounted) {
+                      setState(() {
+                        isFavorite = newStatus;
+                      });
+                    }
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          newStatus
+                              ? '${widget.product.name} ditambahkan ke favorit'
+                              : '${widget.product.name} dihapus dari favorit',
+                        ),
+                        duration: const Duration(seconds: 1),
+                        backgroundColor:
+                            newStatus ? Colors.green[600] : Colors.orange[700],
+                      ),
+                    );
                   },
                 ),
               ),
@@ -97,16 +132,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     colors: [Colors.grey[200]!, Colors.grey[100]!],
                   ),
                 ),
-                child: widget.product.imageUrl != null
-                    ? Image.network(
-                        widget.product.imageUrl!,
-                        fit: BoxFit.contain,
-                      )
-                    : Icon(
-                        Icons.image,
-                        size: 100,
-                        color: Colors.grey[400],
-                      ),
+                child:
+                    widget.product.imageUrl != null
+                        ? Image.network(
+                          widget.product.imageUrl!,
+                          fit: BoxFit.contain,
+                        )
+                        : Icon(Icons.image, size: 100, color: Colors.grey[400]),
               ),
             ),
           ),
@@ -296,7 +328,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                       child: Container(
                                         decoration: BoxDecoration(
                                           color: Colors.grey[100],
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: Stack(
                                           children: [
@@ -403,10 +437,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text(
                   'Keranjang',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue[700],
