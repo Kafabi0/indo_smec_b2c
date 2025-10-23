@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/utils/user_data_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -267,16 +270,34 @@ class _RegisterPageState extends State<RegisterPage> {
   void _handleRegister() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Simpan data user yang baru
-    await prefs.setString('userEmail', widget.userInput);
-    await prefs.setString('userName', _nameController.text);
-    await prefs.setBool('isLoggedIn', false); // belum login, baru daftar
+    final emailOrPhone = widget.userInput;
+    final name = _nameController.text;
+    final password = _passwordController.text;
+
+    final usersString = prefs.getString('registered_users');
+    List<Map<String, dynamic>> users = [];
+
+    if (usersString != null) {
+      users = List<Map<String, dynamic>>.from(jsonDecode(usersString));
+    }
+
+    users.add({
+      'emailOrPhone': emailOrPhone,
+      'name': name,
+      'password': password,
+    });
+
+    await prefs.setString('registered_users', jsonEncode(users));
+
+    // ✅ Ganti bagian ini
+    await UserDataManager.setCurrentUser(emailOrPhone);
+    await prefs.setString('userName', name);
+    await prefs.setBool('isLoggedIn', true);
 
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text("Akun berhasil dibuat!")));
 
-    // Kirimkan data kembali ke halaman login
-    Navigator.pop(context, widget.userInput);
+    Navigator.pop(context, emailOrPhone);
   }
 }

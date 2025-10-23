@@ -15,6 +15,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool isLoggedIn = false;
   String? userEmail;
   String? userName;
+  String? userLogin;
 
   @override
   void initState() {
@@ -27,11 +28,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final loggedIn = prefs.getBool('isLoggedIn') ?? false;
     final email = prefs.getString('userEmail');
     final name = prefs.getString('userName');
+    final login = prefs.getString('userLogin'); // <- Tambahkan
 
     setState(() {
       isLoggedIn = loggedIn;
       userEmail = email;
       userName = name;
+      userLogin = login;
     });
   }
 
@@ -61,18 +64,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (confirmed != true) return;
 
-    // Hapus status login
-    await UserDataManager.clearCurrentUser();
+    // Hapus status login saja (jangan hapus akun terdaftar)
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('isLoggedIn');
+    await prefs.setBool('isLoggedIn', false);
     await prefs.remove('userEmail');
+    await prefs.remove('userName');
 
+    // Hapus cache user lokal (jika kamu pakai UserDataManager)
+    await UserDataManager.clearCurrentUser();
+
+    // Update UI
     setState(() {
       isLoggedIn = false;
       userEmail = null;
     });
 
-    // 🔥 Tambahkan ini:
     widget.onLogout?.call();
 
     if (mounted) {
@@ -83,6 +89,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           duration: Duration(seconds: 2),
         ),
       );
+
+      // Arahkan kembali ke halaman login
+      Navigator.pushReplacementNamed(context, '/login');
     }
   }
 
@@ -215,7 +224,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
 
                           Text(
-                            userEmail ?? 'kafabi',
+                            userLogin ?? 'kafabi',
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 13,

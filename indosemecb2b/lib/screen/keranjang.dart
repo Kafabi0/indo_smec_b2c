@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/favorit.dart';
 import 'package:indosemecb2b/screen/lengkapi_alamat_screen.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
-import 'package:indosemecb2b/utils/user_data_manager.dart'; // Import helper
+import 'package:indosemecb2b/utils/user_data_manager.dart'; // versi baru yang support email / no HP
 
 class CartScreen extends StatefulWidget {
   const CartScreen({Key? key}) : super(key: key);
@@ -17,9 +17,8 @@ class _CartScreenState extends State<CartScreen>
   late TabController _tabController;
   String selectedDelivery = 'xpress';
 
-  // Data alamat yang sudah disimpan
   Map<String, dynamic>? _savedAlamat;
-  String? _currentUserEmail;
+  String? _currentUserLogin; // <- sekarang ini bisa email atau no hp
   bool _isLoading = true;
 
   @override
@@ -30,15 +29,14 @@ class _CartScreenState extends State<CartScreen>
   }
 
   Future<void> _loadUserData() async {
-    // Ambil email user yang sedang login
-    final email = await UserDataManager.getCurrentUserEmail();
+    // ambil identifier user (email atau nomor hp)
+    final userLogin = await UserDataManager.getCurrentUserLogin();
 
-    if (email != null) {
-      // Ambil alamat user dari storage
-      final alamat = await UserDataManager.getAlamat(email);
+    if (userLogin != null) {
+      final alamat = await UserDataManager.getAlamat(userLogin);
 
       setState(() {
-        _currentUserEmail = email;
+        _currentUserLogin = userLogin;
         _savedAlamat = alamat;
         _isLoading = false;
       });
@@ -56,7 +54,7 @@ class _CartScreenState extends State<CartScreen>
   }
 
   Future<void> _navigateToLengkapiAlamat() async {
-    if (_currentUserEmail == null) {
+    if (_currentUserLogin == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Silakan login terlebih dahulu'),
@@ -74,11 +72,9 @@ class _CartScreenState extends State<CartScreen>
       ),
     );
 
-    // Jika ada data yang dikembalikan
     if (result != null && result is Map<String, dynamic>) {
-      // Simpan alamat menggunakan UserDataManager
       final saved = await UserDataManager.saveAlamat(
-        _currentUserEmail!,
+        _currentUserLogin!,
         result,
       );
 
@@ -87,7 +83,6 @@ class _CartScreenState extends State<CartScreen>
           _savedAlamat = result;
         });
 
-        // Tampilkan snackbar sukses
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

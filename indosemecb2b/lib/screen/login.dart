@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/register.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -240,28 +242,52 @@ class _LoginPageState extends State<LoginPage> {
 
   // simulasi pengecekan user
   Future<bool> _fakeCheckUser(String input) async {
-    await Future.delayed(const Duration(seconds: 1));
-    // daftar user yang sudah terdaftar
-    final registered = ["085179860233", "user@gmail.com"];
-    return registered.contains(input);
+    final prefs = await SharedPreferences.getInstance();
+    final usersString = prefs.getString('registered_users');
+
+    if (usersString == null) return false;
+
+    final List<dynamic> users = jsonDecode(usersString);
+    return users.any((u) => u['emailOrPhone'] == input);
   }
 
   Future<void> _handleLogin() async {
     final prefs = await SharedPreferences.getInstance();
-    final email = _emailController.text;
+    final emailOrPhone = _emailController.text.trim();
+    final password = _passwordController.text;
 
-    // Set status login dan email user
+    final usersString = prefs.getString('registered_users');
+    if (usersString == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Akun tidak ditemukan")));
+      return;
+    }
+
+    final List<dynamic> users = jsonDecode(usersString);
+    final user = users.firstWhere(
+      (u) => u['emailOrPhone'] == emailOrPhone && u['password'] == password,
+      orElse: () => {},
+    );
+
+    if (user.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email/Nomor HP atau kata sandi salah")),
+      );
+      return;
+    }
+
+    // ✅ Simpan status login dengan UserDataManager
+    await UserDataManager.setCurrentUser(emailOrPhone);
     await prefs.setBool('isLoggedIn', true);
-    await prefs.setString('userEmail', email);
-
-    // Set current user menggunakan UserDataManager
-    await UserDataManager.setCurrentUser(email);
+    await prefs.setString('userName', user['name']);
+    await prefs.setString('userLogin', emailOrPhone); // <-- Tambahkan baris ini
 
     if (!mounted) return;
 
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => const MainNavigation()),
+      MaterialPageRoute(builder: (_) => const MainNavigation()),
       (route) => false,
     );
   }
