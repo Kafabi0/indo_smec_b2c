@@ -1,366 +1,274 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:indosemecb2b/screen/login.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool isLoggedIn = false;
+  String? userEmail;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLoginStatus();
+  }
+
+  Future<void> _loadLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final loggedIn = prefs.getBool('isLoggedIn') ?? false;
+    final email = prefs.getString('userEmail');
+
+    setState(() {
+      isLoggedIn = loggedIn;
+      userEmail = email;
+    });
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // hapus semua data login
+    setState(() {
+      isLoggedIn = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // HEADER BIRU
-            // HEADER BIRU + AKUN TERHUBUNG + KUPON SAYA
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(
-                top: 60,
-                left: 20,
-                right: 20,
-                bottom: 0,
-              ),
-              decoration: BoxDecoration(color: Colors.blue[700]),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Akun Saya',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+      backgroundColor: Colors.white,
+      body: isLoggedIn ? _buildLoggedInView() : _buildLoginView(),
+    );
+  }
+
+  Widget _buildLoginView() {
+    return SafeArea(
+      child: Column(
+        children: [
+          // HEADER (biru + card login)
+          Container(
+            width: double.infinity,
+            color: Colors.blue[700],
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Akun',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
-                  const SizedBox(height: 20),
-                  Row(
+                ),
+                const SizedBox(height: 30),
+
+                // CARD LOGIN di dalam header biru
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.white,
-                        child: Icon(
-                          Icons.person,
-                          size: 40,
-                          color: Colors.grey[400],
-                        ),
+                      const Text(
+                        'Masuk atau daftar ke Klik Indomaret',
+                        textAlign: TextAlign.left,
+                        style: TextStyle(fontSize: 13, color: Colors.black87),
                       ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'kafabi',
+                      const SizedBox(height: 13),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            // buka halaman login dan tunggu hasil
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginPage(),
+                              ),
+                            );
+                            // setelah kembali dari login, perbarui status
+                            _loadLoginStatus();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue[700],
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'Masuk / Daftar',
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
-                          SizedBox(height: 2),
-                          Text(
-                            '081223506238',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white70,
-                            ),
-                          ),
-                          SizedBox(height: 2),
-                          Row(
-                            children: [
-                              Text(
-                                'Lengkapi profil kamu',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                              Icon(Icons.chevron_right, color: Colors.white70),
-                            ],
-                          ),
-                        ],
+                        ),
                       ),
-                      const Spacer(),
                     ],
                   ),
+                ),
+              ],
+            ),
+          ),
 
-                  const SizedBox(height: 16),
-
-                  // KARTU AKUN TERHUBUNG + KUPON SAYA DALAM HEADER
-                  // CARD: AKUN TERHUBUNG
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+          // BAGIAN PUTIH (Bantuan + versi)
+          Expanded(
+            child: Container(
+              color: Colors.white,
+              child: Column(
+                children: [
+                  const SizedBox(height: 30),
+                  ListTile(
+                    leading: const Icon(Icons.help_outline, color: Colors.grey),
+                    title: const Text('Bantuan'),
+                    subtitle: const Text(
+                      'Informasi lebih lanjut terkait pertanyaanmu',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: const [
-                              Icon(Icons.link, color: Colors.blue),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Akun Terhubung',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ),
-                              Icon(Icons.chevron_right, color: Colors.grey),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: const [
-                              _ConnectedItem(
-                                icon: Icons.account_balance_wallet_outlined,
-                                label: 'Saldo Klik',
-                                buttonText: 'Aktifkan',
-                              ),
-                              SizedBox(width: 1),
-                              _ConnectedItem(
-                                icon: Icons.credit_card_outlined,
-                                label: 'i.saku',
-                                buttonText: 'Hubungkan',
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey,
                     ),
+                    onTap: () {},
                   ),
-
-                  // CARD: KUPON SAYA
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.card_giftcard,
-                            color: Colors.orange,
-                            size: 28,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Text(
-                                      'Kupon Saya',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red[600],
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: const Text(
-                                        'Baru',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'Kumpulan kupon yang kamu punya',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey,
-                                    height: 1.3,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(Icons.chevron_right, color: Colors.grey),
-                        ],
-                      ),
-                    ),
+                  const Divider(height: 1),
+                  const SizedBox(height: 16),
+                  Text(
+                    'V2510102',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[400]),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 16),
-
-            // PROGRESS PROFIL
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Lengkapi profil kamu',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    LinearProgressIndicator(
-                      value: 2 / 6,
-                      color: Colors.blue[600],
-                      backgroundColor: Colors.grey[200],
-                      minHeight: 6,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      '2/6',
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Tambahkan Email, Jenis Kelamin, Tanggal Lahir, Foto Profil kamu di pengaturan profil.',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // MENU PENGATURAN
-            _buildMenuSection(
-              title: 'Pengaturan Akun',
-              items: [
-                _menuItem(
-                  'Ubah Profil',
-                  'Data diri, Email, dan Nomor handphone',
-                ),
-                _menuItem('Ubah Kata Sandi', 'Ubah kata sandi kamu'),
-                _menuItem('Daftar Alamat', 'Pengaturan alamat tujuan'),
-                _menuItem(
-                  'Rekening Bank',
-                  'Tarik Saldo Klik ke rekening tujuan',
-                ),
-                _menuItem(
-                  'Bantuan',
-                  'Informasi lebih lanjut terkait pertanyaanmu',
-                ),
-                _menuItem('Resolusi Komplain', 'Daftar Komplain'),
-                _menuItem(
-                  'Review Aplikasi',
-                  'Berikan penilaianmu untuk Klik Indomaret',
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            // LOGOUT BUTTON
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.only(
-                  left: 20,
-                ), // Geser sedikit ke kanan
-                child: TextButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.logout, color: Colors.red),
-                  label: const Text(
-                    'Logout',
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildConnectedItem({
-    required IconData icon,
-    required String label,
-    required String buttonText,
-  }) {
-    return Expanded(
+  Widget _buildLoggedInView() {
+    return SingleChildScrollView(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.blue[700]),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 13)),
-          const SizedBox(height: 6),
+          // HEADER BIRU
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(20),
+            width: double.infinity,
+            padding: const EdgeInsets.only(top: 60, left: 20, right: 20),
+            decoration: BoxDecoration(color: Colors.blue[700]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Akun Saya',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        Icons.person,
+                        size: 40,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          userEmail ?? 'Pengguna',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Akun Terverifikasi',
+                          style: TextStyle(fontSize: 14, color: Colors.white70),
+                        ),
+                        const SizedBox(height: 2),
+                        const Row(
+                          children: [
+                            Text(
+                              'Lengkapi profil kamu',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white70,
+                              ),
+                            ),
+                            Icon(Icons.chevron_right, color: Colors.white70),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
             ),
-            child: Text(
-              buttonText,
-              style: TextStyle(
-                color: Colors.blue[700],
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
+          ),
+          const SizedBox(height: 20),
+
+          // Menu Pengaturan dan Tombol Logout
+          _buildMenuSection(
+            title: 'Pengaturan Akun',
+            items: [
+              _menuItem('Ubah Profil', 'Data diri, Email, dan Nomor handphone'),
+              _menuItem('Ubah Kata Sandi', 'Ubah kata sandi kamu'),
+              _menuItem('Daftar Alamat', 'Pengaturan alamat tujuan'),
+              _menuItem('Rekening Bank', 'Tarik saldo Klik ke rekening tujuan'),
+              _menuItem(
+                'Bantuan',
+                'Informasi lebih lanjut terkait pertanyaanmu',
+              ),
+              _menuItem('Resolusi Komplain', 'Daftar komplain kamu'),
+              _menuItem(
+                'Review Aplikasi',
+                'Beri penilaian untuk Klik Indomaret',
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // LOGOUT BUTTON
+          Padding(
+            padding: const EdgeInsets.only(left: 20),
+            child: TextButton.icon(
+              onPressed: _logout,
+              icon: const Icon(Icons.logout, color: Colors.red),
+              label: const Text(
+                'Logout',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -422,47 +330,6 @@ class ProfileScreen extends StatelessWidget {
         ),
         const Divider(height: 1),
       ],
-    );
-  }
-}
-
-class _ConnectedItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String buttonText;
-
-  const _ConnectedItem({
-    required this.icon,
-    required this.label,
-    required this.buttonText,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.blue[700]),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 13)),
-          const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              buttonText,
-              style: TextStyle(
-                color: Colors.blue[700],
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

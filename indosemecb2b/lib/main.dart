@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:indosemecb2b/screen/homescreen.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
 
 void main() {
