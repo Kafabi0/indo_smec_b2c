@@ -83,9 +83,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onCategorySelected(String category) {
     setState(() {
       selectedCategory = category;
-      selectedSubCategory = null; // Reset sub-kategori saat kategori berubah
+      selectedSubCategory = null;
       showCategoryFilter = false;
-      _loadData(); // Reload data dengan kategori baru
+      _loadData();
     });
   }
 
@@ -93,13 +93,11 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       selectedSubCategory = subCategory;
       
-      // Filter produk berdasarkan sub-kategori yang dipilih
       if (subCategory == 'Buah') {
         displayedProducts = _productService.getFruitProducts();
       } else if (subCategory == 'Sayuran Organik') {
         displayedProducts = _productService.getVegetableProducts();
       } else {
-        // Untuk sub-kategori lain, gunakan filter umum
         displayedProducts = _productService.getProductsBySubCategory(subCategory);
       }
     });
@@ -107,7 +105,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Tentukan apakah menampilkan layout default atau layout kategori
     bool isDefaultLayout = selectedCategory == 'Semua';
 
     return Scaffold(
@@ -115,26 +112,16 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Modern Top Header
             _buildHeader(),
-
-            // Category Filter Dropdown
             if (showCategoryFilter) _buildCategoryFilter(),
-
             const SizedBox(height: 8),
-
-            // Login Area
             _buildLoginArea(),
-
             const SizedBox(height: 8),
 
-            // CONDITIONAL CONTENT - Berubah berdasarkan kategori
             if (isDefaultLayout) ...[
-              // TAMPILAN DEFAULT (Semua)
               _buildDeliveryOptions(),
               const SizedBox(height: 16),
               
-              // Loyalty Points - Hanya tampil jika sudah login
               if (isLoggedIn) ...[
                 _buildLoyaltyPoints(),
                 const SizedBox(height: 20),
@@ -160,7 +147,6 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildSectionHeader('Buah & Sayur'),
               _buildProductGrid(fruitAndVeggies),
             ] else ...[
-              // TAMPILAN KATEGORI SPESIFIK (Food, Grocery, dll)
               if (subCategories.isNotEmpty) ...[
                 _buildCategoryShoppingSection(),
                 const SizedBox(height: 20),
@@ -187,8 +173,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ============ HEADER & COMMON WIDGETS ============
-  
   Widget _buildHeader() {
     return Container(
       decoration: BoxDecoration(
@@ -214,7 +198,6 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Category Selector
                   GestureDetector(
                     onTap: () {
                       setState(() {
@@ -247,7 +230,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  // App Title
                   Text(
                     'IndoSmec',
                     style: TextStyle(
@@ -257,7 +239,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       letterSpacing: 0.5,
                     ),
                   ),
-                  // Notification Icon
                   Container(
                     padding: EdgeInsets.all(10),
                     decoration: BoxDecoration(
@@ -270,7 +251,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             
-            // Search Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Container(
@@ -405,13 +385,11 @@ class _HomeScreenState extends State<HomeScreen> {
           if (!isLoggedIn) ...[
             GestureDetector(
               onTap: () async {
-                // Navigate to Login Page
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const LoginPage()),
                 );
                 
-                // Check login status after returning from login page
                 if (result == true || mounted) {
                   _checkLoginStatus();
                 }
@@ -476,155 +454,374 @@ class _HomeScreenState extends State<HomeScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      isScrollControlled: true,
       builder: (context) {
         return Container(
           padding: EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Tentukan Lokasimu',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.close_rounded, color: Colors.grey[600]),
-                    padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              
-              // Masuk Option (Login)
-              InkWell(
-                onTap: () async {
-                  Navigator.pop(context);
-                  // Navigate to Login Page
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
-                  );
-                  
-                  // Check login status after returning from login page
-                  if (result == true || mounted) {
-                    _checkLoginStatus();
-                  }
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Row(
-                    children: [
-                      Icon(Icons.login_rounded, color: Colors.grey[700], size: 24),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Masuk',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Masuk agar alamat pengirimanmu disimpan',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
-                    ],
-                  ),
-                ),
-              ),
-              
-              Divider(height: 1, color: Colors.grey[300]),
-              
-              const SizedBox(height: 10),
-              
-              Text(
-                'Cara Lain',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
-                ),
-              ),
-              
-              const SizedBox(height: 10),
-              
-              // Pilih Lokasi Option
-              InkWell(
-                onTap: () {
-                  Navigator.pop(context);
-                  // TODO: Navigate to location picker
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Membuka pilihan lokasi...'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Row(
-                    children: [
-                      Icon(Icons.location_on_rounded, color: Colors.grey[700], size: 24),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Pilih Lokasi',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Pilih area kota atau kecamatan',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
-                    ],
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 20),
-            ],
-          ),
+          child: isLoggedIn ? _buildLoggedInLocationModal() : _buildGuestLocationModal(),
         );
       },
     );
   }
 
-  // ============ DEFAULT LAYOUT WIDGETS (Semua) ============
+  // Modal untuk yang SUDAH LOGIN
+  Widget _buildLoggedInLocationModal() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Tipe Pemesanan',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: Icon(Icons.close_rounded, color: Colors.grey[600]),
+              padding: EdgeInsets.zero,
+              constraints: BoxConstraints(),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        
+        // Tipe Pemesanan Options
+        Row(
+          children: [
+            Expanded(
+              child: _buildOrderTypeCard(
+                icon: Icons.delivery_dining_rounded,
+                label: 'Pesan Antar',
+                isSelected: true,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildOrderTypeCard(
+                icon: Icons.store_rounded,
+                label: 'Ambil di Toko',
+                isSelected: false,
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 24),
+        
+        // Pilih Alamat Section
+        Text(
+          'Pilih Alamat',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 12),
+        
+        InkWell(
+          onTap: () {
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Membuka form tambah alamat...'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          },
+          child: Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.blue[700]!, width: 2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.add_rounded, color: Colors.blue[700], size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Tambah Alamat Pengiriman',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue[700],
+                    ),
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: Colors.blue[700]),
+              ],
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 20),
+        
+        Divider(height: 1, color: Colors.grey[300]),
+        
+        const SizedBox(height: 16),
+        
+        // Cara Lain Section
+        Text(
+          'Cara Lain',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[700],
+          ),
+        ),
+        
+        const SizedBox(height: 12),
+        
+        InkWell(
+          onTap: () {
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Membuka pilihan lokasi...'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Row(
+              children: [
+                Icon(Icons.location_on_rounded, color: Colors.grey[700], size: 24),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Pilih Lokasi',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Pilih area kota atau kecamatan',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
+              ],
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  // Modal untuk yang BELUM LOGIN
+  Widget _buildGuestLocationModal() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Tentukan Lokasimu',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: Icon(Icons.close_rounded, color: Colors.grey[600]),
+              padding: EdgeInsets.zero,
+              constraints: BoxConstraints(),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        
+        // Masuk Option (Login)
+        InkWell(
+          onTap: () async {
+            Navigator.pop(context);
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginPage()),
+            );
+            
+            if (result == true || mounted) {
+              _checkLoginStatus();
+            }
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Row(
+              children: [
+                Icon(Icons.login_rounded, color: Colors.grey[700], size: 24),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Masuk',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Masuk agar alamat pengirimanmu disimpan',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
+              ],
+            ),
+          ),
+        ),
+        
+        Divider(height: 1, color: Colors.grey[300]),
+        
+        const SizedBox(height: 10),
+        
+        Text(
+          'Cara Lain',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[700],
+          ),
+        ),
+        
+        const SizedBox(height: 10),
+        
+        // Pilih Lokasi Option
+        InkWell(
+          onTap: () {
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Membuka pilihan lokasi...'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Row(
+              children: [
+                Icon(Icons.location_on_rounded, color: Colors.grey[700], size: 24),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Pilih Lokasi',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Pilih area kota atau kecamatan',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
+              ],
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _buildOrderTypeCard({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      decoration: BoxDecoration(
+        color: isSelected ? Colors.blue[700] : Colors.white,
+        border: Border.all(
+          color: isSelected ? Colors.blue[700]! : Colors.grey[300]!,
+          width: 2,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? Colors.white : Colors.grey[700],
+            size: 32,
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? Colors.white : Colors.black87,
+                ),
+              ),
+              if (isSelected) ...[
+                const SizedBox(width: 4),
+                Icon(Icons.check_rounded, color: Colors.white, size: 16),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildDeliveryOptions() {
     return Padding(
@@ -1051,8 +1248,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ============ CATEGORY LAYOUT WIDGETS (Food, Grocery, dll) ============
-
   Widget _buildCategoryShoppingSection() {
     return Column(
       children: [
@@ -1091,7 +1286,6 @@ class _HomeScreenState extends State<HomeScreen> {
             itemCount: subCategories.length,
             itemBuilder: (context, index) {
               final subCat = subCategories[index];
-              // Tambah indikator untuk sub-kategori yang dipilih
               bool isSelected = selectedSubCategory == subCat.name;
               
               return GestureDetector(
@@ -1105,7 +1299,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: isSelected ? Colors.white : Colors.white,
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: isSelected ? [
                             BoxShadow(
@@ -1174,12 +1368,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          // Flagship Store (if exists)
           if (flagshipStore != null) ...[
             _buildStoreCard(flagshipStore!, isFlagship: true),
             const SizedBox(height: 12),
           ],
-          // Other stores (limit 3)
           ...categoryStores
               .where((s) => !s.isFlagship)
               .take(3)
@@ -1381,7 +1573,6 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  // Product Image
                   Container(
                     width: 70,
                     height: 70,
@@ -1395,7 +1586,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(width: 12),
                   
-                  // Product Info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1432,7 +1622,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   
-                  // Add Button
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.blue[700],
@@ -1459,8 +1648,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  // ============ SHARED WIDGETS ============
 
   Widget _buildSectionHeader(String title, {bool hasTimer = false, bool showSeeAll = true}) {
     return Padding(
