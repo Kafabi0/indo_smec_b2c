@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
+import 'package:indosemecb2b/utils/user_data_manager.dart'; // Import helper
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -34,9 +35,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   bool _isEmailOrPhone(String input) {
-    // Cek apakah input berupa email atau nomor telepon
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    final phoneRegex = RegExp(r'^[0-9]{9,15}$'); // contoh: 08123456789
+    final phoneRegex = RegExp(r'^[0-9]{9,15}$');
     return emailRegex.hasMatch(input) || phoneRegex.hasMatch(input);
   }
 
@@ -218,8 +218,14 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _handleLogin() async {
     final prefs = await SharedPreferences.getInstance();
+    final email = _emailController.text;
+
+    // Set status login dan email user
     await prefs.setBool('isLoggedIn', true);
-    await prefs.setString('userEmail', _emailController.text);
+    await prefs.setString('userEmail', email);
+
+    // Set current user menggunakan UserDataManager
+    await UserDataManager.setCurrentUser(email);
 
     if (!mounted) return;
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/favorit.dart';
 import 'package:indosemecb2b/screen/lengkapi_alamat_screen.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
+import 'package:indosemecb2b/utils/user_data_manager.dart'; // Import helper
 
 class CartScreen extends StatefulWidget {
   const CartScreen({Key? key}) : super(key: key);
@@ -18,21 +19,34 @@ class _CartScreenState extends State<CartScreen>
 
   // Data alamat yang sudah disimpan
   Map<String, dynamic>? _savedAlamat;
+  String? _currentUserEmail;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    
-    // Check untuk data alamat setelah build selesai
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkForAddressData();
-    });
+    _loadUserData();
   }
 
-  void _checkForAddressData() {
-    // Method ini akan dipanggil untuk check data alamat
-    // Data akan di-set melalui callback dari navigasi
+  Future<void> _loadUserData() async {
+    // Ambil email user yang sedang login
+    final email = await UserDataManager.getCurrentUserEmail();
+
+    if (email != null) {
+      // Ambil alamat user dari storage
+      final alamat = await UserDataManager.getAlamat(email);
+
+      setState(() {
+        _currentUserEmail = email;
+        _savedAlamat = alamat;
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -42,30 +56,56 @@ class _CartScreenState extends State<CartScreen>
   }
 
   Future<void> _navigateToLengkapiAlamat() async {
+    if (_currentUserEmail == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Silakan login terlebih dahulu'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LengkapiAlamatScreen(
-          existingAddress: _savedAlamat, // Kirim alamat yang sudah ada
-        ),
+        builder:
+            (context) => LengkapiAlamatScreen(existingAddress: _savedAlamat),
       ),
     );
 
     // Jika ada data yang dikembalikan
     if (result != null && result is Map<String, dynamic>) {
-      setState(() {
-        _savedAlamat = result;
-      });
-      
-      // Tampilkan snackbar sukses
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Alamat berhasil disimpan'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
+      // Simpan alamat menggunakan UserDataManager
+      final saved = await UserDataManager.saveAlamat(
+        _currentUserEmail!,
+        result,
+      );
+
+      if (saved) {
+        setState(() {
+          _savedAlamat = result;
+        });
+
+        // Tampilkan snackbar sukses
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Alamat berhasil disimpan'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Gagal menyimpan alamat'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
@@ -97,38 +137,41 @@ class _CartScreenState extends State<CartScreen>
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Tabs
-          Container(
-            color: Colors.white,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: Colors.blue[700],
-              unselectedLabelColor: Colors.grey[600],
-              indicatorColor: Colors.blue[700],
-              indicatorWeight: 3,
-              labelStyle: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-              tabs: const [Tab(text: 'Grocery'), Tab(text: 'Food')],
-            ),
-          ),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                children: [
+                  // Tabs
+                  Container(
+                    color: Colors.white,
+                    child: TabBar(
+                      controller: _tabController,
+                      labelColor: Colors.blue[700],
+                      unselectedLabelColor: Colors.grey[600],
+                      indicatorColor: Colors.blue[700],
+                      indicatorWeight: 3,
+                      labelStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      tabs: const [Tab(text: 'Grocery'), Tab(text: 'Food')],
+                    ),
+                  ),
 
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // Grocery Tab
-                _buildGroceryTab(),
-                // Food Tab
-                const Center(child: Text('Food Tab Content')),
-              ],
-            ),
-          ),
-        ],
-      ),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        // Grocery Tab
+                        _buildGroceryTab(),
+                        // Food Tab
+                        const Center(child: Text('Food Tab Content')),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
     );
   }
 
@@ -165,9 +208,10 @@ class _CartScreenState extends State<CartScreen>
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         margin: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: selectedDelivery == 'xpress'
-                              ? Colors.orange[400]
-                              : Colors.transparent,
+                          color:
+                              selectedDelivery == 'xpress'
+                                  ? Colors.orange[400]
+                                  : Colors.transparent,
                           borderRadius: BorderRadius.circular(80),
                         ),
                         child: Row(
@@ -175,18 +219,20 @@ class _CartScreenState extends State<CartScreen>
                           children: [
                             Icon(
                               Icons.flash_on,
-                              color: selectedDelivery == 'xpress'
-                                  ? Colors.white
-                                  : Colors.grey[600],
+                              color:
+                                  selectedDelivery == 'xpress'
+                                      ? Colors.white
+                                      : Colors.grey[600],
                               size: 20,
                             ),
                             const SizedBox(width: 6),
                             Text(
                               'Belanja Xpress',
                               style: TextStyle(
-                                color: selectedDelivery == 'xpress'
-                                    ? Colors.white
-                                    : Colors.grey[600],
+                                color:
+                                    selectedDelivery == 'xpress'
+                                        ? Colors.white
+                                        : Colors.grey[600],
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -207,9 +253,10 @@ class _CartScreenState extends State<CartScreen>
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         margin: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: selectedDelivery == 'xtra'
-                              ? Colors.green[400]
-                              : Colors.transparent,
+                          color:
+                              selectedDelivery == 'xtra'
+                                  ? Colors.green[400]
+                                  : Colors.transparent,
                           borderRadius: BorderRadius.circular(80),
                         ),
                         child: Row(
@@ -217,18 +264,20 @@ class _CartScreenState extends State<CartScreen>
                           children: [
                             Icon(
                               Icons.inventory_2_outlined,
-                              color: selectedDelivery == 'xtra'
-                                  ? Colors.white
-                                  : Colors.grey[600],
+                              color:
+                                  selectedDelivery == 'xtra'
+                                      ? Colors.white
+                                      : Colors.grey[600],
                               size: 20,
                             ),
                             const SizedBox(width: 6),
                             Text(
                               'Belanja Xtra',
                               style: TextStyle(
-                                color: selectedDelivery == 'xtra'
-                                    ? Colors.white
-                                    : Colors.grey[600],
+                                color:
+                                    selectedDelivery == 'xtra'
+                                        ? Colors.white
+                                        : Colors.grey[600],
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -582,7 +631,7 @@ class _CartScreenState extends State<CartScreen>
     );
   }
 
-  // UI ketika sudah ada alamat - DISESUAIKAN DENGAN GAMBAR
+  // UI ketika sudah ada alamat
   Widget _buildSudahAdaAlamat() {
     return Column(
       children: [
@@ -689,35 +738,36 @@ class _CartScreenState extends State<CartScreen>
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Catatan Pengiriman'),
-        content: TextField(
-          controller: catatanController,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Masukkan catatan untuk kurir...',
-            border: OutlineInputBorder(),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Catatan Pengiriman'),
+            content: TextField(
+              controller: catatanController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Masukkan catatan untuk kurir...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Catatan pengiriman disimpan'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                },
+                child: const Text('Simpan'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Catatan pengiriman disimpan'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
-      ),
     );
   }
 

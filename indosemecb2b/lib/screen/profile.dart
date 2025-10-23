@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:indosemecb2b/screen/login.dart';
+import 'package:indosemecb2b/utils/user_data_manager.dart'; // Import helper
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  final VoidCallback? onLogout;
+  const ProfileScreen({Key? key, this.onLogout}) : super(key: key);
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -30,11 +32,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Konfirmasi Logout'),
+            content: const Text('Apakah Anda yakin ingin keluar?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text(
+                  'Logout',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed != true) return;
+
+    // Hapus status login
+    await UserDataManager.clearCurrentUser();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    await prefs.remove('isLoggedIn');
+    await prefs.remove('userEmail');
+
     setState(() {
       isLoggedIn = false;
+      userEmail = null;
     });
+
+    // 🔥 Tambahkan ini:
+    widget.onLogout?.call();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Berhasil logout'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
@@ -131,19 +176,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // ======= HEADER BIRU DENGAN AKUN + AKUN TERHUBUNG + KUPON =======
             Container(
               width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.blue[700],
-                // borderRadius: const BorderRadius.only(
-                //   bottomLeft: Radius.circular(16),
-                //   bottomRight: Radius.circular(16),
-                // ),
-              ),
-              padding: const EdgeInsets.only(
-                top: 24,
-                left: 20,
-                right: 20,
-                // bottom: 24,
-              ),
+              decoration: BoxDecoration(color: Colors.blue[700]),
+              padding: const EdgeInsets.only(top: 24, left: 20, right: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -175,7 +209,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: Colors.white,
                             ),
                           ),
-                           Text(
+                          Text(
                             userEmail ?? 'kafabi',
                             style: const TextStyle(
                               color: Colors.white70,
@@ -446,7 +480,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 10),
           ],
         ),
@@ -513,11 +546,13 @@ class _ConnectedItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final String buttonText;
+
   const _ConnectedItem({
     required this.icon,
     required this.label,
     required this.buttonText,
   });
+
   @override
   Widget build(BuildContext context) {
     return Expanded(
