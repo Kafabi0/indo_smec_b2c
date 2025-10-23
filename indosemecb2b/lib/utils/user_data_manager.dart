@@ -11,6 +11,7 @@ class UserDataManager {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_currentUserKey);
   }
+  
 
   /// Set user yang sedang login (email atau no telepon)
   static Future<void> setCurrentUser(String loginValue) async {

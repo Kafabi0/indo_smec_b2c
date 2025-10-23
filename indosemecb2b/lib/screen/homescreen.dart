@@ -5,6 +5,8 @@ import '../models/store_model.dart';
 import '../models/subcategory_model.dart';
 import '../services/product_service.dart';
 import 'login.dart';
+import '../services/favorite_service.dart';
+import 'favorit.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -15,14 +17,16 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   final ProductService _productService = ProductService();
+  final FavoriteService _favoriteService = FavoriteService(); // TAMBAHKAN INI
+
   bool isLoggedIn = false;
   String userEmail = '';
-  
+
   String selectedCategory = 'Semua';
   bool showCategoryFilter = false;
   bool isXpressSelected = true;
   String? selectedSubCategory;
-  
+
   // Data produk & stores
   late List<Product> displayedProducts;
   late List<Product> flashSaleProducts;
@@ -33,6 +37,7 @@ class HomeScreenState extends State<HomeScreen> {
   late List<Store> categoryStores;
   late List<SubCategory> subCategories;
   Store? flagshipStore;
+  Map<String, bool> favoriteStatus = {};
 
   final List<Map<String, dynamic>> categories = [
     {'name': 'Semua', 'icon': Icons.apps},
@@ -50,6 +55,7 @@ class HomeScreenState extends State<HomeScreen> {
     super.initState();
     _checkLoginStatus();
     _loadData();
+    // _loadFavoriteStatus(); // TAMBAHKAN INI
   }
 
   Future<void> _checkLoginStatus() async {
@@ -58,6 +64,75 @@ class HomeScreenState extends State<HomeScreen> {
       isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
       userEmail = prefs.getString('userEmail') ?? '';
     });
+    if (isLoggedIn) {
+      _loadFavoriteStatus();
+    } else {
+      // CLEAR STATUS FAVORIT JIKA BELUM LOGIN
+      setState(() {
+        favoriteStatus = {};
+      });
+    }
+  }
+
+  // CATATAN: PANGGILAN INI SUDAH TEPAT
+  Future<void> _loadFavoriteStatus() async {
+    final favoriteIds = await _favoriteService.getAllFavoriteIds();
+    setState(() {
+      // Perhatikan: favoriteStatus diisi berdasarkan SEMUA produk
+      // dan dicek apakah ada di dalam favoriteIds yang dimuat dari SharedPreferences
+      for (var product in _productService.getAllProducts()) {
+        favoriteStatus[product.id] = favoriteIds.contains(product.id);
+      }
+    });
+  }
+
+  // Future<void> _loadFavoriteStatus() async {
+  //   final favoriteIds = await _favoriteService.getAllFavoriteIds();
+  //   setState(() {
+  //     for (var product in _productService.getAllProducts()) {
+  //       favoriteStatus[product.id] = favoriteIds.contains(product.id);
+  //     }
+  //   });
+  // }
+
+  // TAMBAHKAN METHOD INI
+  Future<void> _toggleFavorite(String productId, String productName) async {
+    // START MODIFIKASI: Tambahkan pemeriksaan login
+    if (!isLoggedIn) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Anda harus login terlebih dahulu untuk menyimpan favorit.',
+            ),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.red[700],
+          ),
+        );
+      }
+      return; // Keluar jika belum login
+    }
+    // END MODIFIKASI
+
+    final isFavorite = await _favoriteService.toggleFavorite(productId);
+
+    setState(() {
+      favoriteStatus[productId] = isFavorite;
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isFavorite
+                ? '$productName ditambahkan ke favorit'
+                : '$productName dihapus dari favorit',
+          ),
+          duration: Duration(seconds: 1),
+          backgroundColor: isFavorite ? Colors.green[600] : Colors.orange[700],
+        ),
+      );
+    }
   }
 
   void refreshLoginStatus() {
@@ -70,15 +145,17 @@ class HomeScreenState extends State<HomeScreen> {
     if (selectedCategory == 'Semua') {
       displayedProducts = _productService.getAllProducts();
     } else {
-      displayedProducts = _productService.getProductsByCategory(selectedCategory);
+      displayedProducts = _productService.getProductsByCategory(
+        selectedCategory,
+      );
     }
-    
+
     flashSaleProducts = _productService.getFlashSaleProducts();
     topRatedProducts = _productService.getTopRatedProducts();
     freshProducts = _productService.getFreshProducts();
     newestProducts = _productService.getNewestProducts();
     fruitAndVeggies = _productService.getFruitAndVeggies();
-    
+
     // Load stores & sub-categories untuk kategori spesifik
     categoryStores = _productService.getStoresByCategory(selectedCategory);
     subCategories = _productService.getSubCategories(selectedCategory);
@@ -97,13 +174,15 @@ class HomeScreenState extends State<HomeScreen> {
   void _onSubCategorySelected(String subCategory) {
     setState(() {
       selectedSubCategory = subCategory;
-      
+
       if (subCategory == 'Buah') {
         displayedProducts = _productService.getFruitProducts();
       } else if (subCategory == 'Sayuran Organik') {
         displayedProducts = _productService.getVegetableProducts();
       } else {
-        displayedProducts = _productService.getProductsBySubCategory(subCategory);
+        displayedProducts = _productService.getProductsBySubCategory(
+          subCategory,
+        );
       }
     });
   }
@@ -126,12 +205,12 @@ class HomeScreenState extends State<HomeScreen> {
             if (isDefaultLayout) ...[
               _buildDeliveryOptions(),
               const SizedBox(height: 16),
-              
+
               if (isLoggedIn) ...[
                 _buildLoyaltyPoints(),
                 const SizedBox(height: 20),
               ],
-              
+
               _buildSectionHeader('FLASH SALE 11.00 - 13.00', hasTimer: true),
               _buildFlashSaleSection(),
               const SizedBox(height: 20),
@@ -156,18 +235,21 @@ class HomeScreenState extends State<HomeScreen> {
                 _buildCategoryShoppingSection(),
                 const SizedBox(height: 20),
               ],
-              
+
               if (categoryStores.isNotEmpty) ...[
                 _buildStoreList(),
                 const SizedBox(height: 20),
               ],
-              
+
               _buildLiveShopping(),
               const SizedBox(height: 20),
               _buildSectionHeader('Nikmati Promoynya!'),
               _buildProductGrid(displayedProducts.take(6).toList()),
               const SizedBox(height: 20),
-              _buildSectionHeader('Rekomendasi Khusus Untukmu', showSeeAll: false),
+              _buildSectionHeader(
+                'Rekomendasi Khusus Untukmu',
+                showSeeAll: false,
+              ),
               _buildRecommendationList(displayedProducts),
             ],
 
@@ -210,16 +292,25 @@ class HomeScreenState extends State<HomeScreen> {
                       });
                     },
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(25),
-                        border: Border.all(color: Colors.white.withOpacity(0.3)),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.apps_rounded, color: Colors.white, size: 20),
+                          Icon(
+                            Icons.apps_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             selectedCategory,
@@ -230,7 +321,11 @@ class HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 20),
+                          Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ],
                       ),
                     ),
@@ -250,12 +345,16 @@ class HomeScreenState extends State<HomeScreen> {
                       color: Colors.white.withOpacity(0.2),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.notifications_outlined, color: Colors.white, size: 22),
+                    child: Icon(
+                      Icons.notifications_outlined,
+                      color: Colors.white,
+                      size: 22,
+                    ),
                   ),
                 ],
               ),
             ),
-            
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Container(
@@ -274,10 +373,21 @@ class HomeScreenState extends State<HomeScreen> {
                   decoration: InputDecoration(
                     hintText: 'Cari produk UMKM...',
                     hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
-                    prefixIcon: Icon(Icons.search_rounded, color: Colors.blue[700], size: 24),
-                    suffixIcon: Icon(Icons.qr_code_scanner_rounded, color: Colors.grey[400], size: 24),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: Colors.blue[700],
+                      size: 24,
+                    ),
+                    suffixIcon: Icon(
+                      Icons.qr_code_scanner_rounded,
+                      color: Colors.grey[400],
+                      size: 24,
+                    ),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
                   ),
                 ),
               ),
@@ -332,50 +442,66 @@ class HomeScreenState extends State<HomeScreen> {
           Wrap(
             spacing: 10,
             runSpacing: 10,
-            children: categories.map((category) {
-              bool isSelected = selectedCategory == category['name'];
-              return GestureDetector(
-                onTap: () => _onCategorySelected(category['name'] as String),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    gradient: isSelected
-                        ? LinearGradient(colors: [Colors.blue[600]!, Colors.blue[700]!])
-                        : null,
-                    color: isSelected ? null : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: Colors.blue.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: Offset(0, 3),
+            children:
+                categories.map((category) {
+                  bool isSelected = selectedCategory == category['name'];
+                  return GestureDetector(
+                    onTap:
+                        () => _onCategorySelected(category['name'] as String),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient:
+                            isSelected
+                                ? LinearGradient(
+                                  colors: [
+                                    Colors.blue[600]!,
+                                    Colors.blue[700]!,
+                                  ],
+                                )
+                                : null,
+                        color: isSelected ? null : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow:
+                            isSelected
+                                ? [
+                                  BoxShadow(
+                                    color: Colors.blue.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ]
+                                : null,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            category['icon'] as IconData,
+                            size: 18,
+                            color: isSelected ? Colors.white : Colors.grey[700],
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            category['name'] as String,
+                            style: TextStyle(
+                              color:
+                                  isSelected ? Colors.white : Colors.grey[800],
+                              fontWeight:
+                                  isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
+                              fontSize: 14,
                             ),
-                          ]
-                        : null,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        category['icon'] as IconData,
-                        size: 18,
-                        color: isSelected ? Colors.white : Colors.grey[700],
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        category['name'] as String,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.grey[800],
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
+                    ),
+                  );
+                }).toList(),
           ),
         ],
       ),
@@ -394,7 +520,7 @@ class HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(builder: (context) => const LoginPage()),
                 );
-                
+
                 if (result == true || mounted) {
                   _checkLoginStatus();
                 }
@@ -438,18 +564,32 @@ class HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey[600], size: 18),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Colors.grey[600],
+                  size: 18,
+                ),
               ],
             ),
           ),
           Spacer(),
-          Container(
-            padding: EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.favorite, color: Colors.red, size: 21,
+          GestureDetector(
+            onTap: () async {
+              // Navigate ke FavoritScreen
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => FavoritScreen()),
+              );
+              // Reload favorite status setelah kembali
+              _loadFavoriteStatus();
+            },
+            child: Container(
+              padding: EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.favorite, color: Colors.red, size: 21),
             ),
           ),
         ],
@@ -467,7 +607,10 @@ class HomeScreenState extends State<HomeScreen> {
       builder: (context) {
         return Container(
           padding: EdgeInsets.all(20),
-          child: isLoggedIn ? _buildLoggedInLocationModal() : _buildGuestLocationModal(),
+          child:
+              isLoggedIn
+                  ? _buildLoggedInLocationModal()
+                  : _buildGuestLocationModal(),
         );
       },
     );
@@ -499,7 +642,7 @@ class HomeScreenState extends State<HomeScreen> {
           ],
         ),
         const SizedBox(height: 20),
-        
+
         // Tipe Pemesanan Options
         Row(
           children: [
@@ -520,9 +663,9 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        
+
         const SizedBox(height: 24),
-        
+
         // Pilih Alamat Section
         Text(
           'Pilih Alamat',
@@ -533,7 +676,7 @@ class HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        
+
         InkWell(
           onTap: () {
             Navigator.pop(context);
@@ -559,7 +702,11 @@ class HomeScreenState extends State<HomeScreen> {
                     color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.add_rounded, color: Colors.blue[700], size: 24),
+                  child: Icon(
+                    Icons.add_rounded,
+                    color: Colors.blue[700],
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -577,13 +724,13 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        
+
         const SizedBox(height: 20),
-        
+
         Divider(height: 1, color: Colors.grey[300]),
-        
+
         const SizedBox(height: 16),
-        
+
         // Cara Lain Section
         Text(
           'Cara Lain',
@@ -593,9 +740,9 @@ class HomeScreenState extends State<HomeScreen> {
             color: Colors.grey[700],
           ),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         InkWell(
           onTap: () {
             Navigator.pop(context);
@@ -610,7 +757,11 @@ class HomeScreenState extends State<HomeScreen> {
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Row(
               children: [
-                Icon(Icons.location_on_rounded, color: Colors.grey[700], size: 24),
+                Icon(
+                  Icons.location_on_rounded,
+                  color: Colors.grey[700],
+                  size: 24,
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -627,10 +778,7 @@ class HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 4),
                       Text(
                         'Pilih area kota atau kecamatan',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -640,7 +788,7 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        
+
         const SizedBox(height: 20),
       ],
     );
@@ -672,7 +820,7 @@ class HomeScreenState extends State<HomeScreen> {
           ],
         ),
         const SizedBox(height: 20),
-        
+
         // Masuk Option (Login)
         InkWell(
           onTap: () async {
@@ -681,7 +829,7 @@ class HomeScreenState extends State<HomeScreen> {
               context,
               MaterialPageRoute(builder: (context) => const LoginPage()),
             );
-            
+
             if (result == true || mounted) {
               _checkLoginStatus();
             }
@@ -707,10 +855,7 @@ class HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 4),
                       Text(
                         'Masuk agar alamat pengirimanmu disimpan',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -720,11 +865,11 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        
+
         Divider(height: 1, color: Colors.grey[300]),
-        
+
         const SizedBox(height: 10),
-        
+
         Text(
           'Cara Lain',
           style: TextStyle(
@@ -733,9 +878,9 @@ class HomeScreenState extends State<HomeScreen> {
             color: Colors.grey[700],
           ),
         ),
-        
+
         const SizedBox(height: 10),
-        
+
         // Pilih Lokasi Option
         InkWell(
           onTap: () {
@@ -751,7 +896,11 @@ class HomeScreenState extends State<HomeScreen> {
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Row(
               children: [
-                Icon(Icons.location_on_rounded, color: Colors.grey[700], size: 24),
+                Icon(
+                  Icons.location_on_rounded,
+                  color: Colors.grey[700],
+                  size: 24,
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -768,10 +917,7 @@ class HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 4),
                       Text(
                         'Pilih area kota atau kecamatan',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -781,7 +927,7 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        
+
         const SizedBox(height: 20),
       ],
     );
@@ -890,15 +1036,16 @@ class HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             gradient: isSelected ? LinearGradient(colors: colors) : null,
             color: isSelected ? null : Colors.grey[200],
-            borderRadius: isLeft 
-                ? BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    bottomLeft: Radius.circular(12),
-                  )
-                : BorderRadius.only(
-                    topRight: Radius.circular(12),
-                    bottomRight: Radius.circular(12),
-                  ),
+            borderRadius:
+                isLeft
+                    ? BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                    )
+                    : BorderRadius.only(
+                      topRight: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
+                    ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -907,11 +1054,15 @@ class HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.white.withOpacity(0.2) : Colors.white,
+                  color:
+                      isSelected ? Colors.white.withOpacity(0.2) : Colors.white,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Icon(icon,
-                    color: isSelected ? Colors.white : Colors.grey[700], size: 18),
+                child: Icon(
+                  icon,
+                  color: isSelected ? Colors.white : Colors.grey[700],
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 8),
               Flexible(
@@ -930,9 +1081,10 @@ class HomeScreenState extends State<HomeScreen> {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: isSelected
-                            ? Colors.white.withOpacity(0.9)
-                            : Colors.grey[600],
+                        color:
+                            isSelected
+                                ? Colors.white.withOpacity(0.9)
+                                : Colors.grey[600],
                         fontSize: 10,
                       ),
                     ),
@@ -968,9 +1120,19 @@ class HomeScreenState extends State<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildPointCard(Icons.emoji_events_rounded, 'Poin UMKM', '0', Colors.orange),
+                  _buildPointCard(
+                    Icons.emoji_events_rounded,
+                    'Poin UMKM',
+                    '0',
+                    Colors.orange,
+                  ),
                   Container(width: 1, height: 30, color: Colors.grey[200]),
-                  _buildPointCard(Icons.account_balance_wallet_rounded, 'Poin Cash', '0', Colors.amber),
+                  _buildPointCard(
+                    Icons.account_balance_wallet_rounded,
+                    'Poin Cash',
+                    '0',
+                    Colors.amber,
+                  ),
                 ],
               ),
             ),
@@ -979,7 +1141,9 @@ class HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.blue[600]!, Colors.blue[700]!]),
+              gradient: LinearGradient(
+                colors: [Colors.blue[600]!, Colors.blue[700]!],
+              ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -1010,10 +1174,21 @@ class HomeScreenState extends State<HomeScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('i.saku',
-                        style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 10)),
-                    Text('Hubungkan',
-                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text(
+                      'i.saku',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 10,
+                      ),
+                    ),
+                    Text(
+                      'Hubungkan',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -1024,7 +1199,12 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPointCard(IconData icon, String label, String value, Color color) {
+  Widget _buildPointCard(
+    IconData icon,
+    String label,
+    String value,
+    Color color,
+  ) {
     return Row(
       children: [
         Container(
@@ -1040,8 +1220,14 @@ class HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 9)),
-            Text(value,
-                style: TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.bold)),
+            Text(
+              value,
+              style: TextStyle(
+                color: Colors.black87,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ],
@@ -1083,11 +1269,17 @@ class HomeScreenState extends State<HomeScreen> {
           Container(
             height: 120,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.grey[200]!, Colors.grey[100]!]),
+              gradient: LinearGradient(
+                colors: [Colors.grey[200]!, Colors.grey[100]!],
+              ),
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Center(
-              child: Icon(Icons.image_rounded, size: 50, color: Colors.grey[400]),
+              child: Icon(
+                Icons.image_rounded,
+                size: 50,
+                color: Colors.grey[400],
+              ),
             ),
           ),
           Expanded(
@@ -1194,7 +1386,10 @@ class HomeScreenState extends State<HomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
@@ -1296,7 +1491,7 @@ class HomeScreenState extends State<HomeScreen> {
             itemBuilder: (context, index) {
               final subCat = subCategories[index];
               bool isSelected = selectedSubCategory == subCat.name;
-              
+
               return GestureDetector(
                 onTap: () => _onSubCategorySelected(subCat.name),
                 child: Container(
@@ -1310,27 +1505,34 @@ class HomeScreenState extends State<HomeScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
-                          boxShadow: isSelected ? [
-                            BoxShadow(
-                              color: Colors.blue.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: Offset(0, 4),
-                            ),
-                            BoxShadow(
-                              color: Colors.blue.withOpacity(0.2),
-                              blurRadius: 12,
-                              offset: Offset(0, 8),
-                            ),
-                          ] : [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                          border: isSelected 
-                            ? Border.all(color: Colors.blue[700]!, width: 2)
-                            : null,
+                          boxShadow:
+                              isSelected
+                                  ? [
+                                    BoxShadow(
+                                      color: Colors.blue.withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 4),
+                                    ),
+                                    BoxShadow(
+                                      color: Colors.blue.withOpacity(0.2),
+                                      blurRadius: 12,
+                                      offset: Offset(0, 8),
+                                    ),
+                                  ]
+                                  : [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.06),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                          border:
+                              isSelected
+                                  ? Border.all(
+                                    color: Colors.blue[700]!,
+                                    width: 2,
+                                  )
+                                  : null,
                         ),
                         child: Center(
                           child: Text(
@@ -1345,7 +1547,8 @@ class HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(
                           fontSize: 11,
                           color: isSelected ? Colors.blue[700] : Colors.black87,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 2,
@@ -1384,10 +1587,12 @@ class HomeScreenState extends State<HomeScreen> {
           ...categoryStores
               .where((s) => !s.isFlagship)
               .take(3)
-              .map((store) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildStoreCard(store),
-                  ))
+              .map(
+                (store) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildStoreCard(store),
+                ),
+              )
               .toList(),
         ],
       ),
@@ -1400,9 +1605,8 @@ class HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: isFlagship
-            ? Border.all(color: Colors.amber[600]!, width: 2)
-            : null,
+        border:
+            isFlagship ? Border.all(color: Colors.amber[600]!, width: 2) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -1453,7 +1657,11 @@ class HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.star_rounded, color: Colors.amber[700], size: 14),
+                    Icon(
+                      Icons.star_rounded,
+                      color: Colors.amber[700],
+                      size: 14,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${store.rating}',
@@ -1466,10 +1674,7 @@ class HomeScreenState extends State<HomeScreen> {
                     const SizedBox(width: 8),
                     Text(
                       '${store.distanceText} • ${store.openHours}',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
                     ),
                   ],
                 ),
@@ -1564,101 +1769,147 @@ class HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
-        children: products.take(5).map((product) {
-          return Container(
-            margin: EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 10,
-                  offset: Offset(0, 3),
+        children:
+            products.take(5).map((product) {
+              final isFavorite = favoriteStatus[product.id] ?? false;
+
+              return Container(
+                margin: EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 10,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Icon(Icons.image, size: 35, color: Colors.grey[400]),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product.name,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          product.description,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Rp${product.price.toInt()}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue[700],
+                        child: Center(
+                          child: Icon(
+                            Icons.image,
+                            size: 35,
+                            color: Colors.grey[400],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.blue[700],
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: Icon(Icons.add, color: Colors.white, size: 18),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('${product.name} ditambahkan ke keranjang'),
-                            duration: Duration(seconds: 1),
-                            backgroundColor: Colors.green[600],
+                      ),
+                      const SizedBox(width: 12),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              product.name,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              product.description,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Rp${product.price.toInt()}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      Column(
+                        children: [
+                          // Favorite Button
+                          GestureDetector(
+                            onTap:
+                                () => _toggleFavorite(product.id, product.name),
+                            child: Container(
+                              padding: EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color:
+                                    isFavorite
+                                        ? Colors.red[50]
+                                        : Colors.grey[100],
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                isFavorite
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color:
+                                    isFavorite ? Colors.red : Colors.grey[600],
+                                size: 18,
+                              ),
+                            ),
                           ),
-                        );
-                      },
-                    ),
+                          const SizedBox(height: 8),
+                          // Add to Cart Button
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.blue[700],
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.add,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      '${product.name} ditambahkan ke keranjang',
+                                    ),
+                                    duration: Duration(seconds: 1),
+                                    backgroundColor: Colors.green[600],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          );
-        }).toList(),
+                ),
+              );
+            }).toList(),
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title, {bool hasTimer = false, bool showSeeAll = true}) {
+  Widget _buildSectionHeader(
+    String title, {
+    bool hasTimer = false,
+    bool showSeeAll = true,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -1666,13 +1917,19 @@ class HomeScreenState extends State<HomeScreen> {
         children: [
           Text(
             title,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
           ),
           if (hasTimer)
             Container(
               padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [Colors.red[400]!, Colors.red[600]!]),
+                gradient: LinearGradient(
+                  colors: [Colors.red[400]!, Colors.red[600]!],
+                ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
@@ -1684,18 +1941,33 @@ class HomeScreenState extends State<HomeScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.access_time_rounded, color: Colors.white, size: 14),
+                  Icon(
+                    Icons.access_time_rounded,
+                    color: Colors.white,
+                    size: 14,
+                  ),
                   const SizedBox(width: 6),
-                  Text('00:45:32',
-                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                  Text(
+                    '00:45:32',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             )
           else if (showSeeAll)
             TextButton(
               onPressed: () {},
-              child: Text('Lihat Semua',
-                  style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w600)),
+              child: Text(
+                'Lihat Semua',
+                style: TextStyle(
+                  color: Colors.blue[700],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
         ],
       ),
@@ -1717,6 +1989,8 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildProductCard(Product product) {
+    final isFavorite = favoriteStatus[product.id] ?? false;
+
     return Container(
       width: 180,
       margin: const EdgeInsets.only(right: 12),
@@ -1739,11 +2013,17 @@ class HomeScreenState extends State<HomeScreen> {
               Container(
                 height: 160,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [Colors.grey[200]!, Colors.grey[100]!]),
+                  gradient: LinearGradient(
+                    colors: [Colors.grey[200]!, Colors.grey[100]!],
+                  ),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 child: Center(
-                  child: Icon(Icons.image_rounded, size: 60, color: Colors.grey[400]),
+                  child: Icon(
+                    Icons.image_rounded,
+                    size: 60,
+                    color: Colors.grey[400],
+                  ),
                 ),
               ),
               if (product.discountPercentage != null)
@@ -1753,7 +2033,9 @@ class HomeScreenState extends State<HomeScreen> {
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [Colors.green[400]!, Colors.green[600]!]),
+                      gradient: LinearGradient(
+                        colors: [Colors.green[400]!, Colors.green[600]!],
+                      ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
@@ -1773,23 +2055,33 @@ class HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
+              // UPDATE TOMBOL FAVORIT INI
               Positioned(
                 top: 10,
                 left: 10,
-                child: Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
+                child: GestureDetector(
+                  onTap: () => _toggleFavorite(product.id, product.name),
+                  child: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      isFavorite
+                          ? Icons.favorite
+                          : Icons.favorite_border_rounded,
+                      color: isFavorite ? Colors.red : Colors.grey[600],
+                      size: 18,
+                    ),
                   ),
-                  child: Icon(Icons.favorite_border_rounded, color: Colors.grey[600], size: 18),
                 ),
               ),
             ],
@@ -1812,7 +2104,11 @@ class HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.star_rounded, color: Colors.amber[700], size: 16),
+                    Icon(
+                      Icons.star_rounded,
+                      color: Colors.amber[700],
+                      size: 16,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       product.rating.toString(),
