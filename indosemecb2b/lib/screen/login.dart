@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/screen/register.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart'; // Import helper
@@ -91,22 +92,8 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed:
-                      _isFilled
-                          ? () {
-                            if (_isEmailOrPhone(_emailController.text)) {
-                              setState(() => _stepTwo = true);
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    "Masukkan email atau nomor telepon yang valid",
-                                  ),
-                                ),
-                              );
-                            }
-                          }
-                          : null,
+                  onPressed: _isFilled ? _checkAccountExists : null,
+
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[700],
                     disabledBackgroundColor: Colors.grey[300],
@@ -214,6 +201,49 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _checkAccountExists() async {
+    final input = _emailController.text.trim();
+
+    if (!_isEmailOrPhone(input)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Masukkan email atau nomor telepon yang valid"),
+        ),
+      );
+      return;
+    }
+
+    // 🔍 Simulasi pengecekan user di database / API
+    // Nanti kamu bisa ganti dengan request ke backend
+    bool exists = await _fakeCheckUser(input);
+
+    if (exists) {
+      setState(() => _stepTwo = true); // lanjut ke input password
+    } else {
+      // jika belum terdaftar → buka halaman Register
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => RegisterPage(userInput: input)),
+      );
+
+      // Jika register sukses, isi kembali input field
+      if (result != null && result is String) {
+        setState(() {
+          _emailController.text = result;
+          _stepTwo = true; // langsung lanjut ke input password
+        });
+      }
+    }
+  }
+
+  // simulasi pengecekan user
+  Future<bool> _fakeCheckUser(String input) async {
+    await Future.delayed(const Duration(seconds: 1));
+    // daftar user yang sudah terdaftar
+    final registered = ["085179860233", "user@gmail.com"];
+    return registered.contains(input);
   }
 
   Future<void> _handleLogin() async {
