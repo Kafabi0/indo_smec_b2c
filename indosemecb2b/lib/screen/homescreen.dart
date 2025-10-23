@@ -445,8 +445,12 @@ class HomeScreenState extends State<HomeScreen> {
           Spacer(),
           Container(
             padding: EdgeInsets.all(6),
-            decoration: BoxDecoration(color: Colors.grey[200], shape: BoxShape.circle),
-            child: Icon(Icons.help_outline_rounded, color: Colors.grey[600], size: 16),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.favorite, color: Colors.red, size: 21,
+            ),
           ),
         ],
       ),
