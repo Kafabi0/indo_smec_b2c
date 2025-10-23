@@ -18,25 +18,45 @@ class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
   bool _isLoggedIn = false;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const CartScreen(),
-    const PoinkuScreen(),
-    TransaksiScreen(),
-    const ProfileScreen(),
-  ];
+  late List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
     _checkLoginStatus();
+
+    _screens = [
+      const HomeScreen(),
+      const CartScreen(),
+      const PoinkuScreen(),
+      TransaksiScreen(),
+      ProfileScreen(onLogout: _checkLoginStatus), // Sekarang bisa dipanggil
+    ];
+  }
+
+  // ⭐ Tambahkan didUpdateWidget untuk auto-refresh saat kembali dari login
+  @override
+  void didUpdateWidget(MainNavigation oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _checkLoginStatus();
+  }
+
+  // ⭐ Tambahkan didChangeDependencies untuk refresh saat screen muncul lagi
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkLoginStatus();
   }
 
   Future<void> _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-    });
+    final loggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+    if (mounted && _isLoggedIn != loggedIn) {
+      setState(() {
+        _isLoggedIn = loggedIn;
+      });
+    }
   }
 
   void _onTabTapped(int index) {
@@ -80,7 +100,7 @@ class _MainNavigationState extends State<MainNavigation> {
               ),
               const SizedBox(height: 10),
               Image.asset(
-                "assets/research.png", // ganti sesuai nama file gambar kamu
+                "assets/research.png",
                 height: 160,
                 fit: BoxFit.contain,
               ),
@@ -106,12 +126,17 @@ class _MainNavigationState extends State<MainNavigation> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
                     Navigator.pop(context); // tutup bottom sheet
-                    Navigator.push(
+
+                    // ⭐ Navigasi ke login dan tunggu hasilnya
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const LoginPage()),
                     );
+
+                    // ⭐ Setelah kembali dari login, cek status login lagi
+                    _checkLoginStatus();
                   },
                   child: const Text(
                     "Gabung Sekarang",
