@@ -14,6 +14,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool isLoggedIn = false;
   String? userEmail;
+  String? userName;
 
   @override
   void initState() {
@@ -25,9 +26,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     final loggedIn = prefs.getBool('isLoggedIn') ?? false;
     final email = prefs.getString('userEmail');
+    final name = prefs.getString('userName');
+
     setState(() {
       isLoggedIn = loggedIn;
       userEmail = email;
+      userName = name;
     });
   }
 
@@ -201,14 +205,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'kafabi',
-                            style: TextStyle(
+                          Text(
+                            userName ?? 'Pengguna Baru',
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
                             ),
                           ),
+
                           Text(
                             userEmail ?? 'kafabi',
                             style: const TextStyle(
