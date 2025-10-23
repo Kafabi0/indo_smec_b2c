@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/screen/detail_produk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product_model.dart';
 import '../models/store_model.dart';
@@ -1991,168 +1992,183 @@ class HomeScreenState extends State<HomeScreen> {
   Widget _buildProductCard(Product product) {
     final isFavorite = favoriteStatus[product.id] ?? false;
 
-    return Container(
-      width: 180,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: Offset(0, 4),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductDetailPage(product: product),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              Container(
-                height: 160,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.grey[200]!, Colors.grey[100]!],
+        );
+      },
+      child: Container(
+        width: 180,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                Container(
+                  height: 160,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.grey[200]!, Colors.grey[100]!],
+                    ),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
                   ),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.image_rounded,
-                    size: 60,
-                    color: Colors.grey[400],
+                  child: Center(
+                    child: Icon(
+                      Icons.image_rounded,
+                      size: 60,
+                      color: Colors.grey[400],
+                    ),
                   ),
                 ),
-              ),
-              if (product.discountPercentage != null)
+                if (product.discountPercentage != null)
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.green[400]!, Colors.green[600]!],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.green.withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        '${product.discountPercentage}%',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                // UPDATE TOMBOL FAVORIT INI
                 Positioned(
                   top: 10,
-                  right: 10,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.green[400]!, Colors.green[600]!],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.green.withOpacity(0.4),
-                          blurRadius: 8,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      '${product.discountPercentage}%',
-                      style: TextStyle(
+                  left: 10,
+                  child: GestureDetector(
+                    onTap: () => _toggleFavorite(product.id, product.name),
+                    child: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
                         color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        isFavorite
+                            ? Icons.favorite
+                            : Icons.favorite_border_rounded,
+                        color: isFavorite ? Colors.red : Colors.grey[600],
+                        size: 18,
                       ),
                     ),
                   ),
-                ),
-              // UPDATE TOMBOL FAVORIT INI
-              Positioned(
-                top: 10,
-                left: 10,
-                child: GestureDetector(
-                  onTap: () => _toggleFavorite(product.id, product.name),
-                  child: Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      isFavorite
-                          ? Icons.favorite
-                          : Icons.favorite_border_rounded,
-                      color: isFavorite ? Colors.red : Colors.grey[600],
-                      size: 18,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.name,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.star_rounded,
-                      color: Colors.amber[700],
-                      size: 16,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      product.rating.toString(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[700],
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '(${product.reviewCount})',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Text(
-                      'Rp${product.price.toInt()}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.blue[700],
-                      ),
-                    ),
-                    if (product.originalPrice != null) ...[
-                      const SizedBox(width: 6),
-                      Text(
-                        'Rp${product.originalPrice!.toInt()}',
-                        style: TextStyle(
-                          decoration: TextDecoration.lineThrough,
-                          color: Colors.grey[400],
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ],
                 ),
               ],
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.star_rounded,
+                        color: Colors.amber[700],
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        product.rating.toString(),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[700],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '(${product.reviewCount})',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Text(
+                        'Rp${product.price.toInt()}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.blue[700],
+                        ),
+                      ),
+                      if (product.originalPrice != null) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          'Rp${product.originalPrice!.toInt()}',
+                          style: TextStyle(
+                            decoration: TextDecoration.lineThrough,
+                            color: Colors.grey[400],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

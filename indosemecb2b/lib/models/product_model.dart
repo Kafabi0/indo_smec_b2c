@@ -9,6 +9,7 @@ class Product {
   final int reviewCount;
   final String? storeName;
   final String? storeDistance;
+  final String? imageUrl;
 
   Product({
     required this.id,
@@ -21,6 +22,7 @@ class Product {
     this.reviewCount = 0,
     this.storeName,
     this.storeDistance,
+    this.imageUrl, // ✅ tambahkan ini
   });
 
   // Hitung persentase diskon
