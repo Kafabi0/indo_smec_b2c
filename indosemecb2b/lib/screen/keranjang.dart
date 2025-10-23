@@ -1,7 +1,7 @@
 // screen/keranjang.dart
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/favorit.dart';
-import 'package:indosemecb2b/screen/homescreen.dart';
+import 'package:indosemecb2b/screen/lengkapi_alamat_screen.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
 
 class CartScreen extends StatefulWidget {
@@ -16,16 +16,58 @@ class _CartScreenState extends State<CartScreen>
   late TabController _tabController;
   String selectedDelivery = 'xpress';
 
+  // Data alamat yang sudah disimpan
+  Map<String, dynamic>? _savedAlamat;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    
+    // Check untuk data alamat setelah build selesai
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForAddressData();
+    });
+  }
+
+  void _checkForAddressData() {
+    // Method ini akan dipanggil untuk check data alamat
+    // Data akan di-set melalui callback dari navigasi
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _navigateToLengkapiAlamat() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LengkapiAlamatScreen(
+          existingAddress: _savedAlamat, // Kirim alamat yang sudah ada
+        ),
+      ),
+    );
+
+    // Jika ada data yang dikembalikan
+    if (result != null && result is Map<String, dynamic>) {
+      setState(() {
+        _savedAlamat = result;
+      });
+      
+      // Tampilkan snackbar sukses
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Alamat berhasil disimpan'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -35,11 +77,7 @@ class _CartScreenState extends State<CartScreen>
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        // leading: IconButton(
-        //   icon: Icon(Icons.arrow_back, color: Colors.black),
-        //   onPressed: () => Navigator.pop(context),
-        // ),
-        title: Text(
+        title: const Text(
           'Keranjang Belanja',
           style: TextStyle(
             color: Colors.black,
@@ -70,8 +108,11 @@ class _CartScreenState extends State<CartScreen>
               unselectedLabelColor: Colors.grey[600],
               indicatorColor: Colors.blue[700],
               indicatorWeight: 3,
-              labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              tabs: [Tab(text: 'Grocery'), Tab(text: 'Food')],
+              labelStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+              tabs: const [Tab(text: 'Grocery'), Tab(text: 'Food')],
             ),
           ),
 
@@ -82,7 +123,7 @@ class _CartScreenState extends State<CartScreen>
                 // Grocery Tab
                 _buildGroceryTab(),
                 // Food Tab
-                Center(child: Text('Food Tab Content')),
+                const Center(child: Text('Food Tab Content')),
               ],
             ),
           ),
@@ -98,111 +139,8 @@ class _CartScreenState extends State<CartScreen>
         children: [
           const SizedBox(height: 16),
 
-          // Alamat Pengiriman Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Alamat Pengiriman',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    'Ubah Alamat',
-                    style: TextStyle(
-                      color: Colors.blue[700],
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // Address Card
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.location_on, color: Colors.blue[700], size: 25),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Area Antapani Kidul',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Kami membutuhkan lokasimu untuk menentukan\nstok produk dan alamat pengiriman.',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[600],
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[700],
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.edit, size: 18, color: Colors.white),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Lengkapi Alamat',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Alamat Pengiriman Section (Conditional)
+          _buildAlamatPengirimanSection(),
 
           const SizedBox(height: 24),
 
@@ -227,10 +165,9 @@ class _CartScreenState extends State<CartScreen>
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         margin: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color:
-                              selectedDelivery == 'xpress'
-                                  ? Colors.orange[400]
-                                  : Colors.transparent,
+                          color: selectedDelivery == 'xpress'
+                              ? Colors.orange[400]
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(80),
                         ),
                         child: Row(
@@ -238,20 +175,18 @@ class _CartScreenState extends State<CartScreen>
                           children: [
                             Icon(
                               Icons.flash_on,
-                              color:
-                                  selectedDelivery == 'xpress'
-                                      ? Colors.white
-                                      : Colors.grey[600],
+                              color: selectedDelivery == 'xpress'
+                                  ? Colors.white
+                                  : Colors.grey[600],
                               size: 20,
                             ),
                             const SizedBox(width: 6),
                             Text(
                               'Belanja Xpress',
                               style: TextStyle(
-                                color:
-                                    selectedDelivery == 'xpress'
-                                        ? Colors.white
-                                        : Colors.grey[600],
+                                color: selectedDelivery == 'xpress'
+                                    ? Colors.white
+                                    : Colors.grey[600],
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -272,10 +207,9 @@ class _CartScreenState extends State<CartScreen>
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         margin: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color:
-                              selectedDelivery == 'xtra'
-                                  ? Colors.green[400]
-                                  : Colors.transparent,
+                          color: selectedDelivery == 'xtra'
+                              ? Colors.green[400]
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(80),
                         ),
                         child: Row(
@@ -283,20 +217,18 @@ class _CartScreenState extends State<CartScreen>
                           children: [
                             Icon(
                               Icons.inventory_2_outlined,
-                              color:
-                                  selectedDelivery == 'xtra'
-                                      ? Colors.white
-                                      : Colors.grey[600],
+                              color: selectedDelivery == 'xtra'
+                                  ? Colors.white
+                                  : Colors.grey[600],
                               size: 20,
                             ),
                             const SizedBox(width: 6),
                             Text(
                               'Belanja Xtra',
                               style: TextStyle(
-                                color:
-                                    selectedDelivery == 'xtra'
-                                        ? Colors.white
-                                        : Colors.grey[600],
+                                color: selectedDelivery == 'xtra'
+                                    ? Colors.white
+                                    : Colors.grey[600],
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -331,7 +263,7 @@ class _CartScreenState extends State<CartScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Hadiah dan Tebus Murah',
                         style: TextStyle(
                           color: Colors.white,
@@ -359,7 +291,7 @@ class _CartScreenState extends State<CartScreen>
                                 fontSize: 8,
                               ),
                             ),
-                            Text(
+                            const Text(
                               'Rp7.900',
                               style: TextStyle(
                                 color: Colors.black,
@@ -375,14 +307,18 @@ class _CartScreenState extends State<CartScreen>
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Icon(Icons.arrow_forward, size: 8),
+                            const Icon(Icons.arrow_forward, size: 8),
                           ],
                         ),
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.shopping_basket, color: Colors.white, size: 50),
+                const Icon(
+                  Icons.shopping_basket,
+                  color: Colors.white,
+                  size: 50,
+                ),
               ],
             ),
           ),
@@ -414,7 +350,7 @@ class _CartScreenState extends State<CartScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Keranjang belanjamu masih \nkosong',
                             style: TextStyle(
                               fontSize: 12,
@@ -457,7 +393,7 @@ class _CartScreenState extends State<CartScreen>
                       ),
                       elevation: 0,
                     ),
-                    child: Text(
+                    child: const Text(
                       'Mulai Berbelanja !',
                       style: TextStyle(
                         fontSize: 14,
@@ -473,7 +409,7 @@ class _CartScreenState extends State<CartScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    const Text(
                       'Promo Fair',
                       style: TextStyle(
                         fontSize: 16,
@@ -526,6 +462,265 @@ class _CartScreenState extends State<CartScreen>
     );
   }
 
+  // Widget untuk Alamat Pengiriman (Conditional)
+  Widget _buildAlamatPengirimanSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Alamat Pengiriman',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+              if (_savedAlamat != null)
+                TextButton(
+                  onPressed: _navigateToLengkapiAlamat,
+                  child: Text(
+                    'Ubah Alamat',
+                    style: TextStyle(
+                      color: Colors.blue[700],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        // Conditional Display
+        _savedAlamat == null ? _buildBelumAdaAlamat() : _buildSudahAdaAlamat(),
+      ],
+    );
+  }
+
+  // UI ketika belum ada alamat
+  Widget _buildBelumAdaAlamat() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.location_on, color: Colors.blue[700], size: 25),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Area Antapani Kidul',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Kami membutuhkan lokasimu untuk menentukan\nstok produk dan alamat pengiriman.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _navigateToLengkapiAlamat,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue[700],
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.edit, size: 18, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'Lengkapi Alamat',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // UI ketika sudah ada alamat - DISESUAIKAN DENGAN GAMBAR
+  Widget _buildSudahAdaAlamat() {
+    return Column(
+      children: [
+        // Card Alamat Utama
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.location_on, color: Colors.blue[700], size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Label Alamat dengan nomor HP
+                    Text(
+                      '${_savedAlamat!['label'] ?? 'rumah'}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+
+                    // Nama Penerima dengan Nomor HP
+                    Text(
+                      '${_savedAlamat!['nama_penerima'] ?? 'kafabi'} (${_savedAlamat!['nomor_hp'] ?? '084664644412'})',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Alamat Lengkap - Format sesuai gambar
+                    Text(
+                      '${_savedAlamat!['provinsi'] ?? 'Jawa Barat'}, ${_savedAlamat!['kota'] ?? 'Kota Bandung'}, ${_savedAlamat!['kecamatan'] ?? 'Antapani'}, ${_savedAlamat!['kelurahan'] ?? 'Antapani Kidul'}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[700],
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Tombol Tambah Catatan Pengiriman
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Colors.grey[300]!,
+              style: BorderStyle.solid,
+              width: 1.5,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: InkWell(
+            onTap: _showCatatanPengirimanDialog,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.add_circle_outline,
+                    color: Colors.blue[700],
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Catatan Pengiriman',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showCatatanPengirimanDialog() {
+    final TextEditingController catatanController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Catatan Pengiriman'),
+        content: TextField(
+          controller: catatanController,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            hintText: 'Masukkan catatan untuk kurir...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Catatan pengiriman disimpan'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPromoCard(
     BuildContext context, {
     required String title,
@@ -538,7 +733,7 @@ class _CartScreenState extends State<CartScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
         ],
       ),
@@ -551,7 +746,7 @@ class _CartScreenState extends State<CartScreen>
                 height: 85,
                 decoration: BoxDecoration(
                   color: Colors.grey[200],
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
                   ),
@@ -601,9 +796,9 @@ class _CartScreenState extends State<CartScreen>
                         color: Colors.amber[100],
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
+                        children: [
                           Icon(Icons.star, size: 12, color: Colors.amber),
                           SizedBox(width: 2),
                           Text(
