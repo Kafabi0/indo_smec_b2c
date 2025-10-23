@@ -18,6 +18,9 @@ class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
   bool _isLoggedIn = false;
 
+  // 🔑 Key untuk mengakses HomeScreen dan refresh-nya
+  final GlobalKey<HomeScreenState> _homeScreenKey = GlobalKey<HomeScreenState>();
+
   late List<Widget> _screens;
 
   @override
@@ -26,22 +29,22 @@ class _MainNavigationState extends State<MainNavigation> {
     _checkLoginStatus();
 
     _screens = [
-      const HomeScreen(),
+      HomeScreen(key: _homeScreenKey), // Pakai key
       const CartScreen(),
       const PoinkuScreen(),
       TransaksiScreen(),
-      ProfileScreen(onLogout: _checkLoginStatus), // Sekarang bisa dipanggil
+      ProfileScreen(
+        onLogout: _handleLogout, // ⭐ Ganti jadi callback khusus
+      ),
     ];
   }
 
-  // ⭐ Tambahkan didUpdateWidget untuk auto-refresh saat kembali dari login
   @override
   void didUpdateWidget(MainNavigation oldWidget) {
     super.didUpdateWidget(oldWidget);
     _checkLoginStatus();
   }
 
-  // ⭐ Tambahkan didChangeDependencies untuk refresh saat screen muncul lagi
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -59,11 +62,30 @@ class _MainNavigationState extends State<MainNavigation> {
     }
   }
 
+  // ⭐ Handler khusus untuk logout - refresh HomeScreen + pindah ke tab Beranda
+  void _handleLogout() async {
+    // Cek status login lagi
+    await _checkLoginStatus();
+    
+    // Refresh HomeScreen agar tampilan berubah ke mode "belum login"
+    _homeScreenKey.currentState?.refreshLoginStatus();
+    
+    // Pindah ke tab Beranda
+    setState(() {
+      _currentIndex = 0;
+    });
+  }
+
   void _onTabTapped(int index) {
     // Jika user belum login dan ingin akses selain Beranda (0) dan Akun (4)
     if (!_isLoggedIn && index != 0 && index != 4) {
       _showLoginBottomSheet();
       return;
+    }
+
+    // ⭐ Jika tab Beranda diklik berulang, refresh HomeScreen
+    if (index == 0 && _currentIndex == 0) {
+      _homeScreenKey.currentState?.refreshLoginStatus();
     }
 
     setState(() {
@@ -129,14 +151,15 @@ class _MainNavigationState extends State<MainNavigation> {
                   onPressed: () async {
                     Navigator.pop(context); // tutup bottom sheet
 
-                    // ⭐ Navigasi ke login dan tunggu hasilnya
+                    // Navigasi ke login dan tunggu hasilnya
                     await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const LoginPage()),
                     );
 
-                    // ⭐ Setelah kembali dari login, cek status login lagi
-                    _checkLoginStatus();
+                    // ⭐ Setelah kembali dari login, refresh status + HomeScreen
+                    await _checkLoginStatus();
+                    _homeScreenKey.currentState?.refreshLoginStatus();
                   },
                   child: const Text(
                     "Gabung Sekarang",

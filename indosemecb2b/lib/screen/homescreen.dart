@@ -10,10 +10,10 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   final ProductService _productService = ProductService();
   bool isLoggedIn = false;
   String userEmail = '';
@@ -58,6 +58,11 @@ class _HomeScreenState extends State<HomeScreen> {
       isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
       userEmail = prefs.getString('userEmail') ?? '';
     });
+  }
+
+  void refreshLoginStatus() {
+    _checkLoginStatus();
+    _loadData();
   }
 
   void _loadData() {
