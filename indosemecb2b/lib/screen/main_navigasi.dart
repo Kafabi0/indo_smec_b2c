@@ -1,6 +1,6 @@
-// screen/main_navigation.dart
 import 'package:flutter/material.dart';
-import 'package:indosemecb2b/screen/favorit.dart';
+import 'package:indosemecb2b/screen/login.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:indosemecb2b/screen/homescreen.dart';
 import 'package:indosemecb2b/screen/keranjang.dart';
 import 'package:indosemecb2b/screen/poinku.dart';
@@ -16,20 +16,118 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
+  bool _isLoggedIn = false;
 
-  // List screen yang akan ditampilkan
   final List<Widget> _screens = [
     const HomeScreen(),
     const CartScreen(),
     const PoinkuScreen(),
-     TransaksiScreen(),
+    TransaksiScreen(),
     const ProfileScreen(),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    });
+  }
+
   void _onTabTapped(int index) {
+    // Jika user belum login dan ingin akses selain Beranda (0) dan Akun (4)
+    if (!_isLoggedIn && index != 0 && index != 4) {
+      _showLoginBottomSheet();
+      return;
+    }
+
     setState(() {
       _currentIndex = index;
     });
+  }
+
+  void _showLoginBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  const Text(
+                    "Login Untuk Berbelanja",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Image.asset(
+                "assets/research.png", // ganti sesuai nama file gambar kamu
+                height: 160,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Belanja Mudah",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                "One stop online store yang menyediakan berbagai macam produk dalam satu aplikasi",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 45,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[700],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context); // tutup bottom sheet
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                    );
+                  },
+                  child: const Text(
+                    "Gabung Sekarang",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -68,21 +166,14 @@ class _MainNavigationState extends State<MainNavigation> {
               activeIcon: Icon(Icons.shopping_cart, size: 26),
               label: 'Keranjang',
             ),
-
-            /// 🔹 POINKU (tombol melayang tengah)
             BottomNavigationBarItem(
               icon: Transform.translate(
-                offset: const Offset(
-                  0,
-                  -10,
-                ), // ikon naik 10px, tapi background bar tetap diam
+                offset: const Offset(0, -10),
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color:
-                        _currentIndex == 2
-                            ? Colors.blue[100] // aktif → biru muda
-                            : Colors.blue[50], // nonaktif → putih
+                        _currentIndex == 2 ? Colors.blue[100] : Colors.blue[50],
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
@@ -104,7 +195,6 @@ class _MainNavigationState extends State<MainNavigation> {
               ),
               label: 'Poinku',
             ),
-
             const BottomNavigationBarItem(
               icon: Icon(Icons.receipt_long_outlined, size: 26),
               activeIcon: Icon(Icons.receipt_long, size: 26),
