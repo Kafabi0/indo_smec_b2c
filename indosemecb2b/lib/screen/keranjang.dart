@@ -87,7 +87,7 @@ class _CartScreenState extends State<CartScreen>
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.favorite_border, color: Colors.grey[700]),
+            icon: Icon(Icons.favorite_sharp, color: Colors.grey[700]),
             onPressed: () {
               Navigator.push(
                 context,
