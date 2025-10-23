@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product_model.dart';
 import '../models/store_model.dart';
 import '../models/subcategory_model.dart';
 import '../services/product_service.dart';
+import 'login.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -13,6 +15,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ProductService _productService = ProductService();
+  bool isLoggedIn = false;
+  String userEmail = '';
   
   String selectedCategory = 'Semua';
   bool showCategoryFilter = false;
@@ -44,7 +48,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _checkLoginStatus();
     _loadData();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+      userEmail = prefs.getString('userEmail') ?? '';
+    });
   }
 
   void _loadData() {
@@ -120,8 +133,13 @@ class _HomeScreenState extends State<HomeScreen> {
               // TAMPILAN DEFAULT (Semua)
               _buildDeliveryOptions(),
               const SizedBox(height: 16),
-              _buildLoyaltyPoints(),
-              const SizedBox(height: 20),
+              
+              // Loyalty Points - Hanya tampil jika sudah login
+              if (isLoggedIn) ...[
+                _buildLoyaltyPoints(),
+                const SizedBox(height: 20),
+              ],
+              
               _buildSectionHeader('FLASH SALE 11.00 - 13.00', hasTimer: true),
               _buildFlashSaleSection(),
               const SizedBox(height: 20),
@@ -384,15 +402,63 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Text('Login dulu yuk!',
-              style: TextStyle(color: Colors.black87, fontSize: 15, fontWeight: FontWeight.w600)),
-          const SizedBox(width: 4),
-          Text('|', style: TextStyle(color: Colors.grey[400], fontSize: 15)),
-          const SizedBox(width: 4),
-          Text('Area Antapani Kidul',
-              style: TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.w500)),
-          const SizedBox(width: 4),
-          Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey[600], size: 18),
+          if (!isLoggedIn) ...[
+            GestureDetector(
+              onTap: () async {
+                // Navigate to Login Page
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                );
+                
+                // Check login status after returning from login page
+                if (result == true || mounted) {
+                  _checkLoginStatus();
+                }
+              },
+              child: Text(
+                'Login dulu yuk!',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text('|', style: TextStyle(color: Colors.grey[400], fontSize: 15)),
+            const SizedBox(width: 4),
+          ],
+          GestureDetector(
+            onTap: () {
+              _showLocationModal();
+            },
+            child: Row(
+              children: [
+                if (isLoggedIn) ...[
+                  Text(
+                    'Dikirim ke',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                ],
+                Text(
+                  'Area Antapani Kidul',
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey[600], size: 18),
+              ],
+            ),
+          ),
           Spacer(),
           Container(
             padding: EdgeInsets.all(6),
@@ -404,31 +470,198 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showLocationModal() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Tentukan Lokasimu',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close_rounded, color: Colors.grey[600]),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              
+              // Masuk Option (Login)
+              InkWell(
+                onTap: () async {
+                  Navigator.pop(context);
+                  // Navigate to Login Page
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  );
+                  
+                  // Check login status after returning from login page
+                  if (result == true || mounted) {
+                    _checkLoginStatus();
+                  }
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Row(
+                    children: [
+                      Icon(Icons.login_rounded, color: Colors.grey[700], size: 24),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Masuk',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Masuk agar alamat pengirimanmu disimpan',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
+                    ],
+                  ),
+                ),
+              ),
+              
+              Divider(height: 1, color: Colors.grey[300]),
+              
+              const SizedBox(height: 10),
+              
+              Text(
+                'Cara Lain',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[700],
+                ),
+              ),
+              
+              const SizedBox(height: 10),
+              
+              // Pilih Lokasi Option
+              InkWell(
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Navigate to location picker
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Membuka pilihan lokasi...'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Row(
+                    children: [
+                      Icon(Icons.location_on_rounded, color: Colors.grey[700], size: 24),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Pilih Lokasi',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Pilih area kota atau kecamatan',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
+                    ],
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   // ============ DEFAULT LAYOUT WIDGETS (Semua) ============
 
   Widget _buildDeliveryOptions() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          _buildDeliveryOption(
-            isSelected: isXpressSelected,
-            icon: Icons.flash_on_rounded,
-            title: 'Belanja Xpress',
-            subtitle: '1 Jam Sampai',
-            colors: [Colors.orange[400]!, Colors.deepOrange[500]!],
-            onTap: () => setState(() => isXpressSelected = true),
-          ),
-          const SizedBox(width: 12),
-          _buildDeliveryOption(
-            isSelected: !isXpressSelected,
-            icon: Icons.inventory_2_rounded,
-            title: 'Belanja Xtra',
-            subtitle: 'Banyak & Beragam',
-            colors: [Colors.green[400]!, Colors.green[600]!],
-            onTap: () => setState(() => isXpressSelected = false),
-          ),
-        ],
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            _buildDeliveryOption(
+              isSelected: isXpressSelected,
+              icon: Icons.flash_on_rounded,
+              title: 'Belanja Xpress',
+              subtitle: '1 Jam Sampai',
+              colors: [Colors.orange[400]!, Colors.deepOrange[500]!],
+              onTap: () => setState(() => isXpressSelected = true),
+              isLeft: true,
+            ),
+            _buildDeliveryOption(
+              isSelected: !isXpressSelected,
+              icon: Icons.inventory_2_rounded,
+              title: 'Belanja Xtra',
+              subtitle: 'Banyak & Beragam',
+              colors: [Colors.green[400]!, Colors.green[600]!],
+              onTap: () => setState(() => isXpressSelected = false),
+              isLeft: false,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -440,48 +673,51 @@ class _HomeScreenState extends State<HomeScreen> {
     required String subtitle,
     required List<Color> colors,
     required VoidCallback onTap,
+    required bool isLeft,
   }) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             gradient: isSelected ? LinearGradient(colors: colors) : null,
             color: isSelected ? null : Colors.grey[200],
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: isSelected
-                    ? colors[0].withOpacity(0.3)
-                    : Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            borderRadius: isLeft 
+                ? BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
+                  )
+                : BorderRadius.only(
+                    topRight: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  ),
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: isSelected ? Colors.white.withOpacity(0.2) : Colors.white,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(icon,
-                    color: isSelected ? Colors.white : Colors.grey[700], size: 22),
+                    color: isSelected ? Colors.white : Colors.grey[700], size: 18),
               ),
-              const SizedBox(width: 10),
-              Expanded(
+              const SizedBox(width: 8),
+              Flexible(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       title,
                       style: TextStyle(
                         color: isSelected ? Colors.white : Colors.black87,
-                        fontSize: 14,
+                        fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -491,7 +727,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: isSelected
                             ? Colors.white.withOpacity(0.9)
                             : Colors.grey[600],
-                        fontSize: 11,
+                        fontSize: 10,
                       ),
                     ),
                   ],
