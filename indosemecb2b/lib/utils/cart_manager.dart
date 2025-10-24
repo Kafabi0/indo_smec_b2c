@@ -72,6 +72,27 @@ class CartManager {
     }
   }
 
+  // Ambil quantity produk tertentu dari keranjang
+  static Future<int> getProductQuantity(String productId) async {
+    try {
+      final userLogin = await UserDataManager.getCurrentUserLogin();
+      if (userLogin == null) return 0;
+
+      final cartData = await UserDataManager.getCart(userLogin);
+      final cartItems = cartData.map((item) => CartItem.fromMap(item)).toList();
+
+      final item = cartItems.firstWhere(
+        (item) => item.productId == productId,
+        orElse: () => CartItem(productId: '', name: '', price: 0, quantity: 0),
+      );
+
+      return item.quantity;
+    } catch (e) {
+      debugPrint('Error getting product quantity: $e');
+      return 0;
+    }
+  }
+
   // Hitung total items di keranjang
   static Future<int> getCartItemCount() async {
     final items = await getCartItems();
@@ -141,6 +162,17 @@ class CartManager {
       return await UserDataManager.saveCart(userLogin, []);
     } catch (e) {
       debugPrint('Error clearing cart: $e');
+      return false;
+    }
+  }
+
+  // Cek apakah produk ada di keranjang
+  static Future<bool> isInCart(String productId) async {
+    try {
+      final quantity = await getProductQuantity(productId);
+      return quantity > 0;
+    } catch (e) {
+      debugPrint('Error checking if in cart: $e');
       return false;
     }
   }

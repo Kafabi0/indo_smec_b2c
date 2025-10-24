@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/detail_produk.dart';
+import 'package:indosemecb2b/screen/product_list_screen.dart';
 import 'package:indosemecb2b/utils/cart_manager.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -219,19 +220,26 @@ class HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 20),
               _buildPromoBanner(),
               const SizedBox(height: 20),
-              _buildSectionHeader('Promosi Khusus Anda'),
+              _buildSectionHeader(
+                'Promosi Khusus Anda',
+                products: displayedProducts,
+              ),
+
               _buildProductGrid(displayedProducts.take(6).toList()),
               const SizedBox(height: 20),
-              _buildSectionHeader('Produk Rating Tertinggi'),
+              _buildSectionHeader(
+                'Produk Rating Tertinggi',
+                products: topRatedProducts,
+              ),
               _buildProductGrid(topRatedProducts),
               const SizedBox(height: 20),
-              _buildSectionHeader('Produk Segar'),
+              _buildSectionHeader('Produk Segar', products: freshProducts),
               _buildProductGrid(freshProducts),
               const SizedBox(height: 20),
-              _buildSectionHeader('Produk Terbaru'),
+              _buildSectionHeader('Produk Terbaru', products: newestProducts),
               _buildProductGrid(newestProducts),
               const SizedBox(height: 20),
-              _buildSectionHeader('Buah & Sayur'),
+              _buildSectionHeader('Buah & Sayur', products: fruitAndVeggies),
               _buildProductGrid(fruitAndVeggies),
             ] else ...[
               if (subCategories.isNotEmpty) ...[
@@ -1801,12 +1809,12 @@ class HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Center(
-                          child:  Image.network(
-                          product.imageUrl ?? '',
-                          height: 260,
-                          width: 260,
-                          fit: BoxFit.cover,
-                        )
+                          child: Image.network(
+                            product.imageUrl ?? '',
+                            height: 260,
+                            width: 260,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1913,6 +1921,7 @@ class HomeScreenState extends State<HomeScreen> {
     String title, {
     bool hasTimer = false,
     bool showSeeAll = true,
+    List<Product>? products, // Tambahkan parameter ini
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1962,9 +1971,18 @@ class HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             )
-          else if (showSeeAll)
+          else if (showSeeAll && products != null) // Modifikasi ini
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) =>
+                            ProductListScreen(title: title, products: products),
+                  ),
+                );
+              },
               child: Text(
                 'Lihat Semua',
                 style: TextStyle(
@@ -2042,7 +2060,7 @@ class HomeScreenState extends State<HomeScreen> {
                           height: 260,
                           width: 260,
                           fit: BoxFit.cover,
-                        )
+                        ),
                       ),
                     ),
 
