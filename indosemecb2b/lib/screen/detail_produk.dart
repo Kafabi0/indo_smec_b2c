@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/screen/keranjang.dart';
 import '../models/product_model.dart';
 import '../services/favorite_service.dart';
+import '../utils/cart_manager.dart';
+import '../utils/user_data_manager.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
@@ -13,11 +16,14 @@ class ProductDetailPage extends StatefulWidget {
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
   bool isFavorite = false;
+  int quantity = 0;
   final FavoriteService _favoriteService = FavoriteService();
+
   @override
   void initState() {
     super.initState();
     _loadFavoriteStatus();
+    _loadCartQuantity();
   }
 
   Future<void> _loadFavoriteStatus() async {
@@ -26,6 +32,74 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       setState(() {
         isFavorite = status;
       });
+    }
+  }
+
+  Future<void> _loadCartQuantity() async {
+    final qty = await CartManager.getProductQuantity(widget.product.id);
+    if (mounted) {
+      setState(() {
+        quantity = qty;
+      });
+    }
+  }
+
+  Future<void> _addToCart() async {
+    final userLogin = await UserDataManager.getCurrentUserLogin();
+    if (userLogin == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Silakan login terlebih dahulu'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+
+    final success = await CartManager.addToCart(
+      productId: widget.product.id,
+      name: widget.product.name,
+      price: widget.product.price,
+      originalPrice: widget.product.originalPrice,
+      discountPercentage: widget.product.discountPercentage,
+      imageUrl: widget.product.imageUrl,
+    );
+
+    if (success) {
+      await _loadCartQuantity();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${widget.product.name} ditambahkan ke keranjang',
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(milliseconds: 1500),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal menambahkan ke keranjang'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
@@ -80,6 +154,23 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     color: isFavorite ? Colors.red : Colors.black87,
                   ),
                   onPressed: () async {
+                    final userLogin =
+                        await UserDataManager.getCurrentUserLogin();
+                    if (userLogin == null) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Anda harus login terlebih dahulu untuk menyimpan favorit.',
+                            ),
+                            duration: Duration(seconds: 2),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                      return;
+                    }
+
                     final newStatus = await _favoriteService.toggleFavorite(
                       widget.product.id,
                     );
@@ -89,18 +180,22 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       });
                     }
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          newStatus
-                              ? '${widget.product.name} ditambahkan ke favorit'
-                              : '${widget.product.name} dihapus dari favorit',
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            newStatus
+                                ? '${widget.product.name} ditambahkan ke favorit'
+                                : '${widget.product.name} dihapus dari favorit',
+                          ),
+                          duration: const Duration(seconds: 1),
+                          backgroundColor:
+                              newStatus
+                                  ? Colors.green[600]
+                                  : Colors.orange[700],
                         ),
-                        duration: const Duration(seconds: 1),
-                        backgroundColor:
-                            newStatus ? Colors.green[600] : Colors.orange[700],
-                      ),
-                    );
+                      );
+                    }
                   },
                 ),
               ),
@@ -137,6 +232,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         ? Image.network(
                           widget.product.imageUrl!,
                           fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Center(
+                              child: Icon(
+                                Icons.image,
+                                size: 100,
+                                color: Colors.grey[400],
+                              ),
+                            );
+                          },
                         )
                         : Icon(Icons.image, size: 100, color: Colors.grey[400]),
               ),
@@ -411,33 +515,72 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ),
         child: Row(
           children: [
-            // Tombol Keranjang (Icon saja)
+            // Tombol Keranjang (Icon saja) - Menampilkan badge quantity
             Container(
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey[300]!),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: IconButton(
-                onPressed: () {
-                  // Implementasi tambah ke keranjang
-                },
-                icon: const Icon(
-                  Icons.shopping_cart_outlined,
-                  color: Colors.black87,
-                ),
+              child: Stack(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => CartScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.shopping_cart_outlined,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  if (quantity > 0)
+                    Positioned(
+                      right: 4,
+                      top: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$quantity',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(width: 12),
             // Tombol Keranjang dengan text
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () {
-                  // Implementasi tambah ke keranjang
-                },
+                onPressed: _addToCart,
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text(
-                  'Keranjang',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                label: Text(
+                  quantity > 0
+                      ? 'Tambah Lagi ($quantity)'
+                      : 'Tambah ke Keranjang',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue[700],

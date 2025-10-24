@@ -274,6 +274,11 @@ class CartScreenState extends State<CartScreen> {
 
                   const SizedBox(height: 24),
 
+                  // Promo Banner - Selalu muncul
+                  _buildPromoBanner(),
+                  
+                  const SizedBox(height: 24),
+
                   // Cart Items atau Empty Cart
                   _cartItems.isEmpty ? _buildEmptyCart() : _buildCartItems(),
                 ],
@@ -348,6 +353,87 @@ class CartScreenState extends State<CartScreen> {
               ),
             )
           : null,
+    );
+  }
+
+  Widget _buildPromoBanner() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blue[700]!, Colors.blue[400]!],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Hadiah dan Tebus Murah',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Tambah ',
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 8,
+                          ),
+                        ),
+                        const Text(
+                          'Rp7.900',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          ' untuk dapat promo',
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 8,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.arrow_forward, size: 8),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.shopping_basket,
+              color: Colors.white,
+              size: 50,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -637,85 +723,6 @@ class CartScreenState extends State<CartScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          // Promo Banner
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue[700]!, Colors.blue[400]!],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Hadiah dan Tebus Murah',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Tambah ',
-                              style: TextStyle(
-                                color: Colors.grey[700],
-                                fontSize: 8,
-                              ),
-                            ),
-                            const Text(
-                              'Rp7.900',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 8,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              ' untuk dapat promo',
-                              style: TextStyle(
-                                color: Colors.grey[700],
-                                fontSize: 8,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Icon(Icons.arrow_forward, size: 8),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(
-                  Icons.shopping_basket,
-                  color: Colors.white,
-                  size: 50,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 32),
-
           // Empty Cart Message
           Row(
             children: [
@@ -761,7 +768,7 @@ class CartScreenState extends State<CartScreen> {
             ],
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
 
           SizedBox(
             width: double.infinity,

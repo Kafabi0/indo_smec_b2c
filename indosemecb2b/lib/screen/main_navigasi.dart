@@ -6,8 +6,8 @@ import 'package:indosemecb2b/screen/keranjang.dart';
 import 'package:indosemecb2b/screen/poinku.dart';
 import 'package:indosemecb2b/screen/profile.dart';
 import 'package:indosemecb2b/screen/transaksi.dart';
-
 import '../utils/user_data_manager.dart';
+import '../utils/cart_manager.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({Key? key}) : super(key: key);
@@ -19,12 +19,11 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
   bool _isLoggedIn = false;
+  int _cartItemCount = 0; // ⭐ TAMBAHKAN untuk count cart
 
   // 🔑 Key untuk mengakses HomeScreen dan refresh-nya
-  final GlobalKey<HomeScreenState> _homeScreenKey =
-      GlobalKey<HomeScreenState>();
-  final GlobalKey<CartScreenState> _cartScreenKey =
-      GlobalKey<CartScreenState>(); // ⭐ TAMBAHKAN INI
+  final GlobalKey<HomeScreenState> _homeScreenKey = GlobalKey<HomeScreenState>();
+  final GlobalKey<CartScreenState> _cartScreenKey = GlobalKey<CartScreenState>();
 
   late List<Widget> _screens;
 
@@ -32,14 +31,15 @@ class _MainNavigationState extends State<MainNavigation> {
   void initState() {
     super.initState();
     _checkLoginStatus();
+    _loadCartCount(); // ⭐ Load cart count saat init
 
     _screens = [
-      HomeScreen(key: _homeScreenKey), // Pakai key
+      HomeScreen(key: _homeScreenKey),
       CartScreen(key: _cartScreenKey),
       const PoinkuScreen(),
       TransaksiScreen(),
       ProfileScreen(
-        onLogout: _handleLogout, // ⭐ Ganti jadi callback khusus
+        onLogout: _handleLogout,
       ),
     ];
   }
@@ -48,12 +48,14 @@ class _MainNavigationState extends State<MainNavigation> {
   void didUpdateWidget(MainNavigation oldWidget) {
     super.didUpdateWidget(oldWidget);
     _checkLoginStatus();
+    _loadCartCount(); // ⭐ Reload saat widget update
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _checkLoginStatus();
+    _loadCartCount(); // ⭐ Reload saat dependencies change
   }
 
   Future<void> _checkLoginStatus() async {
@@ -64,19 +66,28 @@ class _MainNavigationState extends State<MainNavigation> {
       setState(() {
         _isLoggedIn = loggedIn;
       });
+      // Reload cart count ketika status login berubah
+      _loadCartCount();
+    }
+  }
+
+  // ⭐ Method untuk load jumlah item di cart
+  Future<void> _loadCartCount() async {
+    final count = await CartManager.getCartItemCount();
+    if (mounted) {
+      setState(() {
+        _cartItemCount = count;
+      });
     }
   }
 
   // ⭐ Handler khusus untuk logout - refresh HomeScreen + pindah ke tab Beranda
   void _handleLogout() async {
-    // Cek status login lagi
     await _checkLoginStatus();
-
-    // Refresh HomeScreen agar tampilan berubah ke mode "belum login"
     _homeScreenKey.currentState?.refreshLoginStatus();
     _cartScreenKey.currentState?.refreshCart();
+    _loadCartCount(); // ⭐ Update cart count setelah logout
 
-    // Pindah ke tab Beranda
     setState(() {
       _currentIndex = 0;
     });
@@ -90,21 +101,23 @@ class _MainNavigationState extends State<MainNavigation> {
     }
 
     if (index == 2) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const PoinkuMainScreen()),
-    );
-    return;
-  }
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const PoinkuMainScreen()),
+      );
+      return;
+    }
 
     // ⭐ Jika tab Beranda diklik berulang, refresh HomeScreen
     if (index == 0 && _currentIndex == 0) {
       _homeScreenKey.currentState?.refreshLoginStatus();
     }
+    
     if (index == 1) {
-      // Delay sedikit agar transisi smooth
+      // Refresh cart dan reload count
       Future.delayed(const Duration(milliseconds: 100), () {
         _cartScreenKey.currentState?.refreshCart();
+        _loadCartCount(); // ⭐ Update count saat buka tab cart
       });
     }
 
@@ -169,18 +182,17 @@ class _MainNavigationState extends State<MainNavigation> {
                     ),
                   ),
                   onPressed: () async {
-                    Navigator.pop(context); // tutup bottom sheet
+                    Navigator.pop(context);
 
-                    // Navigasi ke login dan tunggu hasilnya
                     await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const LoginPage()),
                     );
 
-                    // ⭐ Setelah kembali dari login, refresh status + HomeScreen
                     await _checkLoginStatus();
                     _homeScreenKey.currentState?.refreshLoginStatus();
-                    _cartScreenKey.currentState?.refreshCart(); // ⭐ TAMBAHKAN
+                    _cartScreenKey.currentState?.refreshCart();
+                    _loadCartCount(); // ⭐ Update count setelah login
                   },
                   child: const Text(
                     "Gabung Sekarang",
@@ -230,9 +242,10 @@ class _MainNavigationState extends State<MainNavigation> {
               activeIcon: Icon(Icons.home, size: 26),
               label: 'Beranda',
             ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart_outlined, size: 26),
-              activeIcon: Icon(Icons.shopping_cart, size: 26),
+            // ⭐ Keranjang dengan Badge
+            BottomNavigationBarItem(
+              icon: _buildCartIconWithBadge(false),
+              activeIcon: _buildCartIconWithBadge(true),
               label: 'Keranjang',
             ),
             BottomNavigationBarItem(
@@ -241,8 +254,7 @@ class _MainNavigationState extends State<MainNavigation> {
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color:
-                        _currentIndex == 2 ? Colors.blue[100] : Colors.blue[50],
+                    color: _currentIndex == 2 ? Colors.blue[100] : Colors.blue[50],
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
@@ -255,10 +267,7 @@ class _MainNavigationState extends State<MainNavigation> {
                   child: Icon(
                     Icons.qr_code_2,
                     size: 28,
-                    color:
-                        _currentIndex == 2
-                            ? Colors.blue[700]
-                            : Colors.blue[600],
+                    color: _currentIndex == 2 ? Colors.blue[700] : Colors.blue[600],
                   ),
                 ),
               ),
@@ -277,6 +286,46 @@ class _MainNavigationState extends State<MainNavigation> {
           ],
         ),
       ),
+    );
+  }
+
+  // ⭐ Widget untuk icon cart dengan badge
+  Widget _buildCartIconWithBadge(bool isActive) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(
+          isActive ? Icons.shopping_cart : Icons.shopping_cart_outlined,
+          size: 26,
+        ),
+        if (_cartItemCount > 0)
+          Positioned(
+            right: -6,
+            top: -6,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              constraints: const BoxConstraints(
+                minWidth: 18,
+                minHeight: 18,
+              ),
+              child: Center(
+                child: Text(
+                  _cartItemCount > 99 ? '99+' : '$_cartItemCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
