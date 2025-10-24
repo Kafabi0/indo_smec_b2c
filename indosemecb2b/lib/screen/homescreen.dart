@@ -2642,7 +2642,7 @@ String _formatPrice(double price) {
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
-                              color: Colors.black87,
+                              color:  Colors.blue,
                             ),
                           ),
                           const SizedBox(width: 6),
