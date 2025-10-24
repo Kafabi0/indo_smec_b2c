@@ -140,7 +140,6 @@ class _FavoritScreenState extends State<FavoritScreen> {
               : favoriteProducts.isEmpty
               ? _buildEmptyState()
               : _buildFavoriteContent(),
-              
     );
   }
 
@@ -211,7 +210,7 @@ class _FavoritScreenState extends State<FavoritScreen> {
   Widget _buildFavoriteContent() {
     return Column(
       children: [
-        // 🔹 Search Bar
+        // 🔹 Search Bar dengan tombol X
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
           child: TextField(
@@ -219,6 +218,18 @@ class _FavoritScreenState extends State<FavoritScreen> {
             decoration: InputDecoration(
               hintText: 'Cari di Barang Favoritmu',
               prefixIcon: const Icon(Icons.search, color: Colors.grey),
+              suffixIcon:
+                  _searchController.text.isNotEmpty
+                      ? IconButton(
+                        icon: const Icon(Icons.close, color: Colors.grey),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            filteredProducts = favoriteProducts;
+                          });
+                        },
+                      )
+                      : null,
               filled: true,
               fillColor: Colors.white,
               contentPadding: const EdgeInsets.symmetric(
@@ -234,6 +245,7 @@ class _FavoritScreenState extends State<FavoritScreen> {
                 borderSide: BorderSide(color: Colors.grey[300]!),
               ),
             ),
+            onChanged: (value) => _onSearchChanged(),
           ),
         ),
         const SizedBox(height: 6),
@@ -246,10 +258,12 @@ class _FavoritScreenState extends State<FavoritScreen> {
 
   // 🔹 Tampilan grid dua kolom
   Widget _buildFavoriteList() {
+    final displayList =
+        _searchController.text.isEmpty ? favoriteProducts : filteredProducts;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: GridView.builder(
-        itemCount: favoriteProducts.length,
+        itemCount: displayList.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           mainAxisSpacing: 12,
@@ -257,7 +271,7 @@ class _FavoritScreenState extends State<FavoritScreen> {
           childAspectRatio: 0.68,
         ),
         itemBuilder: (context, index) {
-          final product = favoriteProducts[index];
+          final product = displayList[index];
           return _buildFavoriteCard(product);
         },
       ),
