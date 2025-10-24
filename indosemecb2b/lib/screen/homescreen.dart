@@ -2639,10 +2639,10 @@ String _formatPrice(double price) {
                         children: [
                           Text(
                             _formatPrice(product.price),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
-                              color:  Colors.blue,
+                              color:  Colors.blue[700],
                             ),
                           ),
                           const SizedBox(width: 6),
