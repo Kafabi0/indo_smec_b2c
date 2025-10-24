@@ -1973,7 +1973,7 @@ String _formatPrice(double price) {
                                   Row(
                                     children: [
                                       Text(
-                                        'Rp${product.price.toStringAsFixed(0)}',
+                                        _formatPrice(product.price),
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -1983,11 +1983,10 @@ String _formatPrice(double price) {
                                       if (product.originalPrice != null) ...[
                                         const SizedBox(width: 6),
                                         Text(
-                                          'Rp${product.originalPrice!.toStringAsFixed(0)}',
+                                          _formatPrice(product.originalPrice!),
                                           style: TextStyle(
                                             fontSize: 11,
-                                            decoration:
-                                                TextDecoration.lineThrough,
+                                            decoration: TextDecoration.lineThrough,
                                             color: Colors.grey[400],
                                           ),
                                         ),
@@ -2639,7 +2638,7 @@ String _formatPrice(double price) {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            'Rp${product.price.toStringAsFixed(0)}',
+                            _formatPrice(product.price),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -2649,7 +2648,7 @@ String _formatPrice(double price) {
                           const SizedBox(width: 6),
                           if (product.originalPrice != null)
                             Text(
-                              'Rp${product.originalPrice!.toStringAsFixed(0)}',
+                              _formatPrice(product.originalPrice!),
                               style: TextStyle(
                                 decoration: TextDecoration.lineThrough,
                                 color: Colors.grey[400],
