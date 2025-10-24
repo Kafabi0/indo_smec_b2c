@@ -2437,7 +2437,7 @@ class HomeScreenState extends State<HomeScreen> {
             );
           },
           child: Container(
-            width: 180,
+            width: 150,
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
               color: Colors.white,
