@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/keranjang.dart';
 import '../models/product_model.dart';
 import '../services/favorite_service.dart';
+import '../services/product_service.dart';
 import '../utils/cart_manager.dart';
 import '../utils/user_data_manager.dart';
 
@@ -18,12 +19,28 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   bool isFavorite = false;
   int quantity = 0;
   final FavoriteService _favoriteService = FavoriteService();
+  final ProductService _productService = ProductService();
+  List<Product> similarProducts = [];
 
   @override
   void initState() {
     super.initState();
     _loadFavoriteStatus();
     _loadCartQuantity();
+    _loadSimilarProducts();
+  }
+
+  void _loadSimilarProducts() {
+    // Ambil produk dari kategori yang sama
+    final allProducts = _productService.getProductsByCategory(widget.product.category);
+    
+    // Filter: hapus produk saat ini dari list
+    final filtered = allProducts.where((p) => p.id != widget.product.id).toList();
+    
+    // Ambil maksimal 8 produk
+    setState(() {
+      similarProducts = filtered.take(8).toList();
+    });
   }
 
   Future<void> _loadFavoriteStatus() async {
@@ -403,94 +420,144 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   const SizedBox(height: 24),
 
                   // Produk Serupa
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Produk Serupa',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                  if (similarProducts.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Produk Serupa',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          height: 200,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: 4,
-                            itemBuilder: (context, index) {
-                              return Container(
-                                width: 120,
-                                margin: const EdgeInsets.only(right: 12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[100],
-                                          borderRadius: BorderRadius.circular(
-                                            8,
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 220,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: similarProducts.length,
+                              itemBuilder: (context, index) {
+                                final product = similarProducts[index];
+                                return GestureDetector(
+                                  onTap: () {
+                                    // Navigate ke detail produk yang diklik
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ProductDetailPage(
+                                          product: product,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    width: 140,
+                                    margin: const EdgeInsets.only(right: 12),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[100],
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Stack(
+                                              children: [
+                                                ClipRRect(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  child: product.imageUrl != null
+                                                      ? Image.network(
+                                                          product.imageUrl!,
+                                                          width: double.infinity,
+                                                          height: double.infinity,
+                                                          fit: BoxFit.cover,
+                                                          errorBuilder: (context, error, stackTrace) {
+                                                            return Center(
+                                                              child: Icon(
+                                                                Icons.image,
+                                                                size: 40,
+                                                                color: Colors.grey[400],
+                                                              ),
+                                                            );
+                                                          },
+                                                        )
+                                                      : Center(
+                                                          child: Icon(
+                                                            Icons.image,
+                                                            size: 40,
+                                                            color: Colors.grey[400],
+                                                          ),
+                                                        ),
+                                                ),
+                                                if (product.discountPercentage != null)
+                                                  Positioned(
+                                                    top: 8,
+                                                    left: 8,
+                                                    child: Container(
+                                                      padding: const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.red,
+                                                        borderRadius: BorderRadius.circular(4),
+                                                      ),
+                                                      child: Text(
+                                                        '${product.discountPercentage}%',
+                                                        style: const TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 10,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                        child: Stack(
-                                          children: [
-                                            Center(
-                                              child: Icon(
-                                                Icons.image,
-                                                size: 40,
-                                                color: Colors.grey[400],
-                                              ),
-                                            ),
-                                            Positioned(
-                                              top: 8,
-                                              right: 8,
-                                              child: Container(
-                                                decoration: const BoxDecoration(
-                                                  color: Colors.blue,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                                child: const Icon(
-                                                  Icons.add,
-                                                  color: Colors.white,
-                                                  size: 20,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          product.name,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Rp${product.price.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.blue[700],
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        if (product.originalPrice != null)
+                                          Text(
+                                            'Rp${product.originalPrice!.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
+                                            style: const TextStyle(
+                                              decoration: TextDecoration.lineThrough,
+                                              color: Colors.grey,
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Produk ${index + 1}',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      'Rp25.000',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.blue[700],
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
 
                   const SizedBox(height: 100), // Space for bottom buttons
                 ],
