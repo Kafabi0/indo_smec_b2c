@@ -1441,7 +1441,7 @@ class ProductService {
       reviewCount: 456,
       storeName: 'Warung Pak Budi',
       storeDistance: '0.5 km',
-      imageUrl: 'https://images.unsplash.com/photo-1599490659213-e2b9527bd087?w=400&h=400&fit=crop'
+      imageUrl: 'https://i.pinimg.com/736x/c2/22/27/c22227da9452f0e24cdea4511498db68.jpg'
     ),
     Product(
       id: '108',
@@ -1557,8 +1557,8 @@ class ProductService {
     // PAKET KEBUTUHAN BAYI & ANAK
     Product(
       id: '116',
-      name: 'Paket Susu & Makanan Bayi',
-      description: 'Susu Formula 400gr + Bubur Bayi 6pcs + Biskuit Bayi 3pcs',
+      name: 'Paket Hampers Bayi Newborn',
+      description: 'UKURAN 20 × 20 × 5 cm) Dilapisi Paper Tissue + stiker thank you Gift Card',
       price: 145000,
       originalPrice: 200000,
       category: 'Grocery',
@@ -1566,7 +1566,7 @@ class ProductService {
       reviewCount: 523,
       storeName: 'Supermarket Indo',
       storeDistance: '1.1 km',
-      imageUrl: 'https://images.unsplash.com/photo-1515488764276-beab7607c1e6?w=400&h=400&fit=crop'
+      imageUrl: 'https://i.pinimg.com/1200x/5e/9d/58/5e9d58710b089870133d2064e409685f.jpg'
     ),
 
     // PAKET NASI BOX & CATERING
@@ -1609,7 +1609,7 @@ class ProductService {
       reviewCount: 567,
       storeName: 'Hijab Store',
       storeDistance: '1.7 km',
-      imageUrl: 'https://images.unsplash.com/photo-1583391733956-6c78276477e5?w=400&h=400&fit=crop'
+      imageUrl: 'https://i.pinimg.com/736x/ae/4b/d3/ae4bd32a32125a561647a661080dd73f.jpg'
     ),
     Product(
       id: '120',
@@ -1622,7 +1622,7 @@ class ProductService {
       reviewCount: 389,
       storeName: 'Batik Nusantara',
       storeDistance: '2.3 km',
-      imageUrl: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400&h=400&fit=crop'
+      imageUrl: 'https://i.pinimg.com/1200x/82/b3/ee/82b3ee7ca7de98c0912f14000495873b.jpg'
     ),
   ];
 
