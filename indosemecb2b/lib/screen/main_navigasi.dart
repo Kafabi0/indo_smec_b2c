@@ -7,6 +7,8 @@ import 'package:indosemecb2b/screen/poinku.dart';
 import 'package:indosemecb2b/screen/profile.dart';
 import 'package:indosemecb2b/screen/transaksi.dart';
 
+import '../utils/user_data_manager.dart';
+
 class MainNavigation extends StatefulWidget {
   const MainNavigation({Key? key}) : super(key: key);
 
@@ -19,7 +21,10 @@ class _MainNavigationState extends State<MainNavigation> {
   bool _isLoggedIn = false;
 
   // 🔑 Key untuk mengakses HomeScreen dan refresh-nya
-  final GlobalKey<HomeScreenState> _homeScreenKey = GlobalKey<HomeScreenState>();
+  final GlobalKey<HomeScreenState> _homeScreenKey =
+      GlobalKey<HomeScreenState>();
+  final GlobalKey<CartScreenState> _cartScreenKey =
+      GlobalKey<CartScreenState>(); // ⭐ TAMBAHKAN INI
 
   late List<Widget> _screens;
 
@@ -30,7 +35,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
     _screens = [
       HomeScreen(key: _homeScreenKey), // Pakai key
-      const CartScreen(),
+      CartScreen(key: _cartScreenKey),
       const PoinkuScreen(),
       TransaksiScreen(),
       ProfileScreen(
@@ -66,10 +71,11 @@ class _MainNavigationState extends State<MainNavigation> {
   void _handleLogout() async {
     // Cek status login lagi
     await _checkLoginStatus();
-    
+
     // Refresh HomeScreen agar tampilan berubah ke mode "belum login"
     _homeScreenKey.currentState?.refreshLoginStatus();
-    
+    _cartScreenKey.currentState?.refreshCart();
+
     // Pindah ke tab Beranda
     setState(() {
       _currentIndex = 0;
@@ -86,6 +92,12 @@ class _MainNavigationState extends State<MainNavigation> {
     // ⭐ Jika tab Beranda diklik berulang, refresh HomeScreen
     if (index == 0 && _currentIndex == 0) {
       _homeScreenKey.currentState?.refreshLoginStatus();
+    }
+    if (index == 1) {
+      // Delay sedikit agar transisi smooth
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _cartScreenKey.currentState?.refreshCart();
+      });
     }
 
     setState(() {
@@ -160,6 +172,7 @@ class _MainNavigationState extends State<MainNavigation> {
                     // ⭐ Setelah kembali dari login, refresh status + HomeScreen
                     await _checkLoginStatus();
                     _homeScreenKey.currentState?.refreshLoginStatus();
+                    _cartScreenKey.currentState?.refreshCart(); // ⭐ TAMBAHKAN
                   },
                   child: const Text(
                     "Gabung Sekarang",
