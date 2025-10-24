@@ -1334,6 +1334,296 @@ class ProductService {
       storeDistance: '0.8 km',
       imageUrl: 'https://i.pinimg.com/736x/5c/79/5a/5c795af37a63ed75f733d5543dfd64c9.jpg'
     ),
+    // PAKET SEMBAKO
+    Product(
+      id: '100',
+      name: 'Paket Sembako Hemat A',
+      description: 'Beras 5kg + Minyak Goreng 2L + Gula 1kg + Telur 10pcs',
+      price: 100000,
+      originalPrice: 150000,
+      category: 'Grocery',
+      rating: 4.9,
+      reviewCount: 567,
+      storeName: 'Toko Sumber Rezeki',
+      storeDistance: '0.7 km',
+      imageUrl: 'https://i.pinimg.com/1200x/09/b9/72/09b972688cd8b79b4ee15502fd652456.jpg'
+    ),
+    Product(
+      id: '101',
+      name: 'Paket Sembako Lengkap B',
+      description: 'Beras 5kg + Minyak 2L + Gula 1kg + Telur 10pcs + Mie Instan 10pcs + Susu 1L',
+      price: 165000,
+      originalPrice: 225000,
+      category: 'Grocery',
+      rating: 4.8,
+      reviewCount: 489,
+      storeName: 'Toko Sumber Rezeki',
+      storeDistance: '0.7 km',
+      imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=400&fit=crop'
+    ),
+    Product(
+      id: '102',
+      name: 'Paket Sembako Premium C',
+      description: 'Beras Premium 10kg + Minyak Goreng 5L + Gula 2kg + Telur 20pcs + Bumbu Lengkap',
+      price: 285000,
+      originalPrice: 390000,
+      category: 'Grocery',
+      rating: 4.9,
+      reviewCount: 623,
+      storeName: 'Toko Sumber Rezeki',
+      storeDistance: '0.7 km',
+      imageUrl: 'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?w=400&h=400&fit=crop'
+    ),
+    Product(
+      id: '103',
+      name: 'Paket Sembako Ramadhan',
+      description: 'Beras 5kg + Kurma 500gr + Minyak 2L + Tepung 1kg + Gula 2kg + Susu 2L',
+      price: 195000,
+      originalPrice: 270000,
+      category: 'Grocery',
+      rating: 4.8,
+      reviewCount: 512,
+      storeName: 'Toko Sumber Rezeki',
+      storeDistance: '0.7 km',
+      imageUrl: 'https://images.unsplash.com/photo-1609501676725-7186f017a4b0?w=400&h=400&fit=crop'
+    ),
+
+    // PAKET LAUK PAUK
+    Product(
+      id: '104',
+      name: 'Paket Lauk Ayam Lengkap',
+      description: 'Ayam Potong 1kg + Telur 20pcs + Tempe 5pcs + Tahu 10pcs',
+      price: 95000,
+      originalPrice: 130000,
+      category: 'Food',
+      rating: 4.7,
+      reviewCount: 345,
+      storeName: 'Warung Pak Budi',
+      storeDistance: '0.5 km',
+      imageUrl: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=400&fit=crop'
+    ),
+    Product(
+      id: '105',
+      name: 'Paket Lauk Seafood',
+      description: 'Ikan Segar 1kg + Udang 500gr + Cumi 500gr + Kerang 500gr',
+      price: 145000,
+      originalPrice: 200000,
+      category: 'Food',
+      rating: 4.8,
+      reviewCount: 298,
+      storeName: 'Pasar Segar',
+      storeDistance: '0.9 km',
+      imageUrl: 'https://images.unsplash.com/photo-1559737558-2f5a1a45b545?w=400&h=400&fit=crop'
+    ),
+    Product(
+      id: '106',
+      name: 'Paket Lauk Daging Sapi',
+      description: 'Daging Sapi 1kg + Bakso Sapi 500gr + Sosis 500gr',
+      price: 185000,
+      originalPrice: 250000,
+      category: 'Food',
+      rating: 4.9,
+      reviewCount: 412,
+      storeName: 'Rumah Makan Padang',
+      storeDistance: '1.3 km',
+      imageUrl: 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400&h=400&fit=crop'
+    ),
+
+    // PAKET SNACK & MINUMAN
+    Product(
+      id: '107',
+      name: 'Paket Snack Keluarga',
+      description: '10 Macam Snack (Keripik, Biskuit, Coklat, Permen) + 6 Minuman Ringan',
+      price: 125000,
+      originalPrice: 175000,
+      category: 'Food',
+      rating: 4.6,
+      reviewCount: 456,
+      storeName: 'Warung Pak Budi',
+      storeDistance: '0.5 km',
+      imageUrl: 'https://images.unsplash.com/photo-1599490659213-e2b9527bd087?w=400&h=400&fit=crop'
+    ),
+    Product(
+      id: '108',
+      name: 'Paket Minuman Segar',
+      description: '12 Botol Minuman (Jus, Teh, Susu, Air Mineral)',
+      price: 85000,
+      originalPrice: 120000,
+      category: 'Food',
+      rating: 4.7,
+      reviewCount: 389,
+      storeName: 'Tropical Drink',
+      storeDistance: '0.8 km',
+      imageUrl: 'https://images.unsplash.com/photo-1523677011781-c91d1bbe2f9d?w=400&h=400&fit=crop'
+    ),
+
+    // PAKET BUAH & SAYUR
+    Product(
+      id: '109',
+      name: 'Paket Buah Segar Mix',
+      description: 'Apel, Jeruk, Pisang, Anggur, Semangka - Total 5kg',
+      price: 95000,
+      originalPrice: 135000,
+      category: 'Pertanian',
+      rating: 4.8,
+      reviewCount: 523,
+      storeName: 'Buah Segar Pak Joko',
+      storeDistance: '1.2 km',
+      imageUrl: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=400&h=400&fit=crop'
+    ),
+    Product(
+      id: '110',
+      name: 'Paket Sayuran Organik',
+      description: 'Bayam, Kangkung, Wortel, Brokoli, Tomat, Cabai - Total 5kg',
+      price: 75000,
+      originalPrice: 105000,
+      category: 'Pertanian',
+      rating: 4.9,
+      reviewCount: 467,
+      storeName: 'Kebun Segar',
+      storeDistance: '2.1 km',
+      imageUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=400&fit=crop'
+    ),
+    Product(
+      id: '111',
+      name: 'Paket Buah Tropis Premium',
+      description: 'Mangga, Manggis, Rambutan, Salak, Duku - Total 5kg',
+      price: 125000,
+      originalPrice: 175000,
+      category: 'Pertanian',
+      rating: 4.9,
+      reviewCount: 389,
+      storeName: 'Gudang Buah Nusantara',
+      storeDistance: '2.3 km',
+      imageUrl: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&h=400&fit=crop'
+    ),
+
+    // PAKET HERBAL & KESEHATAN
+    Product(
+      id: '112',
+      name: 'Paket Jamu Sehat Lengkap',
+      description: '3 Botol Jamu (Kunyit Asam, Beras Kencur, Temulawak, Jahe)',
+      price: 85000,
+      originalPrice: 125000,
+      category: 'Herbal',
+      rating: 4.8,
+      reviewCount: 412,
+      storeName: 'Jamu Bu Ningsih',
+      storeDistance: '0.6 km',
+      imageUrl: 'https://i.pinimg.com/1200x/f2/6b/70/f26b70aa1ea1dd46110ce43ade9cdefb.jpg'
+    ),
+    Product(
+      id: '113',
+      name: 'Paket Madu & Herbal',
+      description: 'Madu 1L + Propolis + Royal Jelly + Bee Pollen',
+      price: 165000,
+      originalPrice: 230000,
+      category: 'Herbal',
+      rating: 4.9,
+      reviewCount: 345,
+      storeName: 'Madu Alami',
+      storeDistance: '1.4 km',
+      imageUrl: 'https://images.unsplash.com/photo-1587049352846-4a222e784366?w=400&h=400&fit=crop'
+    ),
+
+    // PAKET BUMBU DAPUR
+    Product(
+      id: '114',
+      name: 'Paket Bumbu Dapur Lengkap',
+      description: '15 Jenis Bumbu (Bawang, Cabai, Jahe, Kunyit, Lengkuas, dll)',
+      price: 65000,
+      originalPrice: 95000,
+      category: 'Grocery',
+      rating: 4.7,
+      reviewCount: 489,
+      storeName: 'Toko Sumber Rezeki',
+      storeDistance: '0.7 km',
+      imageUrl: 'https://i.pinimg.com/1200x/14/50/da/1450daea02bdf6e5741831c87483d28b.jpg'
+    ),
+    Product(
+      id: '115',
+      name: 'Paket Rempah Nusantara',
+      description: 'Rempah Pilihan: Kayu Manis, Cengkeh, Pala, Kapulaga, Merica',
+      price: 55000,
+      originalPrice: 80000,
+      category: 'Herbal',
+      rating: 4.8,
+      reviewCount: 367,
+      storeName: 'Herbal Nusantara',
+      storeDistance: '1.8 km',
+      imageUrl: 'https://i.pinimg.com/1200x/ed/b9/7c/edb97cd71eb4adfab250590dfcb2cfa7.jpg'
+    ),
+
+    // PAKET KEBUTUHAN BAYI & ANAK
+    Product(
+      id: '116',
+      name: 'Paket Susu & Makanan Bayi',
+      description: 'Susu Formula 400gr + Bubur Bayi 6pcs + Biskuit Bayi 3pcs',
+      price: 145000,
+      originalPrice: 200000,
+      category: 'Grocery',
+      rating: 4.9,
+      reviewCount: 523,
+      storeName: 'Supermarket Indo',
+      storeDistance: '1.1 km',
+      imageUrl: 'https://images.unsplash.com/photo-1515488764276-beab7607c1e6?w=400&h=400&fit=crop'
+    ),
+
+    // PAKET NASI BOX & CATERING
+    Product(
+      id: '117',
+      name: 'Paket Nasi Box 10 Porsi',
+      description: '10 Box Nasi + Lauk Ayam/Ikan + Sayur + Sambal + Kerupuk',
+      price: 185000,
+      originalPrice: 250000,
+      category: 'Food',
+      rating: 4.8,
+      reviewCount: 678,
+      storeName: 'Warung Pak Budi',
+      storeDistance: '0.5 km',
+      imageUrl: 'https://images.unsplash.com/photo-1562158147-f6df4715534d?w=400&h=400&fit=crop'
+    ),
+    Product(
+      id: '118',
+      name: 'Paket Tumpeng Mini 20 Porsi',
+      description: 'Tumpeng + Lauk Lengkap untuk 20 orang',
+      price: 385000,
+      originalPrice: 520000,
+      category: 'Food',
+      rating: 4.9,
+      reviewCount: 445,
+      storeName: 'Rumah Makan Padang',
+      storeDistance: '1.3 km',
+      imageUrl: 'https://images.unsplash.com/photo-1596797038530-2c107229654b?w=400&h=400&fit=crop'
+    ),
+
+    // PAKET FASHION
+    Product(
+      id: '119',
+      name: 'Paket Hijab 5 Warna',
+      description: '5 Hijab Premium Voal Berbeda Warna',
+      price: 195000,
+      originalPrice: 275000,
+      category: 'Fashion',
+      rating: 4.9,
+      reviewCount: 567,
+      storeName: 'Hijab Store',
+      storeDistance: '1.7 km',
+      imageUrl: 'https://images.unsplash.com/photo-1583391733956-6c78276477e5?w=400&h=400&fit=crop'
+    ),
+    Product(
+      id: '120',
+      name: 'Paket Batik Couple',
+      description: 'Kemeja Batik Pria + Dress Batik Wanita Matching',
+      price: 285000,
+      originalPrice: 400000,
+      category: 'Fashion',
+      rating: 4.8,
+      reviewCount: 389,
+      storeName: 'Batik Nusantara',
+      storeDistance: '2.3 km',
+      imageUrl: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400&h=400&fit=crop'
+    ),
   ];
 
   // ============ METHOD UNTUK GET DATA ============
@@ -1353,35 +1643,106 @@ class ProductService {
 
   // Get flash sale products (diskon >= 15%)
   List<Product> getFlashSaleProducts() {
-    final flashSale =
+  final flashSale =
+      _allProducts
+          .where(
+            (p) =>
+                p.discountPercentage != null && p.discountPercentage! >= 15,
+          )
+          .toList();
+
+  // Jika kurang dari 8 produk, tambahkan produk dengan diskon lebih rendah
+  if (flashSale.length < 8) {
+    final otherDiscounted =
         _allProducts
             .where(
               (p) =>
-                  p.discountPercentage != null && p.discountPercentage! >= 15,
+                  p.discountPercentage != null && p.discountPercentage! < 15,
             )
             .toList();
-
-    // Jika kurang dari 8 produk, tambahkan produk dengan diskon lebih rendah
-    if (flashSale.length < 8) {
-      final otherDiscounted =
-          _allProducts
-              .where(
-                (p) =>
-                    p.discountPercentage != null && p.discountPercentage! < 15,
-              )
-              .toList();
-      flashSale.addAll(otherDiscounted);
-    }
-
-    // Urutkan berdasarkan persentase diskon tertinggi
-    flashSale.sort(
-      (a, b) =>
-          (b.discountPercentage ?? 0).compareTo(a.discountPercentage ?? 0),
-    );
-
-    // Kembalikan maksimal 12 produk
-    return flashSale.take(12).toList();
+    flashSale.addAll(otherDiscounted);
   }
+
+  // Urutkan berdasarkan persentase diskon tertinggi
+  flashSale.sort(
+    (a, b) =>
+        (b.discountPercentage ?? 0).compareTo(a.discountPercentage ?? 0),
+  );
+
+  // Kembalikan maksimal 12 produk
+  return flashSale.take(12).toList();
+}
+
+// Get flash sale paketan (KHUSUS PAKET id >= 100)
+List<Product> getFlashSalePaketan() {
+  // Filter produk paketan (ID >= 100)
+  final paketan = _allProducts
+      .where((p) {
+        try {
+          return int.parse(p.id) >= 100;
+        } catch (e) {
+          return false;
+        }
+      })
+      .toList();
+
+  // Urutkan berdasarkan persentase diskon tertinggi
+  paketan.sort(
+    (a, b) => (b.discountPercentage ?? 0).compareTo(a.discountPercentage ?? 0),
+  );
+
+  return paketan;
+}
+
+// Get paketan by category
+List<Product> getPaketanByCategory(String category) {
+  final paketan = _allProducts
+      .where((p) {
+        try {
+          return int.parse(p.id) >= 100;
+        } catch (e) {
+          return false;
+        }
+      })
+      .toList();
+  
+  if (category == 'Semua') {
+    return paketan;
+  }
+  
+  return paketan.where((p) => p.category == category).toList();
+}
+
+// Get paket sembako
+List<Product> getPaketSembako() {
+  return _allProducts
+      .where((p) {
+        try {
+          return int.parse(p.id) >= 100 && 
+              p.name.toLowerCase().contains('paket sembako');
+        } catch (e) {
+          return false;
+        }
+      })
+      .toList();
+}
+
+// Get paket makanan
+List<Product> getPaketMakanan() {
+  return _allProducts
+      .where((p) {
+        try {
+          return int.parse(p.id) >= 100 && 
+              (p.name.toLowerCase().contains('paket lauk') ||
+               p.name.toLowerCase().contains('paket snack') ||
+               p.name.toLowerCase().contains('paket nasi') ||
+               p.name.toLowerCase().contains('paket tumpeng'));
+        } catch (e) {
+          return false;
+        }
+      })
+      .toList();
+}
 
   // Get produk dengan rating tinggi
   List<Product> getTopRatedProducts() {

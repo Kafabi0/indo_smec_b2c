@@ -154,7 +154,7 @@ class HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    flashSaleProducts = _productService.getFlashSaleProducts();
+    flashSaleProducts = _productService.getFlashSalePaketan();
     topRatedProducts = _productService.getTopRatedProducts();
     freshProducts = _productService.getFreshProducts();
     newestProducts = _productService.getNewestProducts();
@@ -1247,7 +1247,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   Widget _buildFlashSaleSection() {
     return Container(
-      height: 200,
+      height: 230,
       margin: const EdgeInsets.only(left: 16),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -1260,8 +1260,17 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFlashSaleCard(Product product) {
-    return Container(
-      width: 140,
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProductDetailPage(product: product),
+        ),
+      );
+    },
+    child: Container(
+      width: 120,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1277,69 +1286,148 @@ class HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // GAMBAR PRODUK
           Container(
-            height: 120,
+            height: 110,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.grey[200]!, Colors.grey[100]!],
-              ),
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
-            child: Center(
-              child: Icon(
-                Icons.image_rounded,
-                size: 50,
-                color: Colors.grey[400],
+            child: ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              child: Image.network(
+                product.imageUrl ?? '',
+                width: double.infinity,
+                height: 110,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[200],
+                    child: Center(
+                      child: Icon(
+                        Icons.image_rounded,
+                        size: 40,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                  );
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    color: Colors.grey[200],
+                    child: Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ),
+          
+          // INFO PRODUK
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(10.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
+                  // BADGE DISKON
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.red[50],
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      '${product.discountPercentage}% OFF',
+                      '${product.discountPercentage?.toInt() ?? 0}% OFF',
                       style: TextStyle(
                         color: Colors.red[700],
-                        fontSize: 10,
+                        fontSize: 9,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Rp${product.price.toInt()}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Colors.blue[700],
+                  const SizedBox(height: 6),
+                  
+                  // NAMA PRODUK
+                  Flexible(
+                    child: Text(
+                      product.name,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (product.originalPrice != null)
-                    Text(
-                      'Rp${product.originalPrice!.toInt()}',
-                      style: TextStyle(
-                        decoration: TextDecoration.lineThrough,
-                        color: Colors.grey[500],
-                        fontSize: 11,
+                  const SizedBox(height: 6),
+                  
+                  // HARGA - ✅ FORMAT BARU
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _formatPrice(product.price),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Colors.blue[700],
+                        ),
                       ),
-                    ),
+                      if (product.originalPrice != null)
+                        Text(
+                          _formatPrice(product.originalPrice!),
+                          style: TextStyle(
+                            decoration: TextDecoration.lineThrough,
+                            color: Colors.grey[500],
+                            fontSize: 10,
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),
           ),
         ],
       ),
-    );
+    ),
+  );
+}
+
+String _formatPrice(double price) {
+  final priceInt = price.toInt();
+  final priceString = priceInt.toString();
+  
+  // Tambahkan titik setiap 3 digit dari belakang
+  String result = '';
+  int counter = 0;
+  
+  for (int i = priceString.length - 1; i >= 0; i--) {
+    if (counter == 3) {
+      result = '.$result';
+      counter = 0;
+    }
+    result = priceString[i] + result;
+    counter++;
   }
+  
+  return 'Rp$result';
+}
 
   Widget _buildPromoBanner() {
     return Container(
