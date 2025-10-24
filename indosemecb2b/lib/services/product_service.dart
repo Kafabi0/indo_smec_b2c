@@ -1350,7 +1350,7 @@ class ProductService {
     ),
     Product(
       id: '101',
-      name: 'Paket Sembako Lengkap B',
+      name: 'Paket Sembako Lengkap E',
       description: 'Beras 5kg + Minyak 2L + Gula 1kg + Telur 10pcs + Mie Instan 10pcs + Susu 1L',
       price: 165000,
       originalPrice: 225000,
@@ -1359,20 +1359,20 @@ class ProductService {
       reviewCount: 489,
       storeName: 'Toko Sumber Rezeki',
       storeDistance: '0.7 km',
-      imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=400&fit=crop'
+      imageUrl: 'https://i.pinimg.com/1200x/04/28/ae/0428ae2dd8d05913fda40d33b39e8c4c.jpg'
     ),
     Product(
       id: '102',
-      name: 'Paket Sembako Premium C',
-      description: 'Beras Premium 10kg + Minyak Goreng 5L + Gula 2kg + Telur 20pcs + Bumbu Lengkap',
-      price: 285000,
-      originalPrice: 390000,
+      name: 'Paket Sayur Asem',
+      description: 'Tomat, Toge kedelai, Kacang Panjang, Manisa, Asem dan Labu air',
+      price: 15000,
+      originalPrice: 20000,
       category: 'Grocery',
       rating: 4.9,
       reviewCount: 623,
       storeName: 'Toko Sumber Rezeki',
       storeDistance: '0.7 km',
-      imageUrl: 'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?w=400&h=400&fit=crop'
+      imageUrl: 'https://i.pinimg.com/1200x/5e/88/cf/5e88cfe4ffb4b767823cff39731c2ed2.jpg'
     ),
     Product(
       id: '103',
@@ -1385,7 +1385,7 @@ class ProductService {
       reviewCount: 512,
       storeName: 'Toko Sumber Rezeki',
       storeDistance: '0.7 km',
-      imageUrl: 'https://images.unsplash.com/photo-1609501676725-7186f017a4b0?w=400&h=400&fit=crop'
+      imageUrl: 'https://www.static-src.com/wcsstore/Indraprastha/images/catalog/full//102/MTA-51199076/no_brand_paket_ramadhan_sembako_1_full01_uitvmwss.jpg'
     ),
 
     // PAKET LAUK PAUK
@@ -1405,15 +1405,15 @@ class ProductService {
     Product(
       id: '105',
       name: 'Paket Lauk Seafood',
-      description: 'Ikan Segar 1kg + Udang 500gr + Cumi 500gr + Kerang 500gr',
-      price: 145000,
-      originalPrice: 200000,
+      description: 'Kepiting ukuran sedang, Kerang campur ±150–200gr, Jagung + bumbu',
+      price: 52000,
+      originalPrice: 55000,
       category: 'Food',
       rating: 4.8,
       reviewCount: 298,
       storeName: 'Pasar Segar',
       storeDistance: '0.9 km',
-      imageUrl: 'https://images.unsplash.com/photo-1559737558-2f5a1a45b545?w=400&h=400&fit=crop'
+      imageUrl: 'https://i.pinimg.com/736x/6e/56/4f/6e564f2f06eb7fdc75660d8f561b1a5c.jpg'
     ),
     Product(
       id: '106',
@@ -1523,7 +1523,7 @@ class ProductService {
       reviewCount: 345,
       storeName: 'Madu Alami',
       storeDistance: '1.4 km',
-      imageUrl: 'https://images.unsplash.com/photo-1587049352846-4a222e784366?w=400&h=400&fit=crop'
+      imageUrl: 'https://i.pinimg.com/1200x/7f/ee/4d/7fee4d25744b070bfe355911e457bd6e.jpg'
     ),
 
     // PAKET BUMBU DAPUR
@@ -1572,29 +1572,29 @@ class ProductService {
     // PAKET NASI BOX & CATERING
     Product(
       id: '117',
-      name: 'Paket Nasi Box 10 Porsi',
-      description: '10 Box Nasi + Lauk Ayam/Ikan + Sayur + Sambal + Kerupuk',
-      price: 185000,
-      originalPrice: 250000,
+      name: 'Paket Nasi Box',
+      description: 'Box Nasi + Lauk Ayam/Ikan + Sayur + Sambal + Kerupuk',
+      price: 111000,
+      originalPrice: 150000,
       category: 'Food',
       rating: 4.8,
       reviewCount: 678,
       storeName: 'Warung Pak Budi',
       storeDistance: '0.5 km',
-      imageUrl: 'https://images.unsplash.com/photo-1562158147-f6df4715534d?w=400&h=400&fit=crop'
+      imageUrl: 'https://i.pinimg.com/736x/c2/3d/c6/c23dc672030d696e4167bfa8f4c978d2.jpg'
     ),
     Product(
       id: '118',
-      name: 'Paket Tumpeng Mini 20 Porsi',
+      name: 'Paket Tumpeng Mini',
       description: 'Tumpeng + Lauk Lengkap untuk 20 orang',
-      price: 385000,
-      originalPrice: 520000,
+      price: 60000,
+      originalPrice: 85000,
       category: 'Food',
       rating: 4.9,
       reviewCount: 445,
       storeName: 'Rumah Makan Padang',
       storeDistance: '1.3 km',
-      imageUrl: 'https://images.unsplash.com/photo-1596797038530-2c107229654b?w=400&h=400&fit=crop'
+      imageUrl: 'https://i.pinimg.com/1200x/2d/0d/3e/2d0d3eb53498670c275cf452916e3316.jpg'
     ),
 
     // PAKET FASHION
