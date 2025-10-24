@@ -89,6 +89,14 @@ class _MainNavigationState extends State<MainNavigation> {
       return;
     }
 
+    if (index == 2) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const PoinkuMainScreen()),
+    );
+    return;
+  }
+
     // ⭐ Jika tab Beranda diklik berulang, refresh HomeScreen
     if (index == 0 && _currentIndex == 0) {
       _homeScreenKey.currentState?.refreshLoginStatus();
