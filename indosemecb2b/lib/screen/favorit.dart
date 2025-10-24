@@ -14,13 +14,27 @@ class FavoritScreen extends StatefulWidget {
 class _FavoritScreenState extends State<FavoritScreen> {
   final ProductService _productService = ProductService();
   final FavoriteService _favoriteService = FavoriteService();
+  final TextEditingController _searchController = TextEditingController();
+
   List<Product> favoriteProducts = [];
+  List<Product> filteredProducts = [];
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadFavoriteProducts();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      filteredProducts =
+          favoriteProducts
+              .where((p) => p.name.toLowerCase().contains(query))
+              .toList();
+    });
   }
 
   Future<void> _loadFavoriteProducts() async {
@@ -125,7 +139,8 @@ class _FavoritScreenState extends State<FavoritScreen> {
               ? Center(child: CircularProgressIndicator())
               : favoriteProducts.isEmpty
               ? _buildEmptyState()
-              : _buildFavoriteList(),
+              : _buildFavoriteContent(),
+              
     );
   }
 
@@ -193,155 +208,202 @@ class _FavoritScreenState extends State<FavoritScreen> {
     );
   }
 
-  Widget _buildFavoriteList() {
-    return ListView.builder(
-      padding: EdgeInsets.all(16),
-      itemCount: favoriteProducts.length,
-      itemBuilder: (context, index) {
-        return _buildFavoriteCard(favoriteProducts[index]);
-      },
+  Widget _buildFavoriteContent() {
+    return Column(
+      children: [
+        // 🔹 Search Bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Cari di Barang Favoritmu',
+              prefixIcon: const Icon(Icons.search, color: Colors.grey),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+
+        // 🔹 Daftar Produk Favorit
+        Expanded(child: _buildFavoriteList()),
+      ],
     );
   }
 
+  // 🔹 Tampilan grid dua kolom
+  Widget _buildFavoriteList() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: GridView.builder(
+        itemCount: favoriteProducts.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.68,
+        ),
+        itemBuilder: (context, index) {
+          final product = favoriteProducts[index];
+          return _buildFavoriteCard(product);
+        },
+      ),
+    );
+  }
+
+  // 🔹 Kartu produk gaya e-commerce
   Widget _buildFavoriteCard(Product product) {
     return Container(
-      margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: Offset(0, 3),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            // Product Image
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Icon(Icons.image, size: 40, color: Colors.grey[400]),
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // Product Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+      child: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 🔸 Gambar produk
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.star_rounded,
-                        color: Colors.amber[700],
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        product.rating.toString(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '(${product.reviewCount})',
-                        style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Text(
-                        'Rp${product.price.toInt()}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: Colors.blue[700],
-                        ),
-                      ),
-                      if (product.originalPrice != null) ...[
-                        const SizedBox(width: 6),
-                        Text(
-                          'Rp${product.originalPrice!.toInt()}',
-                          style: TextStyle(
-                            decoration: TextDecoration.lineThrough,
-                            color: Colors.grey[400],
-                            fontSize: 12,
+                  child: Container(
+                    color: Colors.grey[200],
+                    width: double.infinity,
+                    child: Image.network(
+                      product.imageUrl ?? '',
+                      fit: BoxFit.cover,
+                      errorBuilder:
+                          (context, error, stackTrace) => const Icon(
+                            Icons.image,
+                            size: 60,
+                            color: Colors.grey,
                           ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // Actions
-            Column(
-              children: [
-                // Remove from Favorite Button
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.red[50],
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: Icon(Icons.favorite, color: Colors.red, size: 20),
-                    onPressed: () => _removeFavorite(product.id),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Add to Cart Button
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.blue[700],
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.add_shopping_cart,
-                      color: Colors.white,
-                      size: 18,
                     ),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            '${product.name} ditambahkan ke keranjang',
-                          ),
-                          duration: Duration(seconds: 1),
-                          backgroundColor: Colors.green[600],
-                        ),
-                      );
-                    },
                   ),
                 ),
-              ],
+              ),
+
+              // 🔸 Informasi produk
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Rp${product.price.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    if (product.originalPrice != null &&
+                        product.originalPrice! > product.price) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Text(
+                            'Rp${product.originalPrice!.toStringAsFixed(0)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${(((product.originalPrice! - product.price) / product.originalPrice!) * 100).toStringAsFixed(0)}%',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.red,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // 🔸 Tombol favorit (hati)
+          Positioned(
+            top: 6,
+            right: 6,
+            child: GestureDetector(
+              onTap: () => _removeFavorite(product.id),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.favorite, color: Colors.red, size: 18),
+              ),
             ),
-          ],
-        ),
+          ),
+
+          // 🔸 Tombol tambah (+)
+          Positioned(
+            top: 6,
+            right: 36,
+            child: GestureDetector(
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${product.name} ditambahkan ke keranjang'),
+                    duration: const Duration(seconds: 1),
+                    backgroundColor: Colors.green[600],
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.add, color: Colors.white, size: 18),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
