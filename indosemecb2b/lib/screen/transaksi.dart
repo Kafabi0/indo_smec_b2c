@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/screen/main_navigasi.dart';
 
 class TransaksiScreen extends StatefulWidget {
   const TransaksiScreen({Key? key}) : super(key: key);
@@ -77,13 +78,14 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: kategoriList.map((item) {
-                    final isSelected = selectedKategori == item;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: _buildKategoriChip(item, isSelected),
-                    );
-                  }).toList(),
+                  children:
+                      kategoriList.map((item) {
+                        final isSelected = selectedKategori == item;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _buildKategoriChip(item, isSelected),
+                        );
+                      }).toList(),
                 ),
               ),
 
@@ -178,7 +180,16 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => MainNavigation(),
+                                
+                          ),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue[600],
                         shape: RoundedRectangleBorder(
@@ -222,12 +233,13 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
           icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
           style: const TextStyle(fontSize: 13, color: Colors.black),
           onChanged: onChanged,
-          items: options.map((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value, overflow: TextOverflow.ellipsis),
-            );
-          }).toList(),
+          items:
+              options.map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value, overflow: TextOverflow.ellipsis),
+                );
+              }).toList(),
         ),
       ),
     );
