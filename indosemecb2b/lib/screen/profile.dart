@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/screen/daftar_alamat.dart';
+import 'package:indosemecb2b/screen/edit_profile_screen.dart';
+import 'package:indosemecb2b/screen/ubah_pw.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:indosemecb2b/screen/login.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart'; // Import helper
@@ -444,9 +447,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _menuItem(
                   'Ubah Profil',
                   'Data diri, Email, dan Nomor handphone',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EditProfileScreen(),
+                      ),
+                    ).then(
+                      (_) => _loadLoginStatus(),
+                    ); // Refresh setelah kembali
+                  },
                 ),
-                _menuItem('Ubah Kata Sandi', 'Ubah kata sandi kamu'),
-                _menuItem('Daftar Alamat', 'Pengaturan alamat tujuan'),
+                _menuItem(
+                  'Ubah Kata Sandi',
+                  'Ubah kata sandi kamu',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ChangePasswordScreen(),
+                      ),
+                    ).then(
+                      (_) => _loadLoginStatus(),
+                    ); // Refresh setelah kembali
+                  },
+                ),
+                _menuItem('Daftar Alamat', 'Pengaturan alamat tujuan',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DaftarAlamatScreen(),
+                        ),
+                      ).then(
+                        (_) => _loadLoginStatus(),
+                      ); // Refresh setelah kembali
+                }),
                 _menuItem(
                   'Rekening Bank',
                   'Tarik Saldo Klik ke rekening tujuan',
@@ -535,7 +571,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _menuItem(String title, String subtitle) {
+  Widget _menuItem(String title, String subtitle, {VoidCallback? onTap}) {
     return Column(
       children: [
         ListTile(
@@ -548,7 +584,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
           trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-          onTap: () {},
+          onTap: onTap,
         ),
         const Divider(height: 1),
       ],
