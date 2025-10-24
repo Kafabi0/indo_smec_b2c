@@ -1784,133 +1784,410 @@ class HomeScreenState extends State<HomeScreen> {
             products.take(5).map((product) {
               final isFavorite = favoriteStatus[product.id] ?? false;
 
-              return Container(
-                margin: EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 10,
-                      offset: Offset(0, 3),
+              return StatefulBuilder(
+                builder: (context, setStateLocal) {
+                  int quantity = 0; // quantity untuk setiap produk
+
+                  return Container(
+                    margin: EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 10,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 70,
-                        height: 70,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: Image.network(
-                            product.imageUrl ?? '',
-                            height: 260,
-                            width: 260,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              product.name,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              product.description,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[600],
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Rp${product.price.toInt()}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue[700],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      Column(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
                         children: [
-                          // Favorite Button
+                          // Product Image
                           GestureDetector(
-                            onTap:
-                                () => _toggleFavorite(product.id, product.name),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) =>
+                                          ProductDetailPage(product: product),
+                                ),
+                              );
+                            },
                             child: Container(
-                              padding: EdgeInsets.all(8),
+                              width: 70,
+                              height: 70,
                               decoration: BoxDecoration(
-                                color:
-                                    isFavorite
-                                        ? Colors.red[50]
-                                        : Colors.grey[100],
-                                shape: BoxShape.circle,
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Icon(
-                                isFavorite
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color:
-                                    isFavorite ? Colors.red : Colors.grey[600],
-                                size: 18,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  product.imageUrl ?? '',
+                                  height: 70,
+                                  width: 70,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Icon(
+                                        Icons.image_rounded,
+                                        size: 30,
+                                        color: Colors.grey[400],
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          // Add to Cart Button
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.blue[700],
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.add,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      '${product.name} ditambahkan ke keranjang',
-                                    ),
-                                    duration: Duration(seconds: 1),
-                                    backgroundColor: Colors.green[600],
+                          const SizedBox(width: 12),
+
+                          // Product Info
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            ProductDetailPage(product: product),
                                   ),
                                 );
                               },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    product.name,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    product.description,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[600],
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Rp${product.price.toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue[700],
+                                        ),
+                                      ),
+                                      if (product.originalPrice != null) ...[
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Rp${product.originalPrice!.toStringAsFixed(0)}',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            decoration:
+                                                TextDecoration.lineThrough,
+                                            color: Colors.grey[400],
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
+                          ),
+
+                          // Action Buttons (Favorite & Add to Cart)
+                          Column(
+                            children: [
+                              // Favorite Button
+                              GestureDetector(
+                                onTap:
+                                    () => _toggleFavorite(
+                                      product.id,
+                                      product.name,
+                                    ),
+                                child: Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        isFavorite
+                                            ? Colors.red[50]
+                                            : Colors.grey[100],
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    isFavorite
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    color:
+                                        isFavorite
+                                            ? Colors.red
+                                            : Colors.grey[600],
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Add to Cart Button with Counter
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 200),
+                                transitionBuilder:
+                                    (child, animation) => ScaleTransition(
+                                      scale: animation,
+                                      child: child,
+                                    ),
+                                child:
+                                    quantity == 0
+                                        ? GestureDetector(
+                                          key: const ValueKey('addButton'),
+                                          onTap: () async {
+                                            final userLogin =
+                                                await UserDataManager.getCurrentUserLogin();
+                                            if (userLogin == null) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Silakan login terlebih dahulu',
+                                                  ),
+                                                  backgroundColor:
+                                                      Colors.orange,
+                                                  duration: Duration(
+                                                    seconds: 2,
+                                                  ),
+                                                ),
+                                              );
+                                              return;
+                                            }
+
+                                            final success =
+                                                await CartManager.addToCart(
+                                                  productId: product.id,
+                                                  name: product.name,
+                                                  price: product.price,
+                                                  originalPrice:
+                                                      product.originalPrice,
+                                                  discountPercentage:
+                                                      product
+                                                          .discountPercentage,
+                                                  imageUrl: product.imageUrl,
+                                                );
+
+                                            if (success) {
+                                              setStateLocal(() {
+                                                quantity = 1;
+                                              });
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Row(
+                                                    children: [
+                                                      const Icon(
+                                                        Icons.check_circle,
+                                                        color: Colors.white,
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Expanded(
+                                                        child: Text(
+                                                          '${product.name} ditambahkan ke keranjang',
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  backgroundColor: Colors.green,
+                                                  duration: const Duration(
+                                                    milliseconds: 1500,
+                                                  ),
+                                                  behavior:
+                                                      SnackBarBehavior.floating,
+                                                ),
+                                              );
+                                            } else {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Gagal menambahkan ke keranjang',
+                                                  ),
+                                                  backgroundColor: Colors.red,
+                                                  duration: Duration(
+                                                    seconds: 2,
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          child: Container(
+                                            width: 36,
+                                            height: 36,
+                                            decoration: BoxDecoration(
+                                              color: Colors.blue[700],
+                                              shape: BoxShape.circle,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(0.15),
+                                                  blurRadius: 6,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ],
+                                            ),
+                                            child: const Icon(
+                                              Icons.add,
+                                              color: Colors.white,
+                                              size: 20,
+                                            ),
+                                          ),
+                                        )
+                                        : Container(
+                                          key: const ValueKey('counter'),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue[700],
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withOpacity(
+                                                  0.15,
+                                                ),
+                                                blurRadius: 6,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              GestureDetector(
+                                                onTap: () async {
+                                                  if (quantity > 1) {
+                                                    // Update quantity di cart
+                                                    final success =
+                                                        await CartManager.updateQuantity(
+                                                          product.id,
+                                                          quantity - 1,
+                                                        );
+                                                    if (success) {
+                                                      setStateLocal(() {
+                                                        quantity--;
+                                                      });
+                                                    }
+                                                  } else {
+                                                    // Remove dari cart
+                                                    final success =
+                                                        await CartManager.removeFromCart(
+                                                          product.id,
+                                                        );
+                                                    if (success) {
+                                                      setStateLocal(() {
+                                                        quantity = 0;
+                                                      });
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                            '${product.name} dihapus dari keranjang',
+                                                          ),
+                                                          backgroundColor:
+                                                              Colors
+                                                                  .orange[700],
+                                                          duration:
+                                                              const Duration(
+                                                                milliseconds:
+                                                                    1500,
+                                                              ),
+                                                          behavior:
+                                                              SnackBarBehavior
+                                                                  .floating,
+                                                        ),
+                                                      );
+                                                    }
+                                                  }
+                                                },
+                                                child: const Icon(
+                                                  Icons.remove,
+                                                  color: Colors.white,
+                                                  size: 16,
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                    ),
+                                                child: Text(
+                                                  '$quantity',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              ),
+                                              GestureDetector(
+                                                onTap: () async {
+                                                  final success =
+                                                      await CartManager.addToCart(
+                                                        productId: product.id,
+                                                        name: product.name,
+                                                        price: product.price,
+                                                        originalPrice:
+                                                            product
+                                                                .originalPrice,
+                                                        discountPercentage:
+                                                            product
+                                                                .discountPercentage,
+                                                        imageUrl:
+                                                            product.imageUrl,
+                                                      );
+
+                                                  if (success) {
+                                                    setStateLocal(() {
+                                                      quantity++;
+                                                    });
+                                                  }
+                                                },
+                                                child: const Icon(
+                                                  Icons.add,
+                                                  color: Colors.white,
+                                                  size: 16,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               );
             }).toList(),
       ),
