@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/detail_produk.dart';
 import 'package:indosemecb2b/screen/product_list_screen.dart';
+import 'package:indosemecb2b/screen/search_screen.dart';
 import 'package:indosemecb2b/utils/cart_manager.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -368,37 +369,56 @@ class HomeScreenState extends State<HomeScreen> {
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SearchScreen(),
                     ),
-                  ],
-                ),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Cari produk UMKM...',
-                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: Colors.blue[700],
-                      size: 24,
-                    ),
-                    suffixIcon: Icon(
-                      Icons.qr_code_scanner_rounded,
-                      color: Colors.grey[400],
-                      size: 24,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 16,
-                    ),
+                  );
+                },
+                child: Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Icon(
+                          Icons.search_rounded,
+                          color: Colors.blue[700],
+                          size: 24,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          'Cari produk UMKM...',
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Icon(
+                          Icons.qr_code_scanner_rounded,
+                          color: Colors.grey[400],
+                          size: 24,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1260,174 +1280,175 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFlashSaleCard(Product product) {
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ProductDetailPage(product: product),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductDetailPage(product: product),
+          ),
+        );
+      },
+      child: Container(
+        width: 120,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
-      );
-    },
-    child: Container(
-      width: 120,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // GAMBAR PRODUK
-          Container(
-            height: 110,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-              child: Image.network(
-                product.imageUrl ?? '',
-                width: double.infinity,
-                height: 110,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[200],
-                    child: Center(
-                      child: Icon(
-                        Icons.image_rounded,
-                        size: 40,
-                        color: Colors.grey[400],
-                      ),
-                    ),
-                  );
-                },
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    color: Colors.grey[200],
-                    child: Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
-                      ),
-                    ),
-                  );
-                },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // GAMBAR PRODUK
+            Container(
+              height: 110,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
               ),
-            ),
-          ),
-          
-          // INFO PRODUK
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // BADGE DISKON
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.red[50],
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '${product.discountPercentage?.toInt() ?? 0}% OFF',
-                      style: TextStyle(
-                        color: Colors.red[700],
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  
-                  // NAMA PRODUK
-                  Flexible(
-                    child: Text(
-                      product.name,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w600,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  
-                  // HARGA - ✅ FORMAT BARU
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _formatPrice(product.price),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: Colors.blue[700],
+              child: ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                child: Image.network(
+                  product.imageUrl ?? '',
+                  width: double.infinity,
+                  height: 110,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[200],
+                      child: Center(
+                        child: Icon(
+                          Icons.image_rounded,
+                          size: 40,
+                          color: Colors.grey[400],
                         ),
                       ),
-                      if (product.originalPrice != null)
-                        Text(
-                          _formatPrice(product.originalPrice!),
-                          style: TextStyle(
-                            decoration: TextDecoration.lineThrough,
-                            color: Colors.grey[500],
-                            fontSize: 10,
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: Colors.grey[200],
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            value:
+                                loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
                           ),
                         ),
-                    ],
-                  ),
-                ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
 
-String _formatPrice(double price) {
-  final priceInt = price.toInt();
-  final priceString = priceInt.toString();
-  
-  // Tambahkan titik setiap 3 digit dari belakang
-  String result = '';
-  int counter = 0;
-  
-  for (int i = priceString.length - 1; i >= 0; i--) {
-    if (counter == 3) {
-      result = '.$result';
-      counter = 0;
-    }
-    result = priceString[i] + result;
-    counter++;
+            // INFO PRODUK
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // BADGE DISKON
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '${product.discountPercentage?.toInt() ?? 0}% OFF',
+                        style: TextStyle(
+                          color: Colors.red[700],
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+
+                    // NAMA PRODUK
+                    Flexible(
+                      child: Text(
+                        product.name,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+
+                    // HARGA - ✅ FORMAT BARU
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _formatPrice(product.price),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.blue[700],
+                          ),
+                        ),
+                        if (product.originalPrice != null)
+                          Text(
+                            _formatPrice(product.originalPrice!),
+                            style: TextStyle(
+                              decoration: TextDecoration.lineThrough,
+                              color: Colors.grey[500],
+                              fontSize: 10,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
-  
-  return 'Rp$result';
-}
+
+  String _formatPrice(double price) {
+    final priceInt = price.toInt();
+    final priceString = priceInt.toString();
+
+    // Tambahkan titik setiap 3 digit dari belakang
+    String result = '';
+    int counter = 0;
+
+    for (int i = priceString.length - 1; i >= 0; i--) {
+      if (counter == 3) {
+        result = '.$result';
+        counter = 0;
+      }
+      result = priceString[i] + result;
+      counter++;
+    }
+
+    return 'Rp$result';
+  }
 
   Widget _buildPromoBanner() {
     return Container(
@@ -1986,7 +2007,8 @@ String _formatPrice(double price) {
                                           _formatPrice(product.originalPrice!),
                                           style: TextStyle(
                                             fontSize: 11,
-                                            decoration: TextDecoration.lineThrough,
+                                            decoration:
+                                                TextDecoration.lineThrough,
                                             color: Colors.grey[400],
                                           ),
                                         ),
@@ -2642,7 +2664,7 @@ String _formatPrice(double price) {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
-                              color:  Colors.blue[700],
+                              color: Colors.blue[700],
                             ),
                           ),
                           const SizedBox(width: 6),
