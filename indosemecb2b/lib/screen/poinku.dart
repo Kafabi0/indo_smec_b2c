@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/product_service.dart';
+
+// Fungsi helper untuk format mata uang Indonesia
+String formatCurrency(int amount) {
+  return 'Rp ${amount.toString().replaceAllMapped(
+    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), 
+    (Match m) => '${m[1]}.'
+  )}';
+}
 
 // ==== POINKU MAIN SCREEN DENGAN BOTTOM NAV SENDIRI ====
 class PoinkuMainScreen extends StatefulWidget {
@@ -619,6 +628,42 @@ class RiwayatScreen extends StatefulWidget {
 
 class _RiwayatScreenState extends State<RiwayatScreen> {
   int _selectedTab = 0;
+  List<Map<String, dynamic>> _transactions = [];
+  final ProductService _productService = ProductService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTransactions();
+  }
+
+  void _loadTransactions() {
+    // Ambil semua toko dari ProductService
+    final allStores = _productService.getStoresByCategory('Semua');
+    
+    // Generate data transaksi dummy berdasarkan toko UMKM
+    List<Map<String, dynamic>> transactions = [];
+    
+    // Tambahkan beberapa transaksi dari toko-toko yang ada
+    final maxTransactions = allStores.length > 4 ? 4 : allStores.length;
+    for (int i = 0; i < maxTransactions; i++) {
+      final store = allStores[i];
+      transactions.add({
+        'invoice': 'INV-2025-001${234 - i}',
+        'store': store.name,
+        'storeCategory': store.category,
+        'amount': (i + 1) * 500000, // Simpan sebagai integer
+        'points': '+ ${(i + 1) * 100} Poin',
+        'date': '${22 - i} Okt 2025, ${14 + i}:30',
+        'color': Colors.green[700]!,
+        'storeDistance': '${store.distance} km',
+      });
+    }
+    
+    setState(() {
+      _transactions = transactions;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -726,44 +771,59 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
   Widget _buildStrukContent() {
     return ListView(
       padding: const EdgeInsets.all(16),
-      children: [
-        _buildStrukItem(
-          'INV-2025-001234',
-          'Indosmec Cabang Pusat',
-          'Rp 1.250.000',
-          '+ 250 Poin',
-          '22 Okt 2025, 14:30',
-          Colors.green[700]!,
-        ),
-        _buildStrukItem(
-          'INV-2025-001198',
-          'Indosmec Cabang Barat',
-          'Rp 3.500.000',
-          '+ 700 Poin',
-          '18 Okt 2025, 16:45',
-          Colors.green[700]!,
-        ),
-        _buildStrukItem(
-          'INV-2025-001156',
-          'Indosmec Cabang Timur',
-          'Rp 850.000',
-          '+ 170 Poin',
-          '15 Okt 2025, 11:20',
-          Colors.green[700]!,
-        ),
-        _buildStrukItem(
-          'INV-2025-001089',
-          'Indosmec Cabang Pusat',
-          'Rp 2.100.000',
-          '+ 420 Poin',
-          '10 Okt 2025, 09:15',
-          Colors.green[700]!,
-        ),
-      ],
+      children: _transactions.map((transaction) {
+        return _buildStrukItem(
+          transaction['invoice'],
+          transaction['store'],
+          transaction['storeCategory'],
+          transaction['amount'], // Sekarang integer
+          transaction['points'],
+          transaction['date'],
+          transaction['color'],
+          transaction['storeDistance'],
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildStrukItem(String invoice, String store, String amount, String points, String date, Color color) {
+  Widget _buildStrukItem(
+    String invoice, 
+    String store, 
+    String storeCategory,
+    int amount, // Ubah tipe menjadi int
+    String points, 
+    String date, 
+    Color color,
+    String storeDistance,
+  ) {
+    // Tentukan ikon berdasarkan kategori toko
+    IconData storeIcon;
+    switch (storeCategory.toLowerCase()) {
+      case 'food':
+        storeIcon = Icons.restaurant;
+        break;
+      case 'grocery':
+        storeIcon = Icons.shopping_basket;
+        break;
+      case 'fashion':
+        storeIcon = Icons.checkroom;
+        break;
+      case 'herbal':
+        storeIcon = Icons.eco;
+        break;
+      case 'kerajinan':
+        storeIcon = Icons.handyman;
+        break;
+      case 'pertanian':
+        storeIcon = Icons.agriculture;
+        break;
+      case 'kreatif':
+        storeIcon = Icons.palette;
+        break;
+      default:
+        storeIcon = Icons.store;
+    }
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -792,7 +852,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                       color: Colors.blue[50],
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(Icons.receipt_long, color: Colors.blue[700], size: 20),
+                    child: Icon(storeIcon, color: Colors.blue[700], size: 20),
                   ),
                   const SizedBox(width: 12),
                   Column(
@@ -807,12 +867,32 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        store,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            store,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[50],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              storeDistance,
+                              style: TextStyle(
+                                color: Colors.blue[700],
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -839,7 +919,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    amount,
+                    formatCurrency(amount), // Gunakan fungsi helper
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
