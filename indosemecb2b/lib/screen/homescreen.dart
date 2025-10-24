@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/detail_produk.dart';
+import 'package:indosemecb2b/screen/notif.dart';
 import 'package:indosemecb2b/screen/product_list_screen.dart';
 import 'package:indosemecb2b/screen/search_screen.dart';
 import 'package:indosemecb2b/utils/cart_manager.dart';
@@ -351,16 +352,27 @@ class HomeScreenState extends State<HomeScreen> {
                       letterSpacing: 0.5,
                     ),
                   ),
-                  Container(
-                    padding: EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.notifications_outlined,
-                      color: Colors.white,
-                      size: 22,
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NotificationScreen(),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(30),
+                    child: Container(
+                      padding: EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.notifications_outlined,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                     ),
                   ),
                 ],
