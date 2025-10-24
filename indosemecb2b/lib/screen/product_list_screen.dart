@@ -305,7 +305,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
       padding: EdgeInsets.all(16),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.65,
+        childAspectRatio: 0.60,
         crossAxisSpacing: 12,
         mainAxisSpacing: 8,
       ),
@@ -399,6 +399,36 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    SizedBox(height: 4),
+                    
+                    // Rating - TAMBAHKAN INI
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.star_rounded,
+                          color: Colors.amber[700],
+                          size: 12,
+                        ),
+                        SizedBox(width: 2),
+                        Text(
+                          '${product.rating}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        SizedBox(width: 2),
+                        Text(
+                          '(${product.reviewCount})',
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                    
                     SizedBox(height: 4),
                     Text(
                       'Rp${product.price.toStringAsFixed(0)}',
@@ -508,6 +538,36 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  SizedBox(height: 4),
+                  
+                  // Rating - TAMBAHKAN INI
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.star_rounded,
+                        color: Colors.amber[700],
+                        size: 12,
+                      ),
+                      SizedBox(width: 2),
+                      Text(
+                        '${product.rating}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        '(${product.reviewCount})',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
+                  
                   SizedBox(height: 6),
                   Text(
                     'Rp${product.price.toStringAsFixed(0)}',
@@ -667,14 +727,35 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     GestureDetector(
                       onTap: () async {
                         if (quantity > 1) {
-                          // TODO: Decrease quantity in cart
-                          setState(() {
-                            cartQuantities[product.id] = quantity - 1;
-                          });
+                          // Update quantity di cart
+                          final success = await CartManager.updateQuantity(
+                            product.id,
+                            quantity - 1,
+                          );
+                          if (success) {
+                            setState(() {
+                              cartQuantities[product.id] = quantity - 1;
+                            });
+                          }
                         } else {
-                          setState(() {
-                            cartQuantities[product.id] = 0;
-                          });
+                          // Remove dari cart
+                          final success = await CartManager.removeFromCart(
+                            product.id,
+                          );
+                          if (success) {
+                            setState(() {
+                              cartQuantities[product.id] = 0;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '${product.name} dihapus dari keranjang',
+                                ),
+                                backgroundColor: Colors.orange[700],
+                                duration: Duration(milliseconds: 1500),
+                              ),
+                            );
+                          }
                         }
                       },
                       child: Icon(Icons.remove, color: Colors.white, size: 16),
