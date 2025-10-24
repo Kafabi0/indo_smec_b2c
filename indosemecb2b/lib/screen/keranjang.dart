@@ -507,10 +507,11 @@ class CartScreenState extends State<CartScreen>
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
-              child: Icon(
-                Icons.image_rounded,
-                size: 40,
-                color: Colors.grey[400],
+              child: Image.network(
+                item.imageUrl??'',
+                height: 260,
+                width: 260,
+                fit: BoxFit.cover,
               ),
             ),
           ),

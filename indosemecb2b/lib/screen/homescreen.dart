@@ -1801,11 +1801,12 @@ class HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Center(
-                          child: Icon(
-                            Icons.image,
-                            size: 35,
-                            color: Colors.grey[400],
-                          ),
+                          child:  Image.network(
+                          product.imageUrl ?? '',
+                          height: 260,
+                          width: 260,
+                          fit: BoxFit.cover,
+                        )
                         ),
                       ),
                       const SizedBox(width: 12),
