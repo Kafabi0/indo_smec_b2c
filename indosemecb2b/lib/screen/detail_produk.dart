@@ -136,7 +136,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     widget.product.imageUrl != null
                         ? Image.network(
                           widget.product.imageUrl!,
-                          fit: BoxFit.contain,
+                          fit: BoxFit.cover,
                         )
                         : Icon(Icons.image, size: 100, color: Colors.grey[400]),
               ),

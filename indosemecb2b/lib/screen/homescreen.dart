@@ -2036,11 +2036,12 @@ class HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       child: Center(
-                        child: Icon(
-                          Icons.image_rounded,
-                          size: 60,
-                          color: Colors.grey[400],
-                        ),
+                        child: Image.network(
+                          product.imageUrl ?? '',
+                          height: 260,
+                          width: 260,
+                          fit: BoxFit.cover,
+                        )
                       ),
                     ),
 

@@ -47,7 +47,7 @@ class ProductService {
       reviewCount: 389,
       description: 'Masakan Padang asli',
     ),
-    
+
     // GROCERY STORES
     Store(
       id: 's5',
@@ -80,7 +80,7 @@ class ProductService {
       reviewCount: 891,
       description: 'Minimarket kebutuhan sehari-hari',
     ),
-    
+
     // FASHION STORES
     Store(
       id: 's8',
@@ -113,7 +113,7 @@ class ProductService {
       reviewCount: 312,
       description: 'Fashion casual trendy',
     ),
-    
+
     // HERBAL STORES
     Store(
       id: 's11',
@@ -136,7 +136,7 @@ class ProductService {
       reviewCount: 423,
       description: 'Madu murni dari peternakan',
     ),
-    
+
     // KERAJINAN STORES
     Store(
       id: 's13',
@@ -159,7 +159,7 @@ class ProductService {
       reviewCount: 145,
       description: 'Ukiran kayu khas Bali',
     ),
-    
+
     // PERTANIAN STORES
     Store(
       id: 's15',
@@ -182,7 +182,7 @@ class ProductService {
       reviewCount: 378,
       description: 'Sayuran organik segar',
     ),
-    
+
     // TAMBAHAN STORE KHUSUS BUAH
     Store(
       id: 's19',
@@ -217,7 +217,7 @@ class ProductService {
       description: 'Supplier buah-buahan segar',
       isFlagship: false,
     ),
-    
+
     // KREATIF STORES
     Store(
       id: 's17',
@@ -246,49 +246,184 @@ class ProductService {
   static final List<SubCategory> _subCategories = [
     // FOOD SUB-CATEGORIES
     SubCategory(id: 'f1', name: 'Nasi Box', parentCategory: 'Food', icon: '🍱'),
-    SubCategory(id: 'f2', name: 'Snack & Jajanan', parentCategory: 'Food', icon: '🍪'),
+    SubCategory(
+      id: 'f2',
+      name: 'Snack & Jajanan',
+      parentCategory: 'Food',
+      icon: '🍪',
+    ),
     SubCategory(id: 'f3', name: 'Minuman', parentCategory: 'Food', icon: '🥤'),
-    SubCategory(id: 'f4', name: 'Lauk Pauk', parentCategory: 'Food', icon: '🍗'),
+    SubCategory(
+      id: 'f4',
+      name: 'Lauk Pauk',
+      parentCategory: 'Food',
+      icon: '🍗',
+    ),
     SubCategory(id: 'f5', name: 'Dessert', parentCategory: 'Food', icon: '🍰'),
-    
+
     // GROCERY SUB-CATEGORIES
-    SubCategory(id: 'g1', name: 'Beras & Tepung', parentCategory: 'Grocery', icon: '🌾'),
-    SubCategory(id: 'g2', name: 'Bumbu Dapur', parentCategory: 'Grocery', icon: '🧂'),
-    SubCategory(id: 'g3', name: 'Minyak Goreng', parentCategory: 'Grocery', icon: '🛢️'),
-    SubCategory(id: 'g4', name: 'Telur & Susu', parentCategory: 'Grocery', icon: '🥚'),
-    SubCategory(id: 'g5', name: 'Mie Instan', parentCategory: 'Grocery', icon: '🍜'),
-    
+    SubCategory(
+      id: 'g1',
+      name: 'Beras & Tepung',
+      parentCategory: 'Grocery',
+      icon: '🌾',
+    ),
+    SubCategory(
+      id: 'g2',
+      name: 'Bumbu Dapur',
+      parentCategory: 'Grocery',
+      icon: '🧂',
+    ),
+    SubCategory(
+      id: 'g3',
+      name: 'Minyak Goreng',
+      parentCategory: 'Grocery',
+      icon: '🛢️',
+    ),
+    SubCategory(
+      id: 'g4',
+      name: 'Telur & Susu',
+      parentCategory: 'Grocery',
+      icon: '🥚',
+    ),
+    SubCategory(
+      id: 'g5',
+      name: 'Mie Instan',
+      parentCategory: 'Grocery',
+      icon: '🍜',
+    ),
+
     // FASHION SUB-CATEGORIES
-    SubCategory(id: 'fa1', name: 'Batik', parentCategory: 'Fashion', icon: '👔'),
-    SubCategory(id: 'fa2', name: 'Hijab', parentCategory: 'Fashion', icon: '🧕'),
-    SubCategory(id: 'fa3', name: 'Kaos & Kemeja', parentCategory: 'Fashion', icon: '👕'),
-    SubCategory(id: 'fa4', name: 'Celana', parentCategory: 'Fashion', icon: '👖'),
-    SubCategory(id: 'fa5', name: 'Dress', parentCategory: 'Fashion', icon: '👗'),
-    
+    SubCategory(
+      id: 'fa1',
+      name: 'Batik',
+      parentCategory: 'Fashion',
+      icon: '👔',
+    ),
+    SubCategory(
+      id: 'fa2',
+      name: 'Hijab',
+      parentCategory: 'Fashion',
+      icon: '🧕',
+    ),
+    SubCategory(
+      id: 'fa3',
+      name: 'Kaos & Kemeja',
+      parentCategory: 'Fashion',
+      icon: '👕',
+    ),
+    SubCategory(
+      id: 'fa4',
+      name: 'Celana',
+      parentCategory: 'Fashion',
+      icon: '👖',
+    ),
+    SubCategory(
+      id: 'fa5',
+      name: 'Dress',
+      parentCategory: 'Fashion',
+      icon: '👗',
+    ),
+
     // HERBAL SUB-CATEGORIES
-    SubCategory(id: 'h1', name: 'Jamu Tradisional', parentCategory: 'Herbal', icon: '🍵'),
+    SubCategory(
+      id: 'h1',
+      name: 'Jamu Tradisional',
+      parentCategory: 'Herbal',
+      icon: '🍵',
+    ),
     SubCategory(id: 'h2', name: 'Madu', parentCategory: 'Herbal', icon: '🍯'),
-    SubCategory(id: 'h3', name: 'Minuman Herbal', parentCategory: 'Herbal', icon: '☕'),
+    SubCategory(
+      id: 'h3',
+      name: 'Minuman Herbal',
+      parentCategory: 'Herbal',
+      icon: '☕',
+    ),
     SubCategory(id: 'h4', name: 'Rempah', parentCategory: 'Herbal', icon: '🌿'),
-    
+
     // KERAJINAN SUB-CATEGORIES
-    SubCategory(id: 'k1', name: 'Anyaman', parentCategory: 'Kerajinan', icon: '🧺'),
-    SubCategory(id: 'k2', name: 'Ukiran Kayu', parentCategory: 'Kerajinan', icon: '🪵'),
-    SubCategory(id: 'k3', name: 'Souvenir', parentCategory: 'Kerajinan', icon: '🎁'),
-    SubCategory(id: 'k4', name: 'Dekorasi', parentCategory: 'Kerajinan', icon: '🖼️'),
-    
+    SubCategory(
+      id: 'k1',
+      name: 'Anyaman',
+      parentCategory: 'Kerajinan',
+      icon: '🧺',
+    ),
+    SubCategory(
+      id: 'k2',
+      name: 'Ukiran Kayu',
+      parentCategory: 'Kerajinan',
+      icon: '🪵',
+    ),
+    SubCategory(
+      id: 'k3',
+      name: 'Souvenir',
+      parentCategory: 'Kerajinan',
+      icon: '🎁',
+    ),
+    SubCategory(
+      id: 'k4',
+      name: 'Dekorasi',
+      parentCategory: 'Kerajinan',
+      icon: '🖼️',
+    ),
+
     // PERTANIAN SUB-CATEGORIES
-    SubCategory(id: 'p1', name: 'Pupuk', parentCategory: 'Pertanian', icon: '🌱'),
-    SubCategory(id: 'p2', name: 'Bibit Tanaman', parentCategory: 'Pertanian', icon: '🌾'),
-    SubCategory(id: 'p3', name: 'Sayuran Organik', parentCategory: 'Pertanian', icon: '🥬'),
-    SubCategory(id: 'p4', name: 'Buah', parentCategory: 'Pertanian', icon: '🍎'),
-    SubCategory(id: 'p5', name: 'Alat Tani', parentCategory: 'Pertanian', icon: '🚜'),
-    
+    SubCategory(
+      id: 'p1',
+      name: 'Pupuk',
+      parentCategory: 'Pertanian',
+      icon: '🌱',
+    ),
+    SubCategory(
+      id: 'p2',
+      name: 'Bibit Tanaman',
+      parentCategory: 'Pertanian',
+      icon: '🌾',
+    ),
+    SubCategory(
+      id: 'p3',
+      name: 'Sayuran Organik',
+      parentCategory: 'Pertanian',
+      icon: '🥬',
+    ),
+    SubCategory(
+      id: 'p4',
+      name: 'Buah',
+      parentCategory: 'Pertanian',
+      icon: '🍎',
+    ),
+    SubCategory(
+      id: 'p5',
+      name: 'Alat Tani',
+      parentCategory: 'Pertanian',
+      icon: '🚜',
+    ),
+
     // KREATIF SUB-CATEGORIES
-    SubCategory(id: 'kr1', name: 'Alat Lukis', parentCategory: 'Kreatif', icon: '🎨'),
-    SubCategory(id: 'kr2', name: 'Buku Sketsa', parentCategory: 'Kreatif', icon: '📓'),
-    SubCategory(id: 'kr3', name: 'Clay & Polymer', parentCategory: 'Kreatif', icon: '🧱'),
-    SubCategory(id: 'kr4', name: 'Craft Tools', parentCategory: 'Kreatif', icon: '✂️'),
+    SubCategory(
+      id: 'kr1',
+      name: 'Alat Lukis',
+      parentCategory: 'Kreatif',
+      icon: '🎨',
+    ),
+    SubCategory(
+      id: 'kr2',
+      name: 'Buku Sketsa',
+      parentCategory: 'Kreatif',
+      icon: '📓',
+    ),
+    SubCategory(
+      id: 'kr3',
+      name: 'Clay & Polymer',
+      parentCategory: 'Kreatif',
+      icon: '🧱',
+    ),
+    SubCategory(
+      id: 'kr4',
+      name: 'Craft Tools',
+      parentCategory: 'Kreatif',
+      icon: '✂️',
+    ),
   ];
 
   // ============ SEMUA DATA DUMMY PRODUK ============
@@ -305,6 +440,7 @@ class ProductService {
       reviewCount: 150,
       storeName: 'Warung Pak Budi',
       storeDistance: '0.5 km',
+      imageUrl:'https://img-global.cpcdn.com/recipes/2d6b62a61e9bb969/680x482cq70/nasi-goreng-hongkong-foto-resep-utama.jpg'
     ),
     Product(
       id: '2',
@@ -317,6 +453,8 @@ class ProductService {
       reviewCount: 89,
       storeName: 'Toko Berkah',
       storeDistance: '1.2 km',
+      imageUrl:
+      'https://drivethru.klikindomaret.com/t69e/wp-content/uploads/sites/58/2020/09/nasi.jpg'
     ),
     Product(
       id: '3',
@@ -329,6 +467,7 @@ class ProductService {
       reviewCount: 220,
       storeName: 'Sushi Corner',
       storeDistance: '2.1 km',
+      imageUrl: 'https://drivethru.klikindomaret.com/t69e/wp-content/uploads/sites/58/2024/03/20096377_1-745x1024.jpg'
     ),
     Product(
       id: '4',
@@ -341,10 +480,11 @@ class ProductService {
       reviewCount: 180,
       storeName: 'Fast Food Center',
       storeDistance: '0.8 km',
+      imageUrl: 'https://assets.klikindomaret.com/products/20115652/20115652_1.jpg'
     ),
     Product(
       id: '5',
-      name: 'Y!Choice Dimsum Ayam Bawang 2\'S',
+      name: 'Y!Choice Dimsum Siomay Ayam Pedas 2\'S',
       description: '2 pcs Dimsum ayam dengan daun bawang segar',
       price: 10000,
       originalPrice: 12000,
@@ -353,6 +493,7 @@ class ProductService {
       reviewCount: 195,
       storeName: 'Dimsum House',
       storeDistance: '1.5 km',
+      imageUrl: 'https://assets.klikindomaret.com/products/20122942/20122942_thumb.jpg?Version.20.03.1.01'
     ),
     Product(
       id: '6',
@@ -365,10 +506,11 @@ class ProductService {
       reviewCount: 167,
       storeName: 'Bakery Mama',
       storeDistance: '0.9 km',
+      imageUrl: 'https://awsimages.detik.net.id/community/media/visual/2021/12/07/resep-sate-ayam-pedas_43.jpeg?w=480'
     ),
     Product(
       id: '7',
-      name: 'Y!Choice Mochi Matsu Saji',
+      name: 'Y!Choice Steam Pao Besar Ayam Panggang',
       description: 'Mochi Jepang dengan isian pasta kacang merah',
       price: 23000,
       originalPrice: 28000,
@@ -377,6 +519,7 @@ class ProductService {
       reviewCount: 310,
       storeName: 'Japan Snack',
       storeDistance: '1.8 km',
+      imageUrl: 'https://drivethru.klikindomaret.com/t69e/wp-content/uploads/sites/58/2022/11/WhatsApp-Image-2022-11-04-at-16.47.13.jpeg'
     ),
     Product(
       id: '8',
@@ -389,6 +532,7 @@ class ProductService {
       reviewCount: 278,
       storeName: 'Rumah Makan Padang',
       storeDistance: '1.3 km',
+      imageUrl: 'https://assets.klikindomaret.com/products/20103568/20103568_thumb.jpg?Version.20.03.1.01'
     ),
 
     // ============ GROCERY CATEGORY ============
@@ -403,6 +547,7 @@ class ProductService {
       reviewCount: 320,
       storeName: 'Toko Sumber Rezeki',
       storeDistance: '0.7 km',
+      imageUrl: 'https://cdn-klik.klikindomaret.com/klik-catalog/product/20002897_1.jpg'
     ),
     Product(
       id: '10',
@@ -415,6 +560,7 @@ class ProductService {
       reviewCount: 250,
       storeName: 'Grocery Mart',
       storeDistance: '0.5 km',
+      imageUrl: 'https://img.lazcdn.com/g/p/5a20b25510c6741f4b12a9607e3a2905.jpg_720x720q80.jpg'
     ),
     Product(
       id: '11',
@@ -427,6 +573,7 @@ class ProductService {
       reviewCount: 189,
       storeName: 'Toko Berkah',
       storeDistance: '1.2 km',
+      imageUrl: 'https://cdn-klik.klikindomaret.com/klik-catalog/product/20042991_1.jpg'
     ),
     Product(
       id: '12',
@@ -439,6 +586,7 @@ class ProductService {
       reviewCount: 412,
       storeName: 'Pasar Segar',
       storeDistance: '0.9 km',
+      imageUrl: 'https://cdn-klik.klikindomaret.com/klik-catalog/product/20024079_1.jpg'
     ),
     Product(
       id: '13',
@@ -451,6 +599,7 @@ class ProductService {
       reviewCount: 356,
       storeName: 'Supermarket Indo',
       storeDistance: '1.1 km',
+      imageUrl: 'https://cdn-klik.klikindomaret.com/klik-catalog/product/20134320_1.jpg'
     ),
     Product(
       id: '14',
@@ -463,6 +612,7 @@ class ProductService {
       reviewCount: 289,
       storeName: 'Warung Serba Ada',
       storeDistance: '0.6 km',
+      imageUrl: 'https://down-id.img.susercontent.com/file/id-11134207-7r98x-lvic6q9m6095fc'
     ),
 
     // ============ FASHION CATEGORY ============
@@ -477,6 +627,7 @@ class ProductService {
       reviewCount: 95,
       storeName: 'Batik Nusantara',
       storeDistance: '2.3 km',
+      imageUrl: 'https://i.pinimg.com/1200x/89/49/43/89494308b3d6d38cf728ec1b6e24e798.jpg'
     ),
     Product(
       id: '16',
@@ -489,6 +640,7 @@ class ProductService {
       reviewCount: 310,
       storeName: 'Hijab Store',
       storeDistance: '1.7 km',
+      imageUrl: 'https://i.pinimg.com/1200x/7a/26/c9/7a26c999cfcd9a931c83237c22e8f96b.jpg'
     ),
     Product(
       id: '17',
@@ -501,6 +653,7 @@ class ProductService {
       reviewCount: 147,
       storeName: 'Fashion Hub',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/736x/83/63/55/83635564a2b3880593033e875a7ee6cd.jpg'
     ),
     Product(
       id: '18',
@@ -513,6 +666,7 @@ class ProductService {
       reviewCount: 203,
       storeName: 'Batik Cantik',
       storeDistance: '1.9 km',
+      imageUrl: 'https://i.pinimg.com/736x/95/15/75/951575bf612a50d8a7632860215387ba.jpg'
     ),
     Product(
       id: '19',
@@ -525,6 +679,7 @@ class ProductService {
       reviewCount: 178,
       storeName: 'Denim Store',
       storeDistance: '2.5 km',
+      imageUrl: 'https://i.pinimg.com/736x/08/c8/9d/08c89d1c2f9b4bebbcfe079fd31d49a5.jpg'
     ),
 
     // ============ HERBAL CATEGORY ============
@@ -539,6 +694,7 @@ class ProductService {
       reviewCount: 180,
       storeName: 'Jamu Bu Ningsih',
       storeDistance: '0.6 km',
+      imageUrl: 'https://i.pinimg.com/736x/f9/bf/d6/f9bfd638c69ebdbeff6d236a6072b37b.jpg'
     ),
     Product(
       id: '21',
@@ -551,6 +707,7 @@ class ProductService {
       reviewCount: 275,
       storeName: 'Madu Alami',
       storeDistance: '1.4 km',
+      imageUrl: 'https://i.pinimg.com/736x/aa/4c/e5/aa4ce5f447925e72362b0a6c9a6db65b.jpg'
     ),
     Product(
       id: '22',
@@ -563,6 +720,7 @@ class ProductService {
       reviewCount: 198,
       storeName: 'Herbal Nusantara',
       storeDistance: '1.8 km',
+      imageUrl: 'https://down-id.img.susercontent.com/file/40714140dc961d5ca9ca2444f1be0612'
     ),
     Product(
       id: '23',
@@ -575,6 +733,7 @@ class ProductService {
       reviewCount: 156,
       storeName: 'Toko Herbal Sehat',
       storeDistance: '1.1 km',
+      imageUrl: 'https://tse2.mm.bing.net/th/id/OIP.xuIGr5AFt6EeCaa_8mnX2gHaHa?rs=1&pid=ImgDetMain&o=7&rm=3'
     ),
 
     // ============ KERAJINAN CATEGORY ============
@@ -589,6 +748,7 @@ class ProductService {
       reviewCount: 87,
       storeName: 'Kerajinan Tangan',
       storeDistance: '2.5 km',
+      imageUrl: 'https://i.pinimg.com/736x/db/17/cc/db17ccbb78756c6f0cda1d11a40ef30e.jpg'
     ),
     Product(
       id: '25',
@@ -601,6 +761,7 @@ class ProductService {
       reviewCount: 56,
       storeName: 'Seni Ukir Bali',
       storeDistance: '3.2 km',
+      imageUrl: 'https://i.pinimg.com/736x/5d/11/d0/5d11d0db5f0ea31b0e00077916e9e09f.jpg'
     ),
     Product(
       id: '26',
@@ -613,6 +774,7 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Souvenir Nusantara',
       storeDistance: '1.9 km',
+      imageUrl: 'https://i.pinimg.com/736x/2b/d6/72/2bd67264b0b81133eb7ff08895fb398b.jpg'
     ),
 
     // ============ PERTANIAN CATEGORY ============
@@ -627,6 +789,7 @@ class ProductService {
       reviewCount: 145,
       storeName: 'Toko Tani Jaya',
       storeDistance: '2.8 km',
+      imageUrl: 'https://i.pinimg.com/736x/23/c8/d4/23c8d4917eba6bd108d13dcadcab3ccc.jpg'
     ),
     Product(
       id: '28',
@@ -639,6 +802,7 @@ class ProductService {
       reviewCount: 98,
       storeName: 'Tani Makmur',
       storeDistance: '3.5 km',
+      imageUrl: 'https://i.pinimg.com/1200x/6a/e4/4f/6ae44f8829716b4bfbfddf3dcc5ca3ca.jpg'
     ),
     Product(
       id: '29',
@@ -651,7 +815,9 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/1200x/e6/e1/19/e6e119960061eec773d9e0f573929d33.jpg'
     ),
+
 
     // ============ KREATIF CATEGORY ============
     Product(
@@ -665,6 +831,7 @@ class ProductService {
       reviewCount: 89,
       storeName: 'Art Supply Store',
       storeDistance: '2.4 km',
+      imageUrl: 'https://i.pinimg.com/736x/f2/ec/d7/f2ecd776d62afb556f7b8277f77d3ee0.jpg'
     ),
     Product(
       id: '31',
@@ -677,6 +844,8 @@ class ProductService {
       reviewCount: 156,
       storeName: 'Creative Corner',
       storeDistance: '1.8 km',
+      imageUrl: 'https://i.pinimg.com/736x/6c/3f/5c/6c3f5c3efc8a11ad2ce76ad60e536069.jpg'
+
     ),
     Product(
       id: '32',
@@ -689,8 +858,9 @@ class ProductService {
       reviewCount: 123,
       storeName: 'DIY Craft Shop',
       storeDistance: '2.2 km',
+      imageUrl: 'https://i.pinimg.com/1200x/d2/73/8e/d2738eceae9feb07c53076a922bd1644.jpg'
     ),
-    
+
     // ============ TAMBAHAN PRODUK SEGAR (MINUMAN, JELLY, PRODUK UMKM INDONESIA) ============
     Product(
       id: '33',
@@ -703,6 +873,7 @@ class ProductService {
       reviewCount: 425,
       storeName: 'Warung Pak Budi',
       storeDistance: '0.5 km',
+      imageUrl: 'https://i.pinimg.com/736x/63/30/04/633004a76c6f03ab9665d8cce7dade47.jpg'
     ),
     Product(
       id: '34',
@@ -715,6 +886,7 @@ class ProductService {
       reviewCount: 312,
       storeName: 'Snack House',
       storeDistance: '1.1 km',
+      imageUrl: 'https://i.pinimg.com/736x/85/58/a5/8558a5cc58e0e57707635793b32e9279.jpg'
     ),
     Product(
       id: '35',
@@ -727,6 +899,7 @@ class ProductService {
       reviewCount: 278,
       storeName: 'Jamu Bu Ningsih',
       storeDistance: '0.6 km',
+      imageUrl: 'https://img.freepik.com/premium-photo/es-dawet-hitam-cendol-hitam-is-indonesia-traditional-iced-dessert-from-purworejo_581937-5126.jpg'
     ),
     Product(
       id: '36',
@@ -739,6 +912,7 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Madu Alami',
       storeDistance: '1.4 km',
+      imageUrl: 'https://tse2.mm.bing.net/th/id/OIP.JtMOAoE1KvaYFqqANYJeRwHaHa?rs=1&pid=ImgDetMain&o=7&rm=3'
     ),
     Product(
       id: '37',
@@ -751,6 +925,7 @@ class ProductService {
       reviewCount: 198,
       storeName: 'Pasar Segar',
       storeDistance: '0.9 km',
+      imageUrl: 'https://i.pinimg.com/736x/6a/5a/df/6a5adf9ad625176e415f49822ae7b924.jpg'
     ),
     Product(
       id: '38',
@@ -763,6 +938,7 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Herbal Nusantara',
       storeDistance: '1.8 km',
+      imageUrl: 'https://i.pinimg.com/736x/61/47/0f/61470f214ef15ab5fc4008a0e7c1a749.jpg'
     ),
     Product(
       id: '39',
@@ -775,6 +951,7 @@ class ProductService {
       reviewCount: 345,
       storeName: 'Tropical Drink',
       storeDistance: '0.8 km',
+      imageUrl: 'https://i.pinimg.com/736x/43/3d/28/433d28c07a9b05f671d3710a90804934.jpg'
     ),
     Product(
       id: '40',
@@ -787,6 +964,7 @@ class ProductService {
       reviewCount: 289,
       storeName: 'Snack House',
       storeDistance: '1.1 km',
+      imageUrl: 'https://i.pinimg.com/1200x/ae/78/f0/ae78f05040e740cc24887f84c3f5ed39.jpg'
     ),
     Product(
       id: '41',
@@ -799,6 +977,7 @@ class ProductService {
       reviewCount: 312,
       storeName: 'Warung Pak Budi',
       storeDistance: '0.5 km',
+      imageUrl: 'https://i.pinimg.com/1200x/bf/f5/02/bff502e79673602b6d93271c46583676.jpg'
     ),
     Product(
       id: '42',
@@ -811,6 +990,7 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Snack House',
       storeDistance: '1.1 km',
+      imageUrl: 'https://i.pinimg.com/1200x/69/72/c1/6972c17a5b9b8de373b26e1c61461c97.jpg'
     ),
     Product(
       id: '43',
@@ -823,6 +1003,7 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Herbal Nusantara',
       storeDistance: '1.8 km',
+      imageUrl: 'https://i.pinimg.com/736x/ab/0d/f7/ab0df7146af3fe5c29d1513cdaf9b97e.jpg'
     ),
     Product(
       id: '44',
@@ -835,8 +1016,9 @@ class ProductService {
       reviewCount: 298,
       storeName: 'Snack House',
       storeDistance: '1.1 km',
+      imageUrl: 'https://i.pinimg.com/736x/c1/8e/70/c18e709489f143a9b12152ab4ab2cc29.jpg'
     ),
-    
+
     // ============ TAMBAHAN PRODUK BUAH & SAYUR ============
     Product(
       id: '45',
@@ -849,6 +1031,7 @@ class ProductService {
       reviewCount: 312,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/1200x/89/94/cc/8994cc72eb45158a30c06d4774230ded.jpg'
     ),
     Product(
       id: '46',
@@ -861,6 +1044,7 @@ class ProductService {
       reviewCount: 278,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/1200x/16/ee/49/16ee497d374644223ccd26a1493c794b.jpg'
     ),
     Product(
       id: '47',
@@ -873,6 +1057,7 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/1200x/67/d7/fc/67d7fc8e8c788fd50b96cc650d24bfb9.jpg'
     ),
     Product(
       id: '48',
@@ -885,6 +1070,7 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/1200x/90/14/0a/90140a4f0056916e38b7c3020772416f.jpg'
     ),
     Product(
       id: '49',
@@ -897,6 +1083,7 @@ class ProductService {
       reviewCount: 289,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/1200x/e5/a0/95/e5a095d73452f84ee2dd563a9b56d2f7.jpg'
     ),
     Product(
       id: '50',
@@ -909,6 +1096,7 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/1200x/9c/68/6e/9c686ec6d33e9d264bf392c072371b89.jpg'
     ),
     Product(
       id: '51',
@@ -921,6 +1109,7 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/1200x/57/2e/44/572e446e7ecd1261d1973b7e11f1d622.jpg'
     ),
     Product(
       id: '52',
@@ -933,6 +1122,7 @@ class ProductService {
       reviewCount: 298,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/736x/05/1e/f7/051ef76a110dfd40de4aef4e601c3040.jpg'
     ),
     Product(
       id: '53',
@@ -945,6 +1135,7 @@ class ProductService {
       reviewCount: 345,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/736x/38/5a/1a/385a1a57260b175ffc75b32a4da62234.jpg'
     ),
     Product(
       id: '54',
@@ -957,6 +1148,7 @@ class ProductService {
       reviewCount: 312,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/1200x/02/ce/2f/02ce2feb0755beed215dac5f6187b7c0.jpg'
     ),
     Product(
       id: '55',
@@ -969,6 +1161,7 @@ class ProductService {
       reviewCount: 278,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/736x/fd/2f/75/fd2f7532157da5c6519aa76d938d17bc.jpg'
     ),
     Product(
       id: '56',
@@ -981,6 +1174,7 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/1200x/91/c2/d5/91c2d5cb35f8db6bd9ab3cadcb2e65a3.jpg'
     ),
     Product(
       id: '57',
@@ -993,6 +1187,7 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/1200x/82/b7/29/82b729fb22b9e2fd02a08d995c1ffbd7.jpg'
     ),
     Product(
       id: '58',
@@ -1005,6 +1200,7 @@ class ProductService {
       reviewCount: 289,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/736x/8f/f4/f0/8ff4f0b8413c8e3ef42a200f43492a77.jpg'
     ),
     Product(
       id: '59',
@@ -1017,6 +1213,7 @@ class ProductService {
       reviewCount: 345,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/1200x/70/f0/cc/70f0cc60b42372f96ff52242cf29710b.jpg'
     ),
     Product(
       id: '60',
@@ -1029,8 +1226,9 @@ class ProductService {
       reviewCount: 312,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/736x/5a/3d/2f/5a3d2fb75acdd8aabe60ae134a357136.jpg'
     ),
-    
+
     // ============ TAMBAHAN PRODUK BUAH YANG LEBIH BANYAK ============
     Product(
       id: '61',
@@ -1043,6 +1241,7 @@ class ProductService {
       reviewCount: 312,
       storeName: 'Buah Segar Pak Joko',
       storeDistance: '1.2 km',
+      imageUrl: 'https://i.pinimg.com/1200x/64/2e/b8/642eb823cc55b56c8e0f611277d850a3.jpg'
     ),
     Product(
       id: '62',
@@ -1055,6 +1254,7 @@ class ProductService {
       reviewCount: 278,
       storeName: 'Warung Buah Sari',
       storeDistance: '0.8 km',
+      imageUrl: 'https://i.pinimg.com/1200x/5d/aa/71/5daa71ea3e755354e00cdacd26d60bbd.jpg'
     ),
     Product(
       id: '63',
@@ -1067,6 +1267,7 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Gudang Buah Nusantara',
       storeDistance: '2.3 km',
+      imageUrl: 'https://i.pinimg.com/736x/2c/91/5f/2c915f71906c55242fa4819403e888d0.jpg'
     ),
     Product(
       id: '64',
@@ -1079,6 +1280,7 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Buah Segar Pak Joko',
       storeDistance: '1.2 km',
+      imageUrl: 'https://i.pinimg.com/736x/1f/98/1a/1f981a87a0ecd3ef4d321e52400458af.jpg'
     ),
     Product(
       id: '65',
@@ -1091,6 +1293,7 @@ class ProductService {
       reviewCount: 289,
       storeName: 'Warung Buah Sari',
       storeDistance: '0.8 km',
+      imageUrl: 'https://i.pinimg.com/736x/2b/20/70/2b207008e715f68d55f9a913cda6799d.jpg'
     ),
     Product(
       id: '66',
@@ -1103,6 +1306,7 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Gudang Buah Nusantara',
       storeDistance: '2.3 km',
+      imageUrl: 'https://i.pinimg.com/736x/57/81/50/578150b5f0e41fea90ab992c2e971533.jpg'
     ),
     Product(
       id: '67',
@@ -1115,6 +1319,7 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Buah Segar Pak Joko',
       storeDistance: '1.2 km',
+      imageUrl: 'https://i.pinimg.com/1200x/96/e9/b6/96e9b6b277e3abc05ed03d92c7d41b1e.jpg'
     ),
     Product(
       id: '68',
@@ -1127,6 +1332,7 @@ class ProductService {
       reviewCount: 289,
       storeName: 'Warung Buah Sari',
       storeDistance: '0.8 km',
+      imageUrl: 'https://i.pinimg.com/736x/5c/79/5a/5c795af37a63ed75f733d5543dfd64c9.jpg'
     ),
   ];
 
@@ -1147,20 +1353,32 @@ class ProductService {
 
   // Get flash sale products (diskon >= 15%)
   List<Product> getFlashSaleProducts() {
-    final flashSale = _allProducts.where((p) => 
-        p.discountPercentage != null && p.discountPercentage! >= 15).toList();
-    
+    final flashSale =
+        _allProducts
+            .where(
+              (p) =>
+                  p.discountPercentage != null && p.discountPercentage! >= 15,
+            )
+            .toList();
+
     // Jika kurang dari 8 produk, tambahkan produk dengan diskon lebih rendah
     if (flashSale.length < 8) {
-      final otherDiscounted = _allProducts.where((p) => 
-          p.discountPercentage != null && p.discountPercentage! < 15).toList();
+      final otherDiscounted =
+          _allProducts
+              .where(
+                (p) =>
+                    p.discountPercentage != null && p.discountPercentage! < 15,
+              )
+              .toList();
       flashSale.addAll(otherDiscounted);
     }
-    
+
     // Urutkan berdasarkan persentase diskon tertinggi
-    flashSale.sort((a, b) => 
-        (b.discountPercentage ?? 0).compareTo(a.discountPercentage ?? 0));
-    
+    flashSale.sort(
+      (a, b) =>
+          (b.discountPercentage ?? 0).compareTo(a.discountPercentage ?? 0),
+    );
+
     // Kembalikan maksimal 12 produk
     return flashSale.take(12).toList();
   }
@@ -1182,34 +1400,37 @@ class ProductService {
   // Get produk segar (dari kategori Food, Grocery, Pertanian, Herbal)
   List<Product> getFreshProducts() {
     final freshCategories = ['Food', 'Grocery', 'Pertanian', 'Herbal'];
-    
+
     // Filter produk segar berdasarkan kategori
-    final freshProducts = _allProducts.where((p) => 
-        freshCategories.contains(p.category)).toList();
-    
+    final freshProducts =
+        _allProducts
+            .where((p) => freshCategories.contains(p.category))
+            .toList();
+
     // Filter khusus untuk produk segar (minuman, jelly, dll)
-    final specificFresh = freshProducts.where((p) {
-      final name = p.name.toLowerCase();
-      return name.contains('minuman') || 
-             name.contains('es') || 
-             name.contains('teh') || 
-             name.contains('madu') || 
-             name.contains('sari') || 
-             name.contains('jamu') || 
-             name.contains('dawet') || 
-             name.contains('wedang') || 
-             name.contains('bandrek') || 
-             name.contains('sirsak') || 
-             name.contains('kelapa') || 
-             name.contains('jelly') || 
-             name.contains('kopyor') || 
-             name.contains('uwuh') || 
-             name.contains('kacang ijo');
-    }).toList();
-    
+    final specificFresh =
+        freshProducts.where((p) {
+          final name = p.name.toLowerCase();
+          return name.contains('minuman') ||
+              name.contains('es') ||
+              name.contains('teh') ||
+              name.contains('madu') ||
+              name.contains('sari') ||
+              name.contains('jamu') ||
+              name.contains('dawet') ||
+              name.contains('wedang') ||
+              name.contains('bandrek') ||
+              name.contains('sirsak') ||
+              name.contains('kelapa') ||
+              name.contains('jelly') ||
+              name.contains('kopyor') ||
+              name.contains('uwuh') ||
+              name.contains('kacang ijo');
+        }).toList();
+
     // Urutkan berdasarkan rating tertinggi
     specificFresh.sort((a, b) => b.rating.compareTo(a.rating));
-    
+
     // Kembalikan maksimal 8 produk
     return specificFresh.take(8).toList();
   }
@@ -1217,31 +1438,32 @@ class ProductService {
   // Get buah & sayur (dari kategori Pertanian & Grocery)
   List<Product> getFruitAndVeggies() {
     // Filter produk yang kemungkinan adalah buah & sayur berdasarkan nama
-    final fruitVeggieProducts = _allProducts.where((p) {
-      final name = p.name.toLowerCase();
-      return name.contains('sayur') || 
-             name.contains('buah') || 
-             name.contains('pisang') ||
-             name.contains('apel') ||
-             name.contains('tomat') ||
-             name.contains('cabai') ||
-             name.contains('bayam') ||
-             name.contains('brokoli') ||
-             name.contains('wortel') ||
-             name.contains('kentang') ||
-             name.contains('semangka') ||
-             name.contains('melon') ||
-             name.contains('strawberry') ||
-             name.contains('anggur') ||
-             name.contains('mangga') ||
-             name.contains('alpukat') ||
-             name.contains('jeruk') ||
-             name.contains('timun');
-    }).toList();
-    
+    final fruitVeggieProducts =
+        _allProducts.where((p) {
+          final name = p.name.toLowerCase();
+          return name.contains('sayur') ||
+              name.contains('buah') ||
+              name.contains('pisang') ||
+              name.contains('apel') ||
+              name.contains('tomat') ||
+              name.contains('cabai') ||
+              name.contains('bayam') ||
+              name.contains('brokoli') ||
+              name.contains('wortel') ||
+              name.contains('kentang') ||
+              name.contains('semangka') ||
+              name.contains('melon') ||
+              name.contains('strawberry') ||
+              name.contains('anggur') ||
+              name.contains('mangga') ||
+              name.contains('alpukat') ||
+              name.contains('jeruk') ||
+              name.contains('timun');
+        }).toList();
+
     // Urutkan berdasarkan rating tertinggi
     fruitVeggieProducts.sort((a, b) => b.rating.compareTo(a.rating));
-    
+
     // Kembalikan maksimal 8 produk
     return fruitVeggieProducts.take(8).toList();
   }
@@ -1250,23 +1472,23 @@ class ProductService {
   List<Product> getFruitProducts() {
     return _allProducts.where((p) {
       final name = p.name.toLowerCase();
-      return name.contains('pisang') || 
-             name.contains('apel') ||
-             name.contains('semangka') ||
-             name.contains('melon') ||
-             name.contains('mangga') ||
-             name.contains('alpukat') ||
-             name.contains('jeruk') ||
-             name.contains('strawberry') ||
-             name.contains('anggur') ||
-             name.contains('timun') ||
-             name.contains('salak') ||
-             name.contains('nanas') ||
-             name.contains('jambu') ||
-             name.contains('duku') ||
-             name.contains('srikaya') ||
-             name.contains('manggis') ||
-             name.contains('rambutan');
+      return name.contains('pisang') ||
+          name.contains('apel') ||
+          name.contains('semangka') ||
+          name.contains('melon') ||
+          name.contains('mangga') ||
+          name.contains('alpukat') ||
+          name.contains('jeruk') ||
+          name.contains('strawberry') ||
+          name.contains('anggur') ||
+          name.contains('timun') ||
+          name.contains('salak') ||
+          name.contains('nanas') ||
+          name.contains('jambu') ||
+          name.contains('duku') ||
+          name.contains('srikaya') ||
+          name.contains('manggis') ||
+          name.contains('rambutan');
     }).toList();
   }
 
@@ -1274,13 +1496,13 @@ class ProductService {
   List<Product> getVegetableProducts() {
     return _allProducts.where((p) {
       final name = p.name.toLowerCase();
-      return name.contains('sayur') || 
-             name.contains('tomat') ||
-             name.contains('cabai') ||
-             name.contains('bayam') ||
-             name.contains('brokoli') ||
-             name.contains('wortel') ||
-             name.contains('kentang');
+      return name.contains('sayur') ||
+          name.contains('tomat') ||
+          name.contains('cabai') ||
+          name.contains('bayam') ||
+          name.contains('brokoli') ||
+          name.contains('wortel') ||
+          name.contains('kentang');
     }).toList();
   }
 
@@ -1289,51 +1511,47 @@ class ProductService {
     // Filter produk berdasarkan nama sub-kategori
     return _allProducts.where((p) {
       final name = p.name.toLowerCase();
-      
+
       // Untuk sub-kategori "Buah"
       if (subCategoryName.toLowerCase() == 'buah') {
-        return name.contains('pisang') || 
-               name.contains('apel') ||
-               name.contains('tomat') ||
-               name.contains('semangka') ||
-               name.contains('melon') ||
-               name.contains('mangga') ||
-               name.contains('alpukat') ||
-               name.contains('jeruk') ||
-               name.contains('strawberry') ||
-               name.contains('anggur') ||
-               name.contains('timun') ||
-               name.contains('salak') ||
-               name.contains('nanas') ||
-               name.contains('jambu') ||
-               name.contains('duku') ||
-               name.contains('srikaya') ||
-               name.contains('manggis') ||
-               name.contains('rambutan');
+        return name.contains('pisang') ||
+            name.contains('apel') ||
+            name.contains('tomat') ||
+            name.contains('semangka') ||
+            name.contains('melon') ||
+            name.contains('mangga') ||
+            name.contains('alpukat') ||
+            name.contains('jeruk') ||
+            name.contains('strawberry') ||
+            name.contains('anggur') ||
+            name.contains('timun') ||
+            name.contains('salak') ||
+            name.contains('nanas') ||
+            name.contains('jambu') ||
+            name.contains('duku') ||
+            name.contains('srikaya') ||
+            name.contains('manggis') ||
+            name.contains('rambutan');
       }
-      
       // Untuk sub-kategori "Sayuran Organik"
       else if (subCategoryName.toLowerCase() == 'sayuran organik') {
-        return name.contains('sayur') || 
-               name.contains('tomat') ||
-               name.contains('cabai') ||
-               name.contains('bayam') ||
-               name.contains('brokoli') ||
-               name.contains('wortel') ||
-               name.contains('kentang');
+        return name.contains('sayur') ||
+            name.contains('tomat') ||
+            name.contains('cabai') ||
+            name.contains('bayam') ||
+            name.contains('brokoli') ||
+            name.contains('wortel') ||
+            name.contains('kentang');
       }
-      
       // Untuk sub-kategori lainnya
       else if (subCategoryName.toLowerCase() == 'pupuk') {
         return name.contains('pupuk');
-      }
-      else if (subCategoryName.toLowerCase() == 'bibit tanaman') {
+      } else if (subCategoryName.toLowerCase() == 'bibit tanaman') {
         return name.contains('bibit');
-      }
-      else if (subCategoryName.toLowerCase() == 'alat tani') {
+      } else if (subCategoryName.toLowerCase() == 'alat tani') {
         return name.contains('alat');
       }
-      
+
       return false;
     }).toList();
   }
@@ -1351,7 +1569,7 @@ class ProductService {
   // Get flagship store for category
   Store? getFlagshipStore(String category) {
     if (category == 'Semua') return null;
-    
+
     try {
       return _allStores.firstWhere(
         (s) => s.category == category && s.isFlagship,
@@ -1370,13 +1588,15 @@ class ProductService {
     if (parentCategory == 'Semua') {
       return [];
     }
-    return _subCategories.where((sc) => sc.parentCategory == parentCategory).toList();
+    return _subCategories
+        .where((sc) => sc.parentCategory == parentCategory)
+        .toList();
   }
 
   // Search produk
   List<Product> searchProducts(String query) {
     if (query.isEmpty) return _allProducts;
-    
+
     return _allProducts
         .where((p) => p.name.toLowerCase().contains(query.toLowerCase()))
         .toList();
