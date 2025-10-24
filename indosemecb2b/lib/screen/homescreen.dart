@@ -600,7 +600,7 @@ class HomeScreenState extends State<HomeScreen> {
                 color: Colors.grey[200],
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.favorite, color: Colors.red, size: 21),
+              child: Icon(Icons.favorite, color: Colors.grey[600], size: 21),
             ),
           ),
         ],
