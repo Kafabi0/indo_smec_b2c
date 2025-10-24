@@ -1,4 +1,4 @@
-// screen/keranjang.dart - Complete Version
+// screen/keranjang.dart - Without Tabs
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/favorit.dart';
 import 'package:indosemecb2b/screen/lengkapi_alamat_screen.dart';
@@ -14,9 +14,7 @@ class CartScreen extends StatefulWidget {
   State<CartScreen> createState() => CartScreenState();
 }
 
-class CartScreenState extends State<CartScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class CartScreenState extends State<CartScreen> {
   String selectedDelivery = 'xpress';
 
   Map<String, dynamic>? _savedAlamat;
@@ -27,15 +25,12 @@ class CartScreenState extends State<CartScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _loadUserData();
   }
 
-  // Tambahkan method ini untuk auto-refresh saat halaman muncul kembali
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Reload data setiap kali screen muncul
     if (mounted) {
       _loadUserData();
     }
@@ -61,18 +56,11 @@ class CartScreenState extends State<CartScreen>
     }
   }
 
-  // Method public untuk refresh dari luar
   Future<void> refreshCart() async {
     setState(() {
       _isLoading = true;
     });
     await _loadUserData();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   Future<void> _navigateToLengkapiAlamat() async {
@@ -89,8 +77,7 @@ class CartScreenState extends State<CartScreen>
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder:
-            (context) => LengkapiAlamatScreen(existingAddress: _savedAlamat),
+        builder: (context) => LengkapiAlamatScreen(existingAddress: _savedAlamat),
       ),
     );
 
@@ -151,261 +138,216 @@ class CartScreenState extends State<CartScreen>
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        // Refresh sebelum keluar
-        return true;
-      },
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          title: const Text(
-            'Keranjang Belanja',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+        elevation: 0,
+        title: const Text(
+          'Keranjang Belanja',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.favorite_sharp, color: Colors.grey[700]),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => FavoritScreen()),
-                );
-              },
-            ),
-          ],
         ),
-        body:
-            _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : Column(
-                  children: [
-                    Container(
-                      color: Colors.white,
-                      child: TabBar(
-                        controller: _tabController,
-                        labelColor: Colors.blue[700],
-                        unselectedLabelColor: Colors.grey[600],
-                        indicatorColor: Colors.blue[700],
-                        indicatorWeight: 3,
-                        labelStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        tabs: const [Tab(text: 'Grocery'), Tab(text: 'Food')],
+        actions: [
+          IconButton(
+            icon: Icon(Icons.favorite_sharp, color: Colors.grey[700]),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => FavoritScreen()),
+              );
+            },
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  _buildAlamatPengirimanSection(),
+                  const SizedBox(height: 24),
+
+                  // Delivery Options
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(80),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  selectedDelivery = 'xpress';
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                margin: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: selectedDelivery == 'xpress'
+                                      ? Colors.orange[400]
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(80),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.flash_on,
+                                      color: selectedDelivery == 'xpress'
+                                          ? Colors.white
+                                          : Colors.grey[600],
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Belanja Xpress',
+                                      style: TextStyle(
+                                        color: selectedDelivery == 'xpress'
+                                            ? Colors.white
+                                            : Colors.grey[600],
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  selectedDelivery = 'xtra';
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                margin: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: selectedDelivery == 'xtra'
+                                      ? Colors.green[400]
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(80),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.inventory_2_outlined,
+                                      color: selectedDelivery == 'xtra'
+                                          ? Colors.white
+                                          : Colors.grey[600],
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Belanja Xtra',
+                                      style: TextStyle(
+                                        color: selectedDelivery == 'xtra'
+                                            ? Colors.white
+                                            : Colors.grey[600],
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Cart Items atau Empty Cart
+                  _cartItems.isEmpty ? _buildEmptyCart() : _buildCartItems(),
+                ],
+              ),
+            ),
+      bottomNavigationBar: _cartItems.isNotEmpty
+          ? Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: Row(
+                  children: [
                     Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildGroceryTab(),
-                          const Center(child: Text('Food Tab Content')),
+                          Text(
+                            'Total Belanja',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Rp${_calculateTotal().toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
                         ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Handle checkout
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue[700],
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Checkout',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
-        bottomNavigationBar:
-            _cartItems.isNotEmpty
-                ? Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
-                  ),
-                  child: SafeArea(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Total Belanja',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Rp${_calculateTotal().toStringAsFixed(0)}',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              // Handle checkout
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue[700],
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: const Text(
-                              'Checkout',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-                : null,
-      ),
-    );
-  }
-
-  Widget _buildGroceryTab() {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 16),
-          _buildAlamatPengirimanSection(),
-          const SizedBox(height: 24),
-
-          // Delivery Options
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(80),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedDelivery = 'xpress';
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        margin: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color:
-                              selectedDelivery == 'xpress'
-                                  ? Colors.orange[400]
-                                  : Colors.transparent,
-                          borderRadius: BorderRadius.circular(80),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.flash_on,
-                              color:
-                                  selectedDelivery == 'xpress'
-                                      ? Colors.white
-                                      : Colors.grey[600],
-                              size: 20,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Belanja Xpress',
-                              style: TextStyle(
-                                color:
-                                    selectedDelivery == 'xpress'
-                                        ? Colors.white
-                                        : Colors.grey[600],
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedDelivery = 'xtra';
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        margin: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color:
-                              selectedDelivery == 'xtra'
-                                  ? Colors.green[400]
-                                  : Colors.transparent,
-                          borderRadius: BorderRadius.circular(80),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.inventory_2_outlined,
-                              color:
-                                  selectedDelivery == 'xtra'
-                                      ? Colors.white
-                                      : Colors.grey[600],
-                              size: 20,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Belanja Xtra',
-                              style: TextStyle(
-                                color:
-                                    selectedDelivery == 'xtra'
-                                        ? Colors.white
-                                        : Colors.grey[600],
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Cart Items atau Empty Cart
-          _cartItems.isEmpty ? _buildEmptyCart() : _buildCartItems(),
-        ],
-      ),
+            )
+          : null,
     );
   }
 
@@ -506,12 +448,22 @@ class CartScreenState extends State<CartScreen>
               ),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Center(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
               child: Image.network(
-                item.imageUrl??'',
-                height: 260,
-                width: 260,
+                item.imageUrl ?? '',
+                height: 80,
+                width: 80,
                 fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Center(
+                    child: Icon(
+                      Icons.image_rounded,
+                      size: 40,
+                      color: Colors.grey[400],
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -796,7 +748,7 @@ class CartScreenState extends State<CartScreen>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Yuk, isi dengan barang-barang menarik dari Klik Indomaret.',
+                      'Yuk, isi dengan barang-barang menarik dari IndoSmec.',
                       style: TextStyle(
                         fontSize: 10,
                         color: Colors.grey[600],
@@ -1107,36 +1059,35 @@ class CartScreenState extends State<CartScreen>
 
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Catatan Pengiriman'),
-            content: TextField(
-              controller: catatanController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                hintText: 'Masukkan catatan untuk kurir...',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Batal'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Catatan pengiriman disimpan'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                },
-                child: const Text('Simpan'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('Catatan Pengiriman'),
+        content: TextField(
+          controller: catatanController,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            hintText: 'Masukkan catatan untuk kurir...',
+            border: OutlineInputBorder(),
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Catatan pengiriman disimpan'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
     );
   }
 
