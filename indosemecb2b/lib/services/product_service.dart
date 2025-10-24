@@ -1392,15 +1392,15 @@ class ProductService {
     Product(
       id: '104',
       name: 'Paket Lauk Ayam Lengkap',
-      description: 'Ayam Potong 1kg + Telur 20pcs + Tempe 5pcs + Tahu 10pcs',
-      price: 95000,
-      originalPrice: 130000,
+      description: 'Nasi, Ayam Goreng / Bakar, Tahu / Tempe, Sambal / Lalapan, Perkedel / Tempe Kering',
+      price: 27000,
+      originalPrice: 30000,
       category: 'Food',
       rating: 4.7,
       reviewCount: 345,
       storeName: 'Warung Pak Budi',
       storeDistance: '0.5 km',
-      imageUrl: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=400&fit=crop'
+      imageUrl: 'https://i.pinimg.com/1200x/a9/4f/ec/a94fec80cee33091150472f62e139ada.jpg'
     ),
     Product(
       id: '105',
@@ -1417,16 +1417,16 @@ class ProductService {
     ),
     Product(
       id: '106',
-      name: 'Paket Lauk Daging Sapi',
-      description: 'Daging Sapi 1kg + Bakso Sapi 500gr + Sosis 500gr',
-      price: 185000,
-      originalPrice: 250000,
+      name: 'Paket Tumis Kangkung',
+      description: 'Sayur Kangkung, Cabe Rawit, Bawang Putih, Bawang Merah',
+      price: 11160,
+      originalPrice: 12000,
       category: 'Food',
       rating: 4.9,
       reviewCount: 412,
       storeName: 'Rumah Makan Padang',
       storeDistance: '1.3 km',
-      imageUrl: 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400&h=400&fit=crop'
+      imageUrl: 'https://i.pinimg.com/1200x/7c/6e/02/7c6e02d9bdde795470cce9bd364f433a.jpg'
     ),
 
     // PAKET SNACK & MINUMAN
