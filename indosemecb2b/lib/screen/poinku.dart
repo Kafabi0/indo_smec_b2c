@@ -892,7 +892,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
           Icons.card_membership,
         ),
         _buildAktivasiItem(
-          'Upgrade ke Member Silver',
+          'Upgrade ke Member Blue',
           'Upgrade otomatis karena total belanja > 5 juta',
           '+ 2000 Poin Bonus',
           '15 Mar 2025, 14:30',
@@ -1192,7 +1192,7 @@ class PengaturanScreen extends StatefulWidget {
 class _PengaturanScreenState extends State<PengaturanScreen> {
   String userName = '';
   String userPhone = '';
-  String memberTier = 'Silver';
+  String memberTier = 'Blue';
 
   @override
   void initState() {
@@ -1205,7 +1205,7 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
     setState(() {
       userName = prefs.getString('userName') ?? 'User';
       userPhone = prefs.getString('userPhone') ?? '08xxxxxxxxxx';
-      memberTier = 'Silver';
+      memberTier = 'Blue';
     });
   }
 
@@ -1224,10 +1224,7 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
           ),
         ),
         centerTitle: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
