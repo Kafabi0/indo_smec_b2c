@@ -1446,7 +1446,7 @@ class ProductService {
     Product(
       id: '108',
       name: 'Paket Minuman Segar',
-      description: '12 Botol Minuman (Jus, Teh, Susu, Air Mineral)',
+      description: '4 Botol Jus Mangga',
       price: 85000,
       originalPrice: 120000,
       category: 'Food',
@@ -1454,7 +1454,7 @@ class ProductService {
       reviewCount: 389,
       storeName: 'Tropical Drink',
       storeDistance: '0.8 km',
-      imageUrl: 'https://images.unsplash.com/photo-1523677011781-c91d1bbe2f9d?w=400&h=400&fit=crop'
+      imageUrl: 'https://i.pinimg.com/1200x/27/51/ad/2751ad58f8a34da9eb93a4fd72ebf2c2.jpg'
     ),
 
     // PAKET BUAH & SAYUR
