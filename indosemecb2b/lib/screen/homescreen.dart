@@ -23,7 +23,7 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   final ProductService _productService = ProductService();
-  final FavoriteService _favoriteService = FavoriteService(); // TAMBAHKAN INI
+  final FavoriteService _favoriteService = FavoriteService();
 
   bool isLoggedIn = false;
   String userEmail = '';
@@ -61,7 +61,6 @@ class HomeScreenState extends State<HomeScreen> {
     super.initState();
     _checkLoginStatus();
     _loadData();
-    // _loadFavoriteStatus(); // TAMBAHKAN INI
   }
 
   Future<void> _checkLoginStatus() async {
@@ -73,37 +72,22 @@ class HomeScreenState extends State<HomeScreen> {
     if (isLoggedIn) {
       _loadFavoriteStatus();
     } else {
-      // CLEAR STATUS FAVORIT JIKA BELUM LOGIN
       setState(() {
         favoriteStatus = {};
       });
     }
   }
 
-  // CATATAN: PANGGILAN INI SUDAH TEPAT
   Future<void> _loadFavoriteStatus() async {
     final favoriteIds = await _favoriteService.getAllFavoriteIds();
     setState(() {
-      // Perhatikan: favoriteStatus diisi berdasarkan SEMUA produk
-      // dan dicek apakah ada di dalam favoriteIds yang dimuat dari SharedPreferences
       for (var product in _productService.getAllProducts()) {
         favoriteStatus[product.id] = favoriteIds.contains(product.id);
       }
     });
   }
 
-  // Future<void> _loadFavoriteStatus() async {
-  //   final favoriteIds = await _favoriteService.getAllFavoriteIds();
-  //   setState(() {
-  //     for (var product in _productService.getAllProducts()) {
-  //       favoriteStatus[product.id] = favoriteIds.contains(product.id);
-  //     }
-  //   });
-  // }
-
-  // TAMBAHKAN METHOD INI
   Future<void> _toggleFavorite(String productId, String productName) async {
-    // START MODIFIKASI: Tambahkan pemeriksaan login
     if (!isLoggedIn) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -116,9 +100,8 @@ class HomeScreenState extends State<HomeScreen> {
           ),
         );
       }
-      return; // Keluar jika belum login
+      return;
     }
-    // END MODIFIKASI
 
     final isFavorite = await _favoriteService.toggleFavorite(productId);
 
@@ -147,7 +130,6 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   void _loadData() {
-    // Load data sesuai kategori yang dipilih
     if (selectedCategory == 'Semua') {
       displayedProducts = _productService.getAllProducts();
     } else {
@@ -162,7 +144,6 @@ class HomeScreenState extends State<HomeScreen> {
     newestProducts = _productService.getNewestProducts();
     fruitAndVeggies = _productService.getFruitAndVeggies();
 
-    // Load stores & sub-categories untuk kategori spesifik
     categoryStores = _productService.getStoresByCategory(selectedCategory);
     subCategories = _productService.getSubCategories(selectedCategory);
     flagshipStore = _productService.getFlagshipStore(selectedCategory);
@@ -618,12 +599,10 @@ class HomeScreenState extends State<HomeScreen> {
           Spacer(),
           GestureDetector(
             onTap: () async {
-              // Navigate ke FavoritScreen
               await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => FavoritScreen()),
               );
-              // Reload favorite status setelah kembali
               _loadFavoriteStatus();
             },
             child: Container(
@@ -632,7 +611,7 @@ class HomeScreenState extends State<HomeScreen> {
                 color: Colors.grey[200],
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.favorite, color: Colors.grey[600], size: 21),
+              child: Icon(Icons.favorite, color: Colors.red[600], size: 21),
             ),
           ),
         ],
@@ -659,7 +638,6 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Modal untuk yang SUDAH LOGIN
   Widget _buildLoggedInLocationModal() {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -686,7 +664,6 @@ class HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 20),
 
-        // Tipe Pemesanan Options
         Row(
           children: [
             Expanded(
@@ -709,7 +686,6 @@ class HomeScreenState extends State<HomeScreen> {
 
         const SizedBox(height: 24),
 
-        // Pilih Alamat Section
         Text(
           'Pilih Alamat',
           style: TextStyle(
@@ -774,7 +750,6 @@ class HomeScreenState extends State<HomeScreen> {
 
         const SizedBox(height: 16),
 
-        // Cara Lain Section
         Text(
           'Cara Lain',
           style: TextStyle(
@@ -837,7 +812,6 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Modal untuk yang BELUM LOGIN
   Widget _buildGuestLocationModal() {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -864,7 +838,6 @@ class HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 20),
 
-        // Masuk Option (Login)
         InkWell(
           onTap: () async {
             Navigator.pop(context);
@@ -924,7 +897,6 @@ class HomeScreenState extends State<HomeScreen> {
 
         const SizedBox(height: 10),
 
-        // Pilih Lokasi Option
         InkWell(
           onTap: () {
             Navigator.pop(context);
@@ -1279,7 +1251,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   Widget _buildFlashSaleSection() {
     return Container(
-      height: 230,
+      height: 210, // Dikurangi dari 230
       margin: const EdgeInsets.only(left: 16),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -1318,9 +1290,8 @@ class HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // GAMBAR PRODUK
             Container(
-              height: 110,
+              height: 100, // Dikurangi dari 110
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
               ),
@@ -1329,7 +1300,7 @@ class HomeScreenState extends State<HomeScreen> {
                 child: Image.network(
                   product.imageUrl ?? '',
                   width: double.infinity,
-                  height: 110,
+                  height: 100,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
@@ -1367,17 +1338,15 @@ class HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // INFO PRODUK
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(10.0),
+                padding: const EdgeInsets.all(8.0), // Dikurangi dari 10
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // BADGE DISKON
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                       decoration: BoxDecoration(
                         color: Colors.red[50],
                         borderRadius: BorderRadius.circular(4),
@@ -1386,19 +1355,17 @@ class HomeScreenState extends State<HomeScreen> {
                         '${product.discountPercentage?.toInt() ?? 0}% OFF',
                         style: TextStyle(
                           color: Colors.red[700],
-                          fontSize: 9,
+                          fontSize: 8,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 6),
-
-                    // NAMA PRODUK
+                    const SizedBox(height: 4),
                     Flexible(
                       child: Text(
                         product.name,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: Colors.black87,
                           fontWeight: FontWeight.w600,
                           height: 1.2,
@@ -1407,9 +1374,34 @@ class HomeScreenState extends State<HomeScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(height: 6),
-
-                    // HARGA - ✅ FORMAT BARU
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.star_rounded,
+                          color: Colors.amber[700],
+                          size: 10,
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${product.rating}',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          '(${product.reviewCount})',
+                          style: TextStyle(
+                            fontSize: 8,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1417,7 +1409,7 @@ class HomeScreenState extends State<HomeScreen> {
                           _formatPrice(product.price),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                            fontSize: 12,
                             color: Colors.blue[700],
                           ),
                         ),
@@ -1427,7 +1419,7 @@ class HomeScreenState extends State<HomeScreen> {
                             style: TextStyle(
                               decoration: TextDecoration.lineThrough,
                               color: Colors.grey[500],
-                              fontSize: 10,
+                              fontSize: 8,
                             ),
                           ),
                       ],
@@ -1446,7 +1438,6 @@ class HomeScreenState extends State<HomeScreen> {
     final priceInt = price.toInt();
     final priceString = priceInt.toString();
 
-    // Tambahkan titik setiap 3 digit dari belakang
     String result = '';
     int counter = 0;
 
@@ -1907,7 +1898,7 @@ class HomeScreenState extends State<HomeScreen> {
 
               return StatefulBuilder(
                 builder: (context, setStateLocal) {
-                  int quantity = 0; // quantity untuk setiap produk
+                  int quantity = 0;
 
                   return Container(
                     margin: EdgeInsets.only(bottom: 12),
@@ -1926,7 +1917,6 @@ class HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.all(12),
                       child: Row(
                         children: [
-                          // Product Image
                           GestureDetector(
                             onTap: () {
                               Navigator.push(
@@ -1967,7 +1957,6 @@ class HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(width: 12),
 
-                          // Product Info
                           Expanded(
                             child: GestureDetector(
                               onTap: () {
@@ -1992,6 +1981,35 @@ class HomeScreenState extends State<HomeScreen> {
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
+                                  const SizedBox(height: 4),
+                                  
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.star_rounded,
+                                        color: Colors.amber[700],
+                                        size: 12,
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        '${product.rating}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '(${product.reviewCount})',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey[500],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  
                                   const SizedBox(height: 4),
                                   Text(
                                     product.description,
@@ -2032,10 +2050,8 @@ class HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
 
-                          // Action Buttons (Favorite & Add to Cart)
                           Column(
                             children: [
-                              // Favorite Button
                               GestureDetector(
                                 onTap:
                                     () => _toggleFavorite(
@@ -2065,7 +2081,6 @@ class HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(height: 8),
 
-                              // Add to Cart Button with Counter
                               AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 200),
                                 transitionBuilder:
@@ -2205,7 +2220,6 @@ class HomeScreenState extends State<HomeScreen> {
                                               GestureDetector(
                                                 onTap: () async {
                                                   if (quantity > 1) {
-                                                    // Update quantity di cart
                                                     final success =
                                                         await CartManager.updateQuantity(
                                                           product.id,
@@ -2217,7 +2231,6 @@ class HomeScreenState extends State<HomeScreen> {
                                                       });
                                                     }
                                                   } else {
-                                                    // Remove dari cart
                                                     final success =
                                                         await CartManager.removeFromCart(
                                                           product.id,
@@ -2319,7 +2332,7 @@ class HomeScreenState extends State<HomeScreen> {
     String title, {
     bool hasTimer = false,
     bool showSeeAll = true,
-    List<Product>? products, // Tambahkan parameter ini
+    List<Product>? products,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -2369,7 +2382,7 @@ class HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             )
-          else if (showSeeAll && products != null) // Modifikasi ini
+          else if (showSeeAll && products != null)
             TextButton(
               onPressed: () {
                 Navigator.push(
@@ -2396,7 +2409,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   Widget _buildProductGrid(List<Product> products) {
     return Container(
-      height: 280,
+      height: 260, // Dikurangi dari 280
       margin: const EdgeInsets.only(left: 16),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -2410,7 +2423,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   Widget _buildProductCard(Product product) {
     final isFavorite = favoriteStatus[product.id] ?? false;
-    int quantity = 0; // jumlah produk sementara
+    int quantity = 0;
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -2443,7 +2456,7 @@ class HomeScreenState extends State<HomeScreen> {
                 Stack(
                   children: [
                     Container(
-                      height: 160,
+                      height: 140, // Dikurangi dari 160
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [Colors.grey[200]!, Colors.grey[100]!],
@@ -2455,14 +2468,13 @@ class HomeScreenState extends State<HomeScreen> {
                       child: Center(
                         child: Image.network(
                           product.imageUrl ?? '',
-                          height: 260,
-                          width: 260,
+                          height: 140,
+                          width: double.infinity,
                           fit: BoxFit.cover,
                         ),
                       ),
                     ),
 
-                    // 🔵 Tombol tambah atau counter
                     Positioned(
                       top: 8,
                       right: 8,
@@ -2479,9 +2491,7 @@ class HomeScreenState extends State<HomeScreen> {
                                     final userLogin =
                                         await UserDataManager.getCurrentUserLogin();
                                     if (userLogin == null) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
+                                      ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(
                                           content: Text(
                                             'Silakan login terlebih dahulu',
@@ -2505,11 +2515,9 @@ class HomeScreenState extends State<HomeScreen> {
 
                                     if (success) {
                                       setState(() {
-                                        quantity = 1; // tampilkan counter
+                                        quantity = 1;
                                       });
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
+                                      ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
                                           content: Row(
                                             children: [
@@ -2526,16 +2534,13 @@ class HomeScreenState extends State<HomeScreen> {
                                             ],
                                           ),
                                           backgroundColor: Colors.green,
-                                          duration: const Duration(
-                                            milliseconds: 1500,
-                                          ),
+                                          duration:
+                                              const Duration(milliseconds: 1500),
                                           behavior: SnackBarBehavior.floating,
                                         ),
                                       );
                                     } else {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
+                                      ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(
                                           content: Text(
                                             'Gagal menambahkan ke keranjang',
@@ -2547,8 +2552,8 @@ class HomeScreenState extends State<HomeScreen> {
                                     }
                                   },
                                   child: Container(
-                                    width: 36,
-                                    height: 36,
+                                    width: 32, // Diperkecil dari 36
+                                    height: 32, // Diperkecil dari 36
                                     decoration: BoxDecoration(
                                       color: Colors.blue,
                                       shape: BoxShape.circle,
@@ -2563,14 +2568,14 @@ class HomeScreenState extends State<HomeScreen> {
                                     child: const Icon(
                                       Icons.add,
                                       color: Colors.white,
-                                      size: 22,
+                                      size: 18, // Diperkecil dari 22
                                     ),
                                   ),
                                 )
                                 : Container(
                                   key: const ValueKey('counter'),
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
+                                    horizontal: 6,
                                   ),
                                   decoration: BoxDecoration(
                                     color: Colors.blue,
@@ -2601,19 +2606,19 @@ class HomeScreenState extends State<HomeScreen> {
                                         child: const Icon(
                                           Icons.remove,
                                           color: Colors.white,
-                                          size: 20,
+                                          size: 16,
                                         ),
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
+                                          horizontal: 6,
                                         ),
                                         child: Text(
                                           '$quantity',
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 16,
+                                            fontSize: 12,
                                           ),
                                         ),
                                       ),
@@ -2640,7 +2645,7 @@ class HomeScreenState extends State<HomeScreen> {
                                         child: const Icon(
                                           Icons.add,
                                           color: Colors.white,
-                                          size: 20,
+                                          size: 16,
                                         ),
                                       ),
                                     ],
@@ -2651,67 +2656,97 @@ class HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
 
-                // --- BAGIAN INFORMASI PRODUK ---
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        product.name,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            _formatPrice(product.price),
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.blue[700],
-                            ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0), // Dikurangi dari 12
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.name,
+                          style: const TextStyle(
+                            fontSize: 12, // Diperkecil dari 13
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w600,
                           ),
-                          const SizedBox(width: 6),
-                          if (product.originalPrice != null)
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2), // Dikurangi dari 4
+                        
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.star_rounded,
+                              color: Colors.amber[700],
+                              size: 14,
+                            ),
+                            const SizedBox(width: 2),
                             Text(
-                              _formatPrice(product.originalPrice!),
+                              '${product.rating}',
                               style: TextStyle(
-                                decoration: TextDecoration.lineThrough,
-                                color: Colors.grey[400],
-                                fontSize: 12,
+                                fontSize: 12, // Diperkecil dari 12
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[700],
                               ),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      if (product.discountPercentage != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red[50],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            '${product.discountPercentage}%',
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
+                            const SizedBox(width: 4),
+                            Text(
+                              '(${product.reviewCount})',
+                              style: TextStyle(
+                                fontSize: 11, // Diperkecil dari 11
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 4), // Dikurangi dari 6
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              _formatPrice(product.price),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Colors.blue[700],
+                              ),
+                            ),
+                            const SizedBox(width: 4), // Dikurangi dari 6
+                            if (product.originalPrice != null)
+                              Text(
+                                _formatPrice(product.originalPrice!),
+                                style: TextStyle(
+                                  decoration: TextDecoration.lineThrough,
+                                  color: Colors.grey[400],
+                                  fontSize: 10, // Diperkecil dari 12
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 2), // Dikurangi dari 4
+                        if (product.discountPercentage != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4, // Dikurangi dari 6
+                              vertical: 1, // Dikurangi dari 2
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red[50],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '${product.discountPercentage}%',
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 9, // Diperkecil dari 11
+                              ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],
