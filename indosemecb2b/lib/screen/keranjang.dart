@@ -1,5 +1,6 @@
 // screen/keranjang.dart - Without Tabs
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/screen/checkout_screen.dart';
 import 'package:indosemecb2b/screen/favorit.dart';
 import 'package:indosemecb2b/screen/lengkapi_alamat_screen.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
@@ -77,7 +78,8 @@ class CartScreenState extends State<CartScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LengkapiAlamatScreen(existingAddress: _savedAlamat),
+        builder:
+            (context) => LengkapiAlamatScreen(existingAddress: _savedAlamat),
       ),
     );
 
@@ -163,196 +165,217 @@ class CartScreenState extends State<CartScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  _buildAlamatPengirimanSection(),
-                  const SizedBox(height: 24),
-
-                  // Delivery Options
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(80),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  selectedDelivery = 'xpress';
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                margin: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: selectedDelivery == 'xpress'
-                                      ? Colors.orange[400]
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(80),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.flash_on,
-                                      color: selectedDelivery == 'xpress'
-                                          ? Colors.white
-                                          : Colors.grey[600],
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Belanja Xpress',
-                                      style: TextStyle(
-                                        color: selectedDelivery == 'xpress'
-                                            ? Colors.white
-                                            : Colors.grey[600],
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  selectedDelivery = 'xtra';
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                margin: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: selectedDelivery == 'xtra'
-                                      ? Colors.green[400]
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(80),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.inventory_2_outlined,
-                                      color: selectedDelivery == 'xtra'
-                                          ? Colors.white
-                                          : Colors.grey[600],
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Belanja Xtra',
-                                      style: TextStyle(
-                                        color: selectedDelivery == 'xtra'
-                                            ? Colors.white
-                                            : Colors.grey[600],
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Promo Banner - Selalu muncul
-                  _buildPromoBanner(),
-                  
-                  const SizedBox(height: 24),
-
-                  // Cart Items atau Empty Cart
-                  _cartItems.isEmpty ? _buildEmptyCart() : _buildCartItems(),
-                ],
-              ),
-            ),
-      bottomNavigationBar: _cartItems.isNotEmpty
-          ? Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                child: Row(
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Total Belanja',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
+                    const SizedBox(height: 16),
+                    _buildAlamatPengirimanSection(),
+                    const SizedBox(height: 24),
+
+                    // Delivery Options
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(80),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedDelivery = 'xpress';
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  margin: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        selectedDelivery == 'xpress'
+                                            ? Colors.orange[400]
+                                            : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(80),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.flash_on,
+                                        color:
+                                            selectedDelivery == 'xpress'
+                                                ? Colors.white
+                                                : Colors.grey[600],
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Belanja Xpress',
+                                        style: TextStyle(
+                                          color:
+                                              selectedDelivery == 'xpress'
+                                                  ? Colors.white
+                                                  : Colors.grey[600],
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Rp${_calculateTotal().toStringAsFixed(0)}',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedDelivery = 'xtra';
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  margin: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        selectedDelivery == 'xtra'
+                                            ? Colors.green[400]
+                                            : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(80),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.inventory_2_outlined,
+                                        color:
+                                            selectedDelivery == 'xtra'
+                                                ? Colors.white
+                                                : Colors.grey[600],
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Belanja Xtra',
+                                        style: TextStyle(
+                                          color:
+                                              selectedDelivery == 'xtra'
+                                                  ? Colors.white
+                                                  : Colors.grey[600],
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // Handle checkout
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[700],
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text(
-                          'Checkout',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Promo Banner - Selalu muncul
+                    _buildPromoBanner(),
+
+                    const SizedBox(height: 24),
+
+                    // Cart Items atau Empty Cart
+                    _cartItems.isEmpty ? _buildEmptyCart() : _buildCartItems(),
                   ],
                 ),
               ),
-            )
-          : null,
+      bottomNavigationBar:
+          _cartItems.isNotEmpty
+              ? Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Total Belanja',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Rp${_calculateTotal().toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => CheckoutScreen(
+                                      alamat: _savedAlamat,
+                                      deliveryOption: selectedDelivery,
+                                    ),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue[700],
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Checkout',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+              : null,
     );
   }
 
@@ -426,11 +449,7 @@ class CartScreenState extends State<CartScreen> {
                 ],
               ),
             ),
-            const Icon(
-              Icons.shopping_basket,
-              color: Colors.white,
-              size: 50,
-            ),
+            const Icon(Icons.shopping_basket, color: Colors.white, size: 50),
           ],
         ),
       ),
@@ -1066,35 +1085,36 @@ class CartScreenState extends State<CartScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Catatan Pengiriman'),
-        content: TextField(
-          controller: catatanController,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Masukkan catatan untuk kurir...',
-            border: OutlineInputBorder(),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Catatan Pengiriman'),
+            content: TextField(
+              controller: catatanController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Masukkan catatan untuk kurir...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Catatan pengiriman disimpan'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                },
+                child: const Text('Simpan'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Catatan pengiriman disimpan'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
-      ),
     );
   }
 
