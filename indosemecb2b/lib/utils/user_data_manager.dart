@@ -4,14 +4,13 @@ import 'dart:convert';
 
 class UserDataManager {
   // Ganti nama key supaya bisa menampung email / no telepon
-  static const String _currentUserKey = 'current_user_login'; // <-- ✅ diganti
+  static const String _currentUserKey = 'current_user_login';
 
   /// Mendapatkan user yang sedang login (email atau no telepon)
   static Future<String?> getCurrentUserLogin() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_currentUserKey);
   }
-  
 
   /// Set user yang sedang login (email atau no telepon)
   static Future<void> setCurrentUser(String loginValue) async {
@@ -144,6 +143,37 @@ class UserDataManager {
       return decoded.map((e) => e as Map<String, dynamic>).toList();
     } catch (e) {
       print('Error getting cart: $e');
+      return [];
+    }
+  }
+
+  // ==================== TRANSAKSI ====================
+  static Future<bool> saveTransactions(
+    String loginValue,
+    List<Map<String, dynamic>> transactions,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = _getUserKey(loginValue, 'transactions');
+      return await prefs.setString(key, jsonEncode(transactions));
+    } catch (e) {
+      print('Error saving transactions: $e');
+      return false;
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getTransactions(
+    String loginValue,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = _getUserKey(loginValue, 'transactions');
+      final jsonString = prefs.getString(key);
+      if (jsonString == null) return [];
+      final List decoded = jsonDecode(jsonString);
+      return decoded.map((e) => e as Map<String, dynamic>).toList();
+    } catch (e) {
+      print('Error getting transactions: $e');
       return [];
     }
   }
