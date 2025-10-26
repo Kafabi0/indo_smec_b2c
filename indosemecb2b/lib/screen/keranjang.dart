@@ -449,7 +449,12 @@ class CartScreenState extends State<CartScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.shopping_basket, color: Colors.white, size: 50),
+            Image.asset(
+            'assets/keranjang.png',
+            height: 55,
+            width: 60,
+            fit: BoxFit.cover,
+          ),
           ],
         ),
       ),
@@ -514,13 +519,26 @@ class CartScreenState extends State<CartScreen> {
                       description:
                           'Khusus Member Baru setiap pembelian produk Bu Krim, Total...',
                       tag: 'Pengguna Baru',
+                      imageUrl:
+                          'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400',
                     ),
                     _buildPromoCard(
                       context,
-                      title: 'New Member Personal Care Wings',
+                      title: 'Personal Care Wings',
                       description:
                           'Khusus Member Baru setiap pembelian produk Wings personal...',
                       tag: 'Pengguna Baru',
+                      imageUrl:
+                          'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400',
+                    ),
+                    _buildPromoCard(
+                      context,
+                      title: 'Diskon Makanan',
+                      description:
+                          'Dapatkan diskon hingga 50% untuk produk makanan pilihan...',
+                      tag: 'Promo Terbatas',
+                      imageUrl:
+                          'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400',
                     ),
                   ],
                 ),
@@ -858,13 +876,26 @@ class CartScreenState extends State<CartScreen> {
                   description:
                       'Khusus Member Baru setiap pembelian produk Bu Krim, Total...',
                   tag: 'Pengguna Baru',
+                  imageUrl:
+                      'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F58869d9f-ec02-47b5-a1f8-34a824cbda7d.png&w=1920&q=75',
                 ),
                 _buildPromoCard(
                   context,
-                  title: 'New Member Personal Care Wings',
+                  title: 'Personal Care Wings',
                   description:
                       'Khusus Member Baru setiap pembelian produk Wings personal...',
                   tag: 'Pengguna Baru',
+                  imageUrl:
+                      'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2Fdecdc6dc-133b-487d-8c0b-5b18af91c170.png&w=1920&q=75',
+                ),
+                _buildPromoCard(
+                  context,
+                  title: 'Diskon Makanan',
+                  description:
+                      'Dapatkan diskon hingga 50% untuk produk makanan pilihan...',
+                  tag: 'Promo Terbatas',
+                  imageUrl:
+                      'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F055aa64a-58a1-4e2e-aa67-7c58c3bdcd5c.png&w=1920&q=75',
                 ),
               ],
             ),
@@ -1123,6 +1154,7 @@ class CartScreenState extends State<CartScreen> {
     required String title,
     required String description,
     required String tag,
+    String? imageUrl,
   }) {
     return Container(
       width: 240,
@@ -1148,8 +1180,50 @@ class CartScreenState extends State<CartScreen> {
                     topRight: Radius.circular(12),
                   ),
                 ),
-                child: Center(
-                  child: Icon(Icons.image, size: 50, color: Colors.grey[400]),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                  child:
+                      imageUrl != null
+                          ? Image.network(
+                            imageUrl,
+                            width: double.infinity,
+                            height: 85,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Center(
+                                child: CircularProgressIndicator(
+                                  value:
+                                      loadingProgress.expectedTotalBytes != null
+                                          ? loadingProgress
+                                                  .cumulativeBytesLoaded /
+                                              loadingProgress
+                                                  .expectedTotalBytes!
+                                          : null,
+                                  strokeWidth: 2,
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(
+                                child: Icon(
+                                  Icons.image,
+                                  size: 50,
+                                  color: Colors.grey[400],
+                                ),
+                              );
+                            },
+                          )
+                          : Center(
+                            child: Icon(
+                              Icons.image,
+                              size: 50,
+                              color: Colors.grey[400],
+                            ),
+                          ),
                 ),
               ),
               Positioned(

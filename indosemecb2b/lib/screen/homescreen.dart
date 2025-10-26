@@ -1455,122 +1455,23 @@ class HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPromoBanner() {
     return Container(
-      height: 160,
+      height: 150,
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.orange[400]!, Colors.deepOrange[600]!],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.orange.withOpacity(0.4),
-            blurRadius: 15,
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 12,
             offset: Offset(0, 6),
           ),
         ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -30,
-            top: -30,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.1),
-              ),
-            ),
+        image: DecorationImage(
+          image: NetworkImage(
+            'https://www.klikindomaret.com/assets-klikidmcore/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F58ce22c0-f2f2-4b09-877e-ff810185fd02.png&w=1080&q=75', // Ganti dengan gambar kamu
           ),
-          Positioned(
-            left: -20,
-            bottom: -20,
-            child: Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.1),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '🔥 PROMO SPESIAL',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Diskon hingga',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.95),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          Text(
-                            '50',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
-                              height: 1,
-                            ),
-                          ),
-                          Text(
-                            '%',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        'Untuk semua produk pilihan',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(Icons.celebration_rounded, color: Colors.white, size: 70),
-              ],
-            ),
-          ),
-        ],
+          fit: BoxFit.cover,
+        ),
       ),
     );
   }
@@ -1982,7 +1883,7 @@ class HomeScreenState extends State<HomeScreen> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 4),
-                                  
+
                                   Row(
                                     children: [
                                       Icon(
@@ -2009,7 +1910,7 @@ class HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ],
                                   ),
-                                  
+
                                   const SizedBox(height: 4),
                                   Text(
                                     product.description,
@@ -2491,7 +2392,9 @@ class HomeScreenState extends State<HomeScreen> {
                                     final userLogin =
                                         await UserDataManager.getCurrentUserLogin();
                                     if (userLogin == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         const SnackBar(
                                           content: Text(
                                             'Silakan login terlebih dahulu',
@@ -2517,7 +2420,9 @@ class HomeScreenState extends State<HomeScreen> {
                                       setState(() {
                                         quantity = 1;
                                       });
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         SnackBar(
                                           content: Row(
                                             children: [
@@ -2534,13 +2439,16 @@ class HomeScreenState extends State<HomeScreen> {
                                             ],
                                           ),
                                           backgroundColor: Colors.green,
-                                          duration:
-                                              const Duration(milliseconds: 1500),
+                                          duration: const Duration(
+                                            milliseconds: 1500,
+                                          ),
                                           behavior: SnackBarBehavior.floating,
                                         ),
                                       );
                                     } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         const SnackBar(
                                           content: Text(
                                             'Gagal menambahkan ke keranjang',
@@ -2673,7 +2581,7 @@ class HomeScreenState extends State<HomeScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2), // Dikurangi dari 4
-                        
+
                         Row(
                           children: [
                             Icon(
@@ -2700,7 +2608,7 @@ class HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
-                        
+
                         const SizedBox(height: 4), // Dikurangi dari 6
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
