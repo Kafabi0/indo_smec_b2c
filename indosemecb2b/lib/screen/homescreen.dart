@@ -162,13 +162,252 @@ class HomeScreenState extends State<HomeScreen> {
     setState(() {
       selectedSubCategory = subCategory;
 
+      // Filter produk berdasarkan subkategori yang dipilih
       if (subCategory == 'Buah') {
         displayedProducts = _productService.getFruitProducts();
       } else if (subCategory == 'Sayuran Organik') {
         displayedProducts = _productService.getVegetableProducts();
+      } else if (subCategory == 'Nasi Box') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('nasi'))
+                .toList();
+      } else if (subCategory == 'Snack & Jajanan') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('snack') ||
+                      p.name.toLowerCase().contains('jajan') ||
+                      p.name.toLowerCase().contains('keripik') ||
+                      p.name.toLowerCase().contains('biskuit'),
+                )
+                .toList();
+      } else if (subCategory == 'Minuman') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('minuman') ||
+                      p.name.toLowerCase().contains('es ') ||
+                      p.name.toLowerCase().contains('jus') ||
+                      p.name.toLowerCase().contains('teh') ||
+                      p.name.toLowerCase().contains('susu'),
+                )
+                .toList();
+      } else if (subCategory == 'Lauk Pauk') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('ayam') ||
+                      p.name.toLowerCase().contains('ikan') ||
+                      p.name.toLowerCase().contains('rendang') ||
+                      p.name.toLowerCase().contains('sate'),
+                )
+                .toList();
+      } else if (subCategory == 'Dessert') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('dessert') ||
+                      p.name.toLowerCase().contains('kue') ||
+                      p.name.toLowerCase().contains('jelly') ||
+                      p.name.toLowerCase().contains('mochi'),
+                )
+                .toList();
+      } else if (subCategory == 'Beras & Tepung') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('beras') ||
+                      p.name.toLowerCase().contains('tepung'),
+                )
+                .toList();
+      } else if (subCategory == 'Bumbu Dapur') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('bumbu') ||
+                      p.name.toLowerCase().contains('bawang') ||
+                      p.name.toLowerCase().contains('cabai') ||
+                      p.name.toLowerCase().contains('garam'),
+                )
+                .toList();
+      } else if (subCategory == 'Minyak Goreng') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('minyak'))
+                .toList();
+      } else if (subCategory == 'Telur & Susu') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('telur') ||
+                      p.name.toLowerCase().contains('susu'),
+                )
+                .toList();
+      } else if (subCategory == 'Mie Instan') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('mie'))
+                .toList();
+      } else if (subCategory == 'Batik') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('batik'))
+                .toList();
+      } else if (subCategory == 'Hijab') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('hijab'))
+                .toList();
+      } else if (subCategory == 'Kaos & Kemeja') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('kaos') ||
+                      p.name.toLowerCase().contains('kemeja'),
+                )
+                .toList();
+      } else if (subCategory == 'Celana') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('celana'))
+                .toList();
+      } else if (subCategory == 'Dress') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('dress'))
+                .toList();
+      } else if (subCategory == 'Jamu Tradisional') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('jamu'))
+                .toList();
+      } else if (subCategory == 'Madu') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('madu'))
+                .toList();
+      } else if (subCategory == 'Minuman Herbal') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('herbal') ||
+                      p.name.toLowerCase().contains('temulawak') ||
+                      p.name.toLowerCase().contains('jahe') ||
+                      p.name.toLowerCase().contains('wedang') ||
+                      p.name.toLowerCase().contains('bandrek'),
+                )
+                .toList();
+      } else if (subCategory == 'Rempah') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('rempah'))
+                .toList();
+      } else if (subCategory == 'Anyaman') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('anyaman') ||
+                      p.name.toLowerCase().contains('rotan'),
+                )
+                .toList();
+      } else if (subCategory == 'Ukiran Kayu') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('ukir') ||
+                      p.name.toLowerCase().contains('kayu'),
+                )
+                .toList();
+      } else if (subCategory == 'Souvenir') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('souvenir') ||
+                      p.name.toLowerCase().contains('gantungan kunci'),
+                )
+                .toList();
+      } else if (subCategory == 'Pupuk') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('pupuk'))
+                .toList();
+      } else if (subCategory == 'Bibit Tanaman') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('bibit'))
+                .toList();
+      } else if (subCategory == 'Alat Tani') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('alat'))
+                .toList();
+      } else if (subCategory == 'Alat Lukis') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('lukis'))
+                .toList();
+      } else if (subCategory == 'Buku Sketsa') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('sketsa'))
+                .toList();
+      } else if (subCategory == 'Clay & Polymer') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('clay'))
+                .toList();
       } else {
+        // Fallback: gunakan method dari service
         displayedProducts = _productService.getProductsBySubCategory(
           subCategory,
+        );
+      }
+
+      // Jika tidak ada produk, tampilkan semua produk dari kategori utama
+      if (displayedProducts.isEmpty) {
+        displayedProducts = _productService.getProductsByCategory(
+          selectedCategory,
         );
       }
     });
@@ -227,7 +466,9 @@ class HomeScreenState extends State<HomeScreen> {
             ] else ...[
               if (subCategories.isNotEmpty) ...[
                 _buildCategoryShoppingSection(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 8),
+                _buildSubCategoryIndicator(), // TAMBAHKAN INI
+                const SizedBox(height: 12),
               ],
 
               if (categoryStores.isNotEmpty) ...[
@@ -237,7 +478,7 @@ class HomeScreenState extends State<HomeScreen> {
 
               _buildLiveShopping(),
               const SizedBox(height: 20),
-              _buildSectionHeader('Nikmati Promoynya!'),
+              _buildSectionHeader('Nikmati Promonya!'),
               _buildProductGrid(displayedProducts.take(6).toList()),
               const SizedBox(height: 20),
               _buildSectionHeader(
@@ -1586,6 +1827,66 @@ class HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSubCategoryIndicator() {
+    if (selectedSubCategory == null) return SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Text(
+            'Menampilkan: ',
+            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.blue[200]!),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  selectedSubCategory!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.blue[700],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      selectedSubCategory = null;
+                      _loadData();
+                    });
+                  },
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 16,
+                    color: Colors.blue[700],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Spacer(),
+          Text(
+            '${displayedProducts.length} produk',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
