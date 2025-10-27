@@ -346,9 +346,16 @@ class CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildDeliveryOptionsSheet() {
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return Padding(
+  return StatefulBuilder(
+    builder: (context, setState) {
+      return Container(
+        decoration: const BoxDecoration(
+          color: Colors.white, // ✅ BACKGROUND PUTIH
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(20), // ✅ Sudut atas membulat
+          ),
+        ),
+        child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -360,7 +367,6 @@ class CartScreenState extends State<CartScreen> {
               ),
               const SizedBox(height: 16),
 
-              // SWITCH ORDER TYPE
               Row(
                 children: [
                   Expanded(
@@ -368,39 +374,19 @@ class CartScreenState extends State<CartScreen> {
                       label: "Pesan Antar",
                       icon: Icons.delivery_dining,
                       isActive: selectedDeliveryType == "antar",
-                      onTap:
-                          () => setState(() => selectedDeliveryType = "antar"),
+                      onTap: () => setState(() => selectedDeliveryType = "antar"),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  // Expanded(
-                  //   child: _optionButton(
-                  //     label: "Ambil di Toko",
-                  //     icon: Icons.store_mall_directory,
-                  //     isActive: selectedDeliveryType == "pickup",
-                  //     onTap:
-                  //         () => setState(() => selectedDeliveryType = "pickup"),
-                  //   ),
-                  // ),
                 ],
               ),
 
               const SizedBox(height: 24),
-
               const Text(
                 "Pilih salah satu tipe pengiriman",
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 12),
 
-              // _radioShipping(
-              //   title: "Instan (Rp7.000)",
-              //   subtitle: "1 jam sampai setelah lunas",
-              //   value: "instan",
-              //   groupValue: selectedShipping,
-              //   onChanged: (v) => setState(() => selectedShipping = v!),
-              // ),
-              const SizedBox(height: 10),
               _radioShipping(
                 title: "Reguler - Pilih Waktu (Rp5.000)",
                 subtitle: selectedRegulerTime ?? "Pilih jadwal pengiriman",
@@ -408,12 +394,11 @@ class CartScreenState extends State<CartScreen> {
                 groupValue: selectedShipping,
                 onChanged: (v) {
                   setState(() => selectedShipping = v!);
-                  _openTimePickerSheet(); // BOTTOM SHEET WAKTU
+                  _openTimePickerSheet();
                 },
               ),
 
               const SizedBox(height: 24),
-
               Row(
                 children: [
                   Expanded(
@@ -430,9 +415,7 @@ class CartScreenState extends State<CartScreen> {
                             selectedRegulerTime == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text(
-                                "Silakan pilih waktu pengiriman dulu",
-                              ),
+                              content: Text("Silakan pilih waktu pengiriman dulu"),
                               backgroundColor: Colors.red,
                             ),
                           );
@@ -443,12 +426,11 @@ class CartScreenState extends State<CartScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder:
-                                (_) => CheckoutScreen(
-                                  alamat: _savedAlamat,
-                                  deliveryOption:
-                                      "$selectedShipping - $selectedRegulerTime",
-                                ),
+                            builder: (_) => CheckoutScreen(
+                              alamat: _savedAlamat,
+                              deliveryOption:
+                                  "$selectedShipping - $selectedRegulerTime",
+                            ),
                           ),
                         );
                       },
@@ -457,59 +439,69 @@ class CartScreenState extends State<CartScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 16),
             ],
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
-  void _openTimePickerSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => _buildTimeSelectorSheet(),
-    );
-  }
+void _openTimePickerSheet() {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (_) => _buildTimeSelectorSheet(),
+  );
+}
 
-  Widget _buildTimeSelectorSheet() {
-    List<String> times = [
-      "14.00 - 14.59",
-      "15.00 - 15.59",
-      "16.00 - 16.59",
-      "17.00 - 17.59",
-      "18.00 - 18.59",
-      "19.00 - 19.59",
-      "20.00 - 20.59",
-    ];
+Widget _buildTimeSelectorSheet() {
+  List<String> allTimes = [
+    "14.00 - 14.59",
+    "15.00 - 15.59",
+    "16.00 - 16.59",
+    "17.00 - 17.59",
+    "18.00 - 18.59",
+    "19.00 - 19.59",
+    "20.00 - 20.59",
+  ];
 
-    DateTime today = DateTime.now();
-    List<DateTime> dateOptions = [
-      today,
-      today.add(const Duration(days: 1)),
-      today.add(const Duration(days: 2)),
-    ];
+  DateTime today = DateTime.now();
+  List<DateTime> dateOptions = [
+    today,
+    today.add(const Duration(days: 1)),
+    today.add(const Duration(days: 2)),
+  ];
 
-    int selectedDayIndex = 0;
-    String? selectedTime;
+  int selectedDayIndex = 0;
+  String? selectedTime;
 
-    return StatefulBuilder(
-      builder: (context, setStateSB) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
+  return StatefulBuilder(
+    builder: (context, setStateSB) {
+      List<String> times = List.from(allTimes);
+
+      // FILTER REAL-TIME → HANYA HARI INI
+      if (selectedDayIndex == 0) {
+        int nowHour = DateTime.now().hour;
+        times = times.where((t) {
+          int h = int.parse(t.substring(0, 2));
+          return h > nowHour; // hanya tampil jam yang belum lewat
+        }).toList();
+      }
+
+      return Padding(
+        padding: const EdgeInsets.all(20),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.7,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Waktu Pengiriman",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+              const Text("Waktu Pengiriman",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
 
               const Text("Hari", style: TextStyle(fontWeight: FontWeight.w600)),
@@ -518,12 +510,11 @@ class CartScreenState extends State<CartScreen> {
               Row(
                 children: List.generate(dateOptions.length, (index) {
                   DateTime d = dateOptions[index];
-                  String labelDay =
-                      index == 0
-                          ? "Hari Ini"
-                          : index == 1
+                  String labelDay = index == 0
+                      ? "Hari Ini"
+                      : index == 1
                           ? "Besok"
-                          : "Rabu";
+                          : "Lusa";
 
                   return Expanded(
                     child: GestureDetector(
@@ -532,16 +523,14 @@ class CartScreenState extends State<CartScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         margin: const EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
-                          color:
-                              selectedDayIndex == index
-                                  ? Colors.blue
-                                  : Colors.white,
+                          color: selectedDayIndex == index
+                              ? Colors.blue
+                              : Colors.white,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color:
-                                selectedDayIndex == index
-                                    ? Colors.blue
-                                    : Colors.grey.shade300,
+                            color: selectedDayIndex == index
+                                ? Colors.blue
+                                : Colors.grey.shade300,
                           ),
                         ),
                         child: Column(
@@ -549,20 +538,18 @@ class CartScreenState extends State<CartScreen> {
                             Text(
                               labelDay,
                               style: TextStyle(
-                                color:
-                                    selectedDayIndex == index
-                                        ? Colors.white
-                                        : Colors.black,
+                                color: selectedDayIndex == index
+                                    ? Colors.white
+                                    : Colors.black,
                                 fontSize: 13,
                               ),
                             ),
                             Text(
                               "${d.day} Okt",
                               style: TextStyle(
-                                color:
-                                    selectedDayIndex == index
-                                        ? Colors.white
-                                        : Colors.black,
+                                color: selectedDayIndex == index
+                                    ? Colors.white
+                                    : Colors.black,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -573,130 +560,146 @@ class CartScreenState extends State<CartScreen> {
                   );
                 }),
               ),
-              const SizedBox(height: 20),
 
-              const Text(
-                "Waktu",
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
+              const SizedBox(height: 20),
+              const Text("Waktu", style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 10),
 
               Expanded(
-                child: ListView.builder(
-                  itemCount: times.length,
-                  itemBuilder: (ctx, i) {
-                    return ListTile(
-                      title: Text(times[i]),
-                      trailing:
-                          selectedTime == times[i]
-                              ? const Icon(Icons.check, color: Colors.blue)
-                              : null,
-                      onTap: () => setStateSB(() => selectedTime = times[i]),
-                    );
-                  },
-                ),
+                child: times.isEmpty
+                    ? const Center(
+                        child: Text("Tidak ada jadwal tersisa untuk hari ini"))
+                    : ListView.builder(
+                        itemCount: times.length,
+                        itemBuilder: (ctx, i) {
+                          return ListTile(
+                            title: Text(times[i]),
+                            trailing: selectedTime == times[i]
+                                ? const Icon(Icons.check, color: Colors.blue)
+                                : null,
+                            onTap: () => setStateSB(
+                              () => selectedTime = times[i],
+                            ),
+                          );
+                        },
+                      ),
               ),
 
               const SizedBox(height: 12),
-
               ElevatedButton(
-                onPressed:
-                    selectedTime == null
-                        ? null
-                        : () {
-                          setState(() {
-                            selectedRegulerTime =
-                                times[times.indexOf(selectedTime!)];
-                          });
-                          Navigator.pop(context);
-                        },
+                onPressed: selectedTime == null
+                    ? null
+                    : () {
+                        setState(() {
+                          selectedRegulerTime = selectedTime!;
+                        });
+                        Navigator.pop(context);
+                      },
                 child: const Text("Pilih Waktu"),
               ),
-
               const SizedBox(height: 16),
             ],
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
-  Widget _optionButton({
-    required String label,
-    required IconData icon,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.blue[700] : Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: isActive ? Colors.blue : Colors.grey[300]!),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: isActive ? Colors.white : Colors.black, size: 18),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: isActive ? Colors.white : Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _radioShipping({
-    required String title,
-    required String subtitle,
-    required String value,
-    required String groupValue,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return InkWell(
-      onTap: () => onChanged(value),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[300]!),
-          borderRadius: BorderRadius.circular(10),
+Widget _radioShipping({
+  required String title,
+  required String subtitle,
+  required String value,
+  required String groupValue,
+  required ValueChanged<String?> onChanged,
+}) {
+  return InkWell(
+    onTap: () => onChanged(value),
+    child: Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: groupValue == value ? Colors.blue : Colors.grey.shade300,
+          width: 1.4,
         ),
-        child: Row(
-          children: [
-            Radio<String>(
-              value: value,
-              groupValue: groupValue,
-              onChanged: onChanged,
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    subtitle,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-    );
-  }
+      child: Row(
+        children: [
+          Radio<String>(
+            value: value,
+            groupValue: groupValue,
+            onChanged: onChanged,
+            activeColor: Colors.blue,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(subtitle,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _optionButton({
+  required String label,
+  required IconData icon,
+  required bool isActive,
+  required VoidCallback onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: isActive ? Colors.blue[700] : Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isActive ? Colors.blue : Colors.grey[300]!,
+          width: 1.4,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: isActive ? Colors.white : Colors.blue),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: isActive ? Colors.white : Colors.blue,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   Widget _buildPromoBanner() {
     return Padding(
