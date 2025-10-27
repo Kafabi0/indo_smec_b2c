@@ -350,13 +350,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       onPressed: () {
                         // Implementasi cari toko
                       },
-                      icon: Icon(
-                        Icons.location_on_outlined,
-                        color: Colors.blue[600],
-                        size: 20,
-                      ),
+                      // icon: Icon(
+                      //   Icons.location_on_outlined,
+                      //   color: Colors.blue[600],
+                      //   size: 20,
+                      // ),
                       label: Text(
-                        'Cari Toko yang Menjual',
+                        'Koperasi Merah Putih',
                         style: TextStyle(
                           color: Colors.blue[600],
                           fontWeight: FontWeight.w500,
@@ -592,13 +592,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 children: [
                   IconButton(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => CartScreen(),
-                        ),
-                      );
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder:
+                      //         (context) => CartScreen(),
+                      //   ),
+                      // );
                     },
                     icon: const Icon(
                       Icons.shopping_cart_outlined,

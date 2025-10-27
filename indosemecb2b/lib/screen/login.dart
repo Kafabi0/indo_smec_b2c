@@ -62,12 +62,12 @@ class _LoginPageState extends State<LoginPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              "Masukkan Nomor Handphone atau Email",
+              "Masukkan Nomor Whatsapp",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
-              "Silakan masukkan nomor handphone atau email untuk masuk",
+              "Silakan masukkan nomor Whatsapp untuk masuk",
               style: TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const SizedBox(height: 20),
@@ -78,8 +78,8 @@ class _LoginPageState extends State<LoginPage> {
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
-                  labelText: "Nomor Handphone atau Email",
-                  hintText: "Masukkan nomor handphone atau email",
+                  labelText: "Nomor Whatsapp",
+                  hintText: "Masukkan nomor Whatsapp",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
                   ),

@@ -257,116 +257,116 @@ class CartScreenState extends State<CartScreen> {
                   children: [
                     const SizedBox(height: 16),
                     _buildAlamatPengirimanSection(),
-                    const SizedBox(height: 24),
+                    // const SizedBox(height: 24),
 
                     // Delivery Options
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(80),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    selectedDelivery = 'xpress';
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
-                                  margin: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        selectedDelivery == 'xpress'
-                                            ? Colors.orange[400]
-                                            : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(80),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.flash_on,
-                                        color:
-                                            selectedDelivery == 'xpress'
-                                                ? Colors.white
-                                                : Colors.grey[600],
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Belanja Xpress',
-                                        style: TextStyle(
-                                          color:
-                                              selectedDelivery == 'xpress'
-                                                  ? Colors.white
-                                                  : Colors.grey[600],
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    selectedDelivery = 'xtra';
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
-                                  margin: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        selectedDelivery == 'xtra'
-                                            ? Colors.green[400]
-                                            : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(80),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.inventory_2_outlined,
-                                        color:
-                                            selectedDelivery == 'xtra'
-                                                ? Colors.white
-                                                : Colors.grey[600],
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Belanja Xtra',
-                                        style: TextStyle(
-                                          color:
-                                              selectedDelivery == 'xtra'
-                                                  ? Colors.white
-                                                  : Colors.grey[600],
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    // Padding(
+                    //   padding: const EdgeInsets.symmetric(horizontal: 16),
+                    //   child: Container(
+                    //     decoration: BoxDecoration(
+                    //       color: Colors.grey[200],
+                    //       borderRadius: BorderRadius.circular(80),
+                    //     ),
+                    //     child: Row(
+                    //       children: [
+                    //         Expanded(
+                    //           child: GestureDetector(
+                    //             onTap: () {
+                    //               setState(() {
+                    //                 selectedDelivery = 'xpress';
+                    //               });
+                    //             },
+                    //             child: Container(
+                    //               padding: const EdgeInsets.symmetric(
+                    //                 vertical: 12,
+                    //               ),
+                    //               margin: const EdgeInsets.all(8),
+                    //               decoration: BoxDecoration(
+                    //                 color:
+                    //                     selectedDelivery == 'xpress'
+                    //                         ? Colors.orange[400]
+                    //                         : Colors.transparent,
+                    //                 borderRadius: BorderRadius.circular(80),
+                    //               ),
+                    //               child: Row(
+                    //                 mainAxisAlignment: MainAxisAlignment.center,
+                    //                 children: [
+                    //                   Icon(
+                    //                     Icons.flash_on,
+                    //                     color:
+                    //                         selectedDelivery == 'xpress'
+                    //                             ? Colors.white
+                    //                             : Colors.grey[600],
+                    //                     size: 20,
+                    //                   ),
+                    //                   const SizedBox(width: 6),
+                    //                   Text(
+                    //                     'Belanja Xpress',
+                    //                     style: TextStyle(
+                    //                       color:
+                    //                           selectedDelivery == 'xpress'
+                    //                               ? Colors.white
+                    //                               : Colors.grey[600],
+                    //                       fontSize: 14,
+                    //                       fontWeight: FontWeight.bold,
+                    //                     ),
+                    //                   ),
+                    //                 ],
+                    //               ),
+                    //             ),
+                    //           ),
+                    //         ),
+                    //         Expanded(
+                    //           child: GestureDetector(
+                    //             onTap: () {
+                    //               setState(() {
+                    //                 selectedDelivery = 'xtra';
+                    //               });
+                    //             },
+                    //             child: Container(
+                    //               padding: const EdgeInsets.symmetric(
+                    //                 vertical: 12,
+                    //               ),
+                    //               margin: const EdgeInsets.all(8),
+                    //               decoration: BoxDecoration(
+                    //                 color:
+                    //                     selectedDelivery == 'xtra'
+                    //                         ? Colors.green[400]
+                    //                         : Colors.transparent,
+                    //                 borderRadius: BorderRadius.circular(80),
+                    //               ),
+                    //               child: Row(
+                    //                 mainAxisAlignment: MainAxisAlignment.center,
+                    //                 children: [
+                    //                   Icon(
+                    //                     Icons.inventory_2_outlined,
+                    //                     color:
+                    //                         selectedDelivery == 'xtra'
+                    //                             ? Colors.white
+                    //                             : Colors.grey[600],
+                    //                     size: 20,
+                    //                   ),
+                    //                   const SizedBox(width: 6),
+                    //                   Text(
+                    //                     'Belanja Xtra',
+                    //                     style: TextStyle(
+                    //                       color:
+                    //                           selectedDelivery == 'xtra'
+                    //                               ? Colors.white
+                    //                               : Colors.grey[600],
+                    //                       fontSize: 14,
+                    //                       fontWeight: FontWeight.bold,
+                    //                     ),
+                    //                   ),
+                    //                 ],
+                    //               ),
+                    //             ),
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ),
 
                     const SizedBox(height: 24),
 

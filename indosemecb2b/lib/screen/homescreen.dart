@@ -471,13 +471,13 @@ class HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 12),
               ],
 
-              if (categoryStores.isNotEmpty) ...[
-                _buildStoreList(),
-                const SizedBox(height: 20),
-              ],
+              // if (categoryStores.isNotEmpty) ...[
+              //   _buildStoreList(),
+              //   const SizedBox(height: 20),
+              // ],
 
-              _buildLiveShopping(),
-              const SizedBox(height: 20),
+              // _buildLiveShopping(),
+              // const SizedBox(height: 20),
               _buildSectionHeader('Nikmati Promonya!'),
               _buildProductGrid(displayedProducts.take(6).toList()),
               const SizedBox(height: 20),
@@ -1709,7 +1709,7 @@ class HomeScreenState extends State<HomeScreen> {
         ],
         image: DecorationImage(
           image: NetworkImage(
-            'https://www.klikindomaret.com/assets-klikidmcore/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F58ce22c0-f2f2-4b09-877e-ff810185fd02.png&w=1080&q=75', // Ganti dengan gambar kamu
+            'https://www.klikindomaret.com/assets-klikidmcore/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F2e8dd8a3-cdd5-4123-9805-5b3d7d49c57b.png&w=1080&q=75', // Ganti dengan gambar kamu
           ),
           fit: BoxFit.cover,
         ),
@@ -1890,205 +1890,205 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStoreList() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'UMKM ${selectedCategory} Terdekat',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (flagshipStore != null) ...[
-            _buildStoreCard(flagshipStore!, isFlagship: true),
-            const SizedBox(height: 12),
-          ],
-          ...categoryStores
-              .where((s) => !s.isFlagship)
-              .take(3)
-              .map(
-                (store) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _buildStoreCard(store),
-                ),
-              )
-              .toList(),
-        ],
-      ),
-    );
-  }
+  // Widget _buildStoreList() {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 16),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(
+  //           'UMKM ${selectedCategory} Terdekat',
+  //           style: TextStyle(
+  //             fontSize: 16,
+  //             fontWeight: FontWeight.bold,
+  //             color: Colors.black87,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 12),
+  //         if (flagshipStore != null) ...[
+  //           _buildStoreCard(flagshipStore!, isFlagship: true),
+  //           const SizedBox(height: 12),
+  //         ],
+  //         ...categoryStores
+  //             .where((s) => !s.isFlagship)
+  //             .take(3)
+  //             .map(
+  //               (store) => Padding(
+  //                 padding: const EdgeInsets.only(bottom: 12),
+  //                 child: _buildStoreCard(store),
+  //               ),
+  //             )
+  //             .toList(),
+  //       ],
+  //     ),
+  //   );
+  // }
 
-  Widget _buildStoreCard(Store store, {bool isFlagship = false}) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border:
-            isFlagship ? Border.all(color: Colors.amber[600]!, width: 2) : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: isFlagship ? Colors.amber[50] : Colors.blue[50],
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              isFlagship ? Icons.stars_rounded : Icons.store,
-              color: isFlagship ? Colors.amber[700] : Colors.blue[700],
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    if (isFlagship) ...[
-                      Icon(Icons.verified, color: Colors.amber[700], size: 14),
-                      const SizedBox(width: 4),
-                    ],
-                    Expanded(
-                      child: Text(
-                        store.name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.star_rounded,
-                      color: Colors.amber[700],
-                      size: 14,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${store.rating}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${store.distanceText} • ${store.openHours}',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Icon(Icons.chevron_right, color: Colors.grey[400]),
-        ],
-      ),
-    );
-  }
+  // Widget _buildStoreCard(Store store, {bool isFlagship = false}) {
+  //   return Container(
+  //     padding: EdgeInsets.all(16),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(12),
+  //       border:
+  //           isFlagship ? Border.all(color: Colors.amber[600]!, width: 2) : null,
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black.withOpacity(0.06),
+  //           blurRadius: 10,
+  //           offset: Offset(0, 3),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Row(
+  //       children: [
+  //         Container(
+  //           width: 50,
+  //           height: 50,
+  //           decoration: BoxDecoration(
+  //             color: isFlagship ? Colors.amber[50] : Colors.blue[50],
+  //             borderRadius: BorderRadius.circular(10),
+  //           ),
+  //           child: Icon(
+  //             isFlagship ? Icons.stars_rounded : Icons.store,
+  //             color: isFlagship ? Colors.amber[700] : Colors.blue[700],
+  //             size: 28,
+  //           ),
+  //         ),
+  //         const SizedBox(width: 12),
+  //         Expanded(
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               Row(
+  //                 children: [
+  //                   if (isFlagship) ...[
+  //                     Icon(Icons.verified, color: Colors.amber[700], size: 14),
+  //                     const SizedBox(width: 4),
+  //                   ],
+  //                   Expanded(
+  //                     child: Text(
+  //                       store.name,
+  //                       style: TextStyle(
+  //                         fontWeight: FontWeight.bold,
+  //                         fontSize: 14,
+  //                       ),
+  //                       maxLines: 1,
+  //                       overflow: TextOverflow.ellipsis,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //               const SizedBox(height: 4),
+  //               Row(
+  //                 children: [
+  //                   Icon(
+  //                     Icons.star_rounded,
+  //                     color: Colors.amber[700],
+  //                     size: 14,
+  //                   ),
+  //                   const SizedBox(width: 4),
+  //                   Text(
+  //                     '${store.rating}',
+  //                     style: TextStyle(
+  //                       fontSize: 12,
+  //                       fontWeight: FontWeight.w600,
+  //                       color: Colors.grey[700],
+  //                     ),
+  //                   ),
+  //                   const SizedBox(width: 8),
+  //                   Text(
+  //                     '${store.distanceText} • ${store.openHours}',
+  //                     style: TextStyle(color: Colors.grey[600], fontSize: 12),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //         Icon(Icons.chevron_right, color: Colors.grey[400]),
+  //       ],
+  //     ),
+  //   );
+  // }
 
-  Widget _buildLiveShopping() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Live Shopping',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _buildLiveShoppingCard('10.00 - 11.00 WIB')),
-              const SizedBox(width: 12),
-              Expanded(child: _buildLiveShoppingCard('18.00 - 19.00 WIB')),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildLiveShopping() {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 16),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(
+  //           'Live Shopping',
+  //           style: TextStyle(
+  //             fontSize: 16,
+  //             fontWeight: FontWeight.bold,
+  //             color: Colors.black87,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 12),
+  //         Row(
+  //           children: [
+  //             Expanded(child: _buildLiveShoppingCard('10.00 - 11.00 WIB')),
+  //             const SizedBox(width: 12),
+  //             Expanded(child: _buildLiveShoppingCard('18.00 - 19.00 WIB')),
+  //           ],
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
-  Widget _buildLiveShoppingCard(String time) {
-    return Container(
-      height: 180,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.purple[700]!, Colors.purple[900]!],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.purple.withOpacity(0.3),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(Icons.live_tv, color: Colors.purple[700], size: 40),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            time,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Segera Live',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildLiveShoppingCard(String time) {
+  //   return Container(
+  //     height: 180,
+  //     decoration: BoxDecoration(
+  //       gradient: LinearGradient(
+  //         colors: [Colors.purple[700]!, Colors.purple[900]!],
+  //         begin: Alignment.topLeft,
+  //         end: Alignment.bottomRight,
+  //       ),
+  //       borderRadius: BorderRadius.circular(12),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.purple.withOpacity(0.3),
+  //           blurRadius: 10,
+  //           offset: Offset(0, 4),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Column(
+  //       mainAxisAlignment: MainAxisAlignment.center,
+  //       children: [
+  //         Container(
+  //           padding: EdgeInsets.all(12),
+  //           decoration: BoxDecoration(
+  //             color: Colors.white,
+  //             borderRadius: BorderRadius.circular(8),
+  //           ),
+  //           child: Icon(Icons.live_tv, color: Colors.purple[700], size: 40),
+  //         ),
+  //         const SizedBox(height: 12),
+  //         Text(
+  //           time,
+  //           style: TextStyle(
+  //             color: Colors.white,
+  //             fontSize: 14,
+  //             fontWeight: FontWeight.bold,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 4),
+  //         Text(
+  //           'Segera Live',
+  //           style: TextStyle(
+  //             color: Colors.white.withOpacity(0.8),
+  //             fontSize: 12,
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildRecommendationList(List<Product> products) {
     return Padding(
