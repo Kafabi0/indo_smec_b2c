@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inisialisasi locale Indonesia
+  await initializeDateFormatting('id_ID', null);
+
   runApp(const MyApp());
 }
 

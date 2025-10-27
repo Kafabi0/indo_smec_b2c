@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/models/tracking.dart';
+import 'package:indosemecb2b/screen/lacak.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:indosemecb2b/models/transaction.dart';
@@ -393,261 +395,174 @@ class _TransaksiScreenState extends State<TransaksiScreen>
   Widget _buildTransactionCard(Transaction transaction) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[300]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Grocery',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      _getDeliveryIcon(transaction.deliveryOption),
-                      size: 20,
-                      color: _getDeliveryColor(transaction.deliveryOption),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      transaction.deliveryOption == 'xpress'
-                          ? 'Belanja Xpress'
-                          : 'Belanja Xtra',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(transaction.status).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    transaction.status,
-                    style: TextStyle(
-                      color: _getStatusColor(transaction.status),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(transaction.status).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  transaction.status,
+                  style: TextStyle(
+                    color: _getStatusColor(transaction.status),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
 
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 6),
+          Text(
+            _formatDate(transaction.date),
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+
+          const SizedBox(height: 14),
+
+          Text(
+            transaction.deliveryOption == 'xpress'
+                ? 'Belanja Xpress'
+                : 'Belanja Xtra',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'No. Transaksi - ${transaction.id}',
+            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+          ),
+
+          const SizedBox(height: 14),
+
+          ...transaction.items.take(1).map((item) {
+            return Row(
               children: [
-                // Transaction ID & Date
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      transaction.id,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      _formatDate(transaction.date),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-                const Divider(height: 1),
-                const SizedBox(height: 12),
-
-                // Products List
-                ...transaction.items.take(2).map((item) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            item.imageUrl ?? '',
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                width: 50,
-                                height: 50,
-                                color: Colors.grey[200],
-                                child: Icon(
-                                  Icons.image,
-                                  color: Colors.grey[400],
-                                  size: 24,
-                                ),
-                              );
-                            },
-                          ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    item.imageUrl ?? '',
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                    errorBuilder:
+                        (_, __, ___) => Container(
+                          width: 50,
+                          height: 50,
+                          color: Colors.grey[200],
+                          child: Icon(Icons.image, color: Colors.grey[400]),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'x${item.quantity}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          formatRupiah(item.totalPrice),
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-
-                // Show more indicator
-                if (transaction.items.length > 2)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      '+${transaction.items.length - 2} produk lainnya',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.blue[700],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
                   ),
-
-                const SizedBox(height: 12),
-                const Divider(height: 1),
-                const SizedBox(height: 12),
-
-                // Total
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Total Belanja',
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                    ),
-                    Text(
-                      formatRupiah(transaction.totalPrice),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ],
                 ),
-
-                const SizedBox(height: 12),
-
-                // Action Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          _showTransactionDetail(transaction);
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.blue[700]!),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                        child: Text(
-                          'Lihat Detail',
-                          style: TextStyle(
-                            color: Colors.blue[700],
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => MainNavigation()),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[700],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                        child: const Text(
-                          'Belanja Lagi',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'x${item.quantity}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
+            );
+          }),
+
+          if (transaction.items.length > 1)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                '+${transaction.items.length - 1} produk lainnya',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.blue[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
+
+          const SizedBox(height: 14),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              OutlinedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => TrackingScreen(
+                            trackingData: OrderTrackingModel(
+                              courierName: "Tryan Gumilar",
+                              courierId: "D 4563 ADP",
+                              statusMessage:
+                                  "Delivery Man akan segera mengambil pesanan",
+                              statusDesc: "Delivery Man sedang menuju ke toko",
+                              updatedAt: DateTime.now(),
+                            ),
+                          ),
+                    ),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: Colors.blue[700]!),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                child: Text(
+                  'Lacak',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.blue[700],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Text(
+                'Total ${formatRupiah(transaction.totalPrice)}',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         ],
       ),
