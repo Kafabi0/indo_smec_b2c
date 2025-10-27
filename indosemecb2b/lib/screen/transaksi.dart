@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/models/tracking.dart';
+import 'package:indosemecb2b/screen/detail_transaksi.dart';
 import 'package:indosemecb2b/screen/lacak.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
@@ -399,7 +400,18 @@ class _TransaksiScreenState extends State<TransaksiScreen>
   }
 
   Widget _buildTransactionCard(Transaction transaction) {
-    return Container(
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TransactionDetailScreen(
+            transaction: transaction,
+          ),
+        ),
+      );
+    },
+    child:  Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -587,6 +599,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
           ),
         ],
       ),
+    ),
     );
   }
 
