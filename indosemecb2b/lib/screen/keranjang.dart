@@ -1,5 +1,5 @@
-// screen/keranjang.dart - With Checkout Validation
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // ⭐ Tambahkan import ini
 import 'package:indosemecb2b/screen/checkout_screen.dart';
 import 'package:indosemecb2b/screen/favorit.dart';
 import 'package:indosemecb2b/screen/lengkapi_alamat_screen.dart';
@@ -22,6 +22,17 @@ class CartScreenState extends State<CartScreen> {
   String? _currentUserLogin;
   bool _isLoading = true;
   List<CartItem> _cartItems = [];
+
+  // ⭐ Formatter untuk harga Indonesia
+  final NumberFormat _currencyFormatter = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp',
+    decimalDigits: 0,
+  );
+
+  String _formatPrice(double price) {
+    return _currencyFormatter.format(price);
+  }
 
   @override
   void initState() {
@@ -108,15 +119,12 @@ class CartScreenState extends State<CartScreen> {
     }
   }
 
-  // ⭐ VALIDASI CHECKOUT - Cek apakah alamat sudah diisi
   void _handleCheckout() {
-    // Validasi: Pastikan alamat sudah terisi
     if (_savedAlamat == null) {
       _showAlamatKosongDialog();
       return;
     }
 
-    // Validasi: Pastikan user sudah login
     if (_currentUserLogin == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -127,7 +135,6 @@ class CartScreenState extends State<CartScreen> {
       return;
     }
 
-    // Jika semua validasi terpenuhi, lanjut ke checkout
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -140,7 +147,6 @@ class CartScreenState extends State<CartScreen> {
     );
   }
 
-  // ⭐ Dialog peringatan jika alamat belum diisi
   void _showAlamatKosongDialog() {
     showDialog(
       context: context,
@@ -258,15 +264,9 @@ class CartScreenState extends State<CartScreen> {
                   children: [
                     const SizedBox(height: 16),
                     _buildAlamatPengirimanSection(),
-
                     const SizedBox(height: 24),
-
-                    // Promo Banner - Selalu muncul
                     _buildPromoBanner(),
-
                     const SizedBox(height: 24),
-
-                    // Cart Items atau Empty Cart
                     _cartItems.isEmpty ? _buildEmptyCart() : _buildCartItems(),
                   ],
                 ),
@@ -302,7 +302,7 @@ class CartScreenState extends State<CartScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Rp${_calculateTotal().toStringAsFixed(0)}',
+                              _formatPrice(_calculateTotal()), // ⭐ Format harga
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -315,7 +315,7 @@ class CartScreenState extends State<CartScreen> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: _handleCheckout, // ⭐ Pakai fungsi validasi
+                          onPressed: _handleCheckout,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue[700],
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -390,7 +390,7 @@ class CartScreenState extends State<CartScreen> {
                           ),
                         ),
                         const Text(
-                          'Rp7.900',
+                          'Rp7.900', // ⭐ Bisa diganti _formatPrice(7900)
                           style: TextStyle(
                             color: Colors.black,
                             fontSize: 8,
@@ -427,7 +427,6 @@ class CartScreenState extends State<CartScreen> {
   Widget _buildCartItems() {
     return Column(
       children: [
-        // List Cart Items
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -439,7 +438,6 @@ class CartScreenState extends State<CartScreen> {
             return _buildCartItemCard(item);
           },
         ),
-
         const SizedBox(height: 24),
 
         // Promo Fair Section
@@ -524,7 +522,6 @@ class CartScreenState extends State<CartScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Product Image
           Container(
             width: 80,
             height: 80,
@@ -553,10 +550,7 @@ class CartScreenState extends State<CartScreen> {
               ),
             ),
           ),
-
           const SizedBox(width: 12),
-
-          // Product Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -572,12 +566,10 @@ class CartScreenState extends State<CartScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 8),
-
-                // Price and Discount
                 Row(
                   children: [
                     Text(
-                      'Rp${item.price.toStringAsFixed(0)}',
+                      _formatPrice(item.price), // ⭐ Format harga
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -587,7 +579,7 @@ class CartScreenState extends State<CartScreen> {
                     const SizedBox(width: 6),
                     if (item.originalPrice != null)
                       Text(
-                        'Rp${item.originalPrice!.toStringAsFixed(0)}',
+                        _formatPrice(item.originalPrice!), // ⭐ Format harga
                         style: TextStyle(
                           fontSize: 12,
                           decoration: TextDecoration.lineThrough,
@@ -596,14 +588,10 @@ class CartScreenState extends State<CartScreen> {
                       ),
                   ],
                 ),
-
                 const SizedBox(height: 8),
-
-                // Quantity Controls
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Discount Badge
                     if (item.discountPercentage != null)
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -623,13 +611,9 @@ class CartScreenState extends State<CartScreen> {
                           ),
                         ),
                       ),
-
                     const Spacer(),
-
-                    // Quantity Control Buttons
                     Row(
                       children: [
-                        // Delete Button
                         GestureDetector(
                           onTap: () => _removeItem(item.productId),
                           child: Container(
@@ -645,10 +629,7 @@ class CartScreenState extends State<CartScreen> {
                             ),
                           ),
                         ),
-
                         const SizedBox(width: 8),
-
-                        // Minus Button
                         GestureDetector(
                           onTap: () {
                             if (item.quantity > 1) {
@@ -672,10 +653,7 @@ class CartScreenState extends State<CartScreen> {
                             ),
                           ),
                         ),
-
                         const SizedBox(width: 12),
-
-                        // Quantity
                         Text(
                           '${item.quantity}',
                           style: const TextStyle(
@@ -684,10 +662,7 @@ class CartScreenState extends State<CartScreen> {
                             color: Colors.black,
                           ),
                         ),
-
                         const SizedBox(width: 12),
-
-                        // Plus Button
                         GestureDetector(
                           onTap: () {
                             _updateQuantity(item.productId, item.quantity + 1);

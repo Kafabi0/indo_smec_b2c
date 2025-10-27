@@ -4,6 +4,7 @@ import 'package:indosemecb2b/screen/transaksi.dart';
 import 'package:indosemecb2b/utils/cart_manager.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:indosemecb2b/models/cart_item.dart';
+import 'package:intl/intl.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final Map<String, dynamic>? alamat;
@@ -19,6 +20,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   List<CartItem> _cartItems = [];
   bool _isLoading = true;
   bool _isProcessing = false;
+  String formatRupiah(double value) {
+    final format = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp.',
+      decimalDigits: 0,
+    );
+    return format.format(value);
+  }
 
   @override
   void initState() {
@@ -358,7 +367,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     ),
                                   ),
                                   Text(
-                                    "Rp${item.totalPrice.toStringAsFixed(0)}",
+                                    formatRupiah(item.totalPrice),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -402,7 +411,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                   Text(
-                    "Rp${getTotal().toStringAsFixed(0)}",
+                    formatRupiah(getTotal()),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
