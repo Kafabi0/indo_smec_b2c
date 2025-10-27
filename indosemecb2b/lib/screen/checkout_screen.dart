@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
+import 'package:indosemecb2b/screen/metode_pembayaran.dart';
 import 'package:indosemecb2b/screen/transaksi.dart';
 import 'package:indosemecb2b/utils/cart_manager.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
@@ -421,7 +422,50 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _isProcessing ? null : _processCheckout,
+                onPressed: () async {
+                  // Hitung total
+                  double total = getTotal();
+
+                  // Debug: cek nilai total
+                  print("DEBUG - Total pembayaran: $total");
+                  print("DEBUG - Cart items: ${_cartItems.length}");
+
+                  // Validasi keranjang tidak kosong
+                  if (_cartItems.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Keranjang masih kosong!'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                    return;
+                  }
+
+                  // Validasi total valid
+                  if (total <= 0 || total.isNaN || total.isInfinite) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Total pembayaran tidak valid: $total'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final selectedPayment = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => PaymentMethodScreen(totalPembayaran: total),
+                    ),
+                  );
+
+                  if (selectedPayment != null) {
+                    print("✅ Metode dipilih: $selectedPayment");
+                    _processCheckout();
+                  }
+                },
+
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue[700],
                   minimumSize: Size(double.infinity, 48),

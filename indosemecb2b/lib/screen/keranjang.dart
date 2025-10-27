@@ -24,6 +24,9 @@ class CartScreenState extends State<CartScreen> {
   List<CartItem> _cartItems = [];
   String? _catatanPengiriman;
 
+  String selectedDeliveryType = "antar"; // antar / pickup
+  String selectedShipping = "reguler"; // instan / reguler
+  String? selectedRegulerTime;
 
   // ⭐ Formatter untuk harga Indonesia
   final NumberFormat _currencyFormatter = NumberFormat.currency(
@@ -137,15 +140,13 @@ class CartScreenState extends State<CartScreen> {
       return;
     }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (_) => CheckoutScreen(
-              alamat: _savedAlamat,
-              deliveryOption: selectedDelivery,
-            ),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      builder: (_) => _buildDeliveryOptionsSheet(),
     );
   }
 
@@ -341,6 +342,359 @@ class CartScreenState extends State<CartScreen> {
                 ),
               )
               : null,
+    );
+  }
+
+  Widget _buildDeliveryOptionsSheet() {
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Tipe Pemesanan",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+
+              // SWITCH ORDER TYPE
+              Row(
+                children: [
+                  Expanded(
+                    child: _optionButton(
+                      label: "Pesan Antar",
+                      icon: Icons.delivery_dining,
+                      isActive: selectedDeliveryType == "antar",
+                      onTap:
+                          () => setState(() => selectedDeliveryType = "antar"),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Expanded(
+                  //   child: _optionButton(
+                  //     label: "Ambil di Toko",
+                  //     icon: Icons.store_mall_directory,
+                  //     isActive: selectedDeliveryType == "pickup",
+                  //     onTap:
+                  //         () => setState(() => selectedDeliveryType = "pickup"),
+                  //   ),
+                  // ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              const Text(
+                "Pilih salah satu tipe pengiriman",
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+
+              // _radioShipping(
+              //   title: "Instan (Rp7.000)",
+              //   subtitle: "1 jam sampai setelah lunas",
+              //   value: "instan",
+              //   groupValue: selectedShipping,
+              //   onChanged: (v) => setState(() => selectedShipping = v!),
+              // ),
+              const SizedBox(height: 10),
+              _radioShipping(
+                title: "Reguler - Pilih Waktu (Rp5.000)",
+                subtitle: selectedRegulerTime ?? "Pilih jadwal pengiriman",
+                value: "reguler",
+                groupValue: selectedShipping,
+                onChanged: (v) {
+                  setState(() => selectedShipping = v!);
+                  _openTimePickerSheet(); // BOTTOM SHEET WAKTU
+                },
+              ),
+
+              const SizedBox(height: 24),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Batal"),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (selectedShipping == "reguler" &&
+                            selectedRegulerTime == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                "Silakan pilih waktu pengiriman dulu",
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => CheckoutScreen(
+                                  alamat: _savedAlamat,
+                                  deliveryOption:
+                                      "$selectedShipping - $selectedRegulerTime",
+                                ),
+                          ),
+                        );
+                      },
+                      child: const Text("Konfirmasi"),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _openTimePickerSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _buildTimeSelectorSheet(),
+    );
+  }
+
+  Widget _buildTimeSelectorSheet() {
+    List<String> times = [
+      "14.00 - 14.59",
+      "15.00 - 15.59",
+      "16.00 - 16.59",
+      "17.00 - 17.59",
+      "18.00 - 18.59",
+      "19.00 - 19.59",
+      "20.00 - 20.59",
+    ];
+
+    DateTime today = DateTime.now();
+    List<DateTime> dateOptions = [
+      today,
+      today.add(const Duration(days: 1)),
+      today.add(const Duration(days: 2)),
+    ];
+
+    int selectedDayIndex = 0;
+    String? selectedTime;
+
+    return StatefulBuilder(
+      builder: (context, setStateSB) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Waktu Pengiriman",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+
+              const Text("Hari", style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 10),
+
+              Row(
+                children: List.generate(dateOptions.length, (index) {
+                  DateTime d = dateOptions[index];
+                  String labelDay =
+                      index == 0
+                          ? "Hari Ini"
+                          : index == 1
+                          ? "Besok"
+                          : "Rabu";
+
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => setStateSB(() => selectedDayIndex = index),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color:
+                              selectedDayIndex == index
+                                  ? Colors.blue
+                                  : Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color:
+                                selectedDayIndex == index
+                                    ? Colors.blue
+                                    : Colors.grey.shade300,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              labelDay,
+                              style: TextStyle(
+                                color:
+                                    selectedDayIndex == index
+                                        ? Colors.white
+                                        : Colors.black,
+                                fontSize: 13,
+                              ),
+                            ),
+                            Text(
+                              "${d.day} Okt",
+                              style: TextStyle(
+                                color:
+                                    selectedDayIndex == index
+                                        ? Colors.white
+                                        : Colors.black,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 20),
+
+              const Text(
+                "Waktu",
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 10),
+
+              Expanded(
+                child: ListView.builder(
+                  itemCount: times.length,
+                  itemBuilder: (ctx, i) {
+                    return ListTile(
+                      title: Text(times[i]),
+                      trailing:
+                          selectedTime == times[i]
+                              ? const Icon(Icons.check, color: Colors.blue)
+                              : null,
+                      onTap: () => setStateSB(() => selectedTime = times[i]),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              ElevatedButton(
+                onPressed:
+                    selectedTime == null
+                        ? null
+                        : () {
+                          setState(() {
+                            selectedRegulerTime =
+                                times[times.indexOf(selectedTime!)];
+                          });
+                          Navigator.pop(context);
+                        },
+                child: const Text("Pilih Waktu"),
+              ),
+
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _optionButton({
+    required String label,
+    required IconData icon,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.blue[700] : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: isActive ? Colors.blue : Colors.grey[300]!),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isActive ? Colors.white : Colors.black, size: 18),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive ? Colors.white : Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _radioShipping({
+    required String title,
+    required String subtitle,
+    required String value,
+    required String groupValue,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return InkWell(
+      onTap: () => onChanged(value),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Radio<String>(
+              value: value,
+              groupValue: groupValue,
+              onChanged: onChanged,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -960,302 +1314,305 @@ class CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildSudahAdaAlamat() {
-  return Column(
-    children: [
-      Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.blue[50],
-          borderRadius: BorderRadius.circular(12),
+    return Column(
+      children: [
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.location_on, color: Colors.blue[700], size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${_savedAlamat!['label'] ?? 'rumah'}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${_savedAlamat!['nama_penerima'] ?? 'kafabi'} (${_savedAlamat!['nomor_hp'] ?? '084664644412'})',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${_savedAlamat!['provinsi'] ?? 'Jawa Barat'}, ${_savedAlamat!['kota'] ?? 'Kota Bandung'}, ${_savedAlamat!['kecamatan'] ?? 'Antapani'}, ${_savedAlamat!['kelurahan'] ?? 'Antapani Kidul'}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[700],
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.location_on, color: Colors.blue[700], size: 28),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 12),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Colors.grey[300]!,
+              style: BorderStyle.solid,
+              width: 1.5,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: InkWell(
+            onTap: _showCatatanPengirimanDialog,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 children: [
-                  Text(
-                    '${_savedAlamat!['label'] ?? 'rumah'}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
+                  Icon(
+                    _catatanPengiriman == null
+                        ? Icons.add_circle_outline
+                        : Icons.edit_note,
+                    color: Colors.blue[700],
+                    size: 24,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${_savedAlamat!['nama_penerima'] ?? 'kafabi'} (${_savedAlamat!['nomor_hp'] ?? '084664644412'})',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${_savedAlamat!['provinsi'] ?? 'Jawa Barat'}, ${_savedAlamat!['kota'] ?? 'Kota Bandung'}, ${_savedAlamat!['kecamatan'] ?? 'Antapani'}, ${_savedAlamat!['kelurahan'] ?? 'Antapani Kidul'}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[700],
-                      height: 1.5,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Catatan Pengiriman',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blue[700],
+                          ),
+                        ),
+                        if (_catatanPengiriman != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            _catatanPengiriman!,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[700],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 12),
-      Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Colors.grey[300]!,
-            style: BorderStyle.solid,
-            width: 1.5,
           ),
-          borderRadius: BorderRadius.circular(12),
         ),
-        child: InkWell(
-          onTap: _showCatatanPengirimanDialog,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+      ],
+    );
+  }
+
+  void _showCatatanPengirimanDialog() {
+    final TextEditingController catatanController = TextEditingController(
+      text: _catatanPengiriman ?? '',
+    );
+
+    // Daftar quick action messages
+    final List<String> quickActions = [
+      'Tolong taruh depan pintu',
+      'Taruh di atas meja',
+      'Titip ke resepsionis/satpam',
+      'Tekan bel rumah',
+      'Info kalau sudah sampai',
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  _catatanPengiriman == null
-                      ? Icons.add_circle_outline
-                      : Icons.edit_note,
-                  color: Colors.blue[700],
-                  size: 24,
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
+
+                // Content
+                Padding(
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Catatan Pengiriman',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Kamu bisa berikan catatan pengiriman ke Delivery Man untuk pengiriman pesanan',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Catatan',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.blue[700],
+                          color: Colors.grey[800],
                         ),
                       ),
-                      if (_catatanPengiriman != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          _catatanPengiriman!,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[700],
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: catatanController,
+                        maxLines: 4,
+                        maxLength: 200,
+                        style: const TextStyle(fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText: 'Contoh: Tekan bel rumah ya pak!',
+                          hintStyle: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 14,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: Colors.blue[400]!,
+                              width: 1.5,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.all(12),
                         ),
-                      ],
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children:
+                            quickActions.map((action) {
+                              return InkWell(
+                                onTap: () {
+                                  catatanController.text = action;
+                                },
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: Colors.blue[600]!,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    action,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.blue[600],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _catatanPengiriman =
+                                  catatanController.text.isEmpty
+                                      ? null
+                                      : catatanController.text;
+                            });
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Catatan pengiriman disimpan'),
+                                backgroundColor: Colors.green,
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue[600],
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Simpan',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-        ),
-      ),
-    ],
-  );
-}
-
-void _showCatatanPengirimanDialog() {
-  final TextEditingController catatanController = TextEditingController(
-    text: _catatanPengiriman ?? '',
-  );
-
-  // Daftar quick action messages
-  final List<String> quickActions = [
-    'Tolong taruh depan pintu',
-    'Taruh di atas meja',
-    'Titip ke resepsionis/satpam',
-    'Tekan bel rumah',
-    'Info kalau sudah sampai',
-  ];
-
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) => Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle bar
-          Container(
-            margin: const EdgeInsets.only(top: 12, bottom: 8),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Catatan Pengiriman',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Kamu bisa berikan catatan pengiriman ke Delivery Man untuk pengiriman pesanan',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Catatan',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: catatanController,
-                  maxLines: 4,
-                  maxLength: 200,
-                  style: const TextStyle(fontSize: 14),
-                  decoration: InputDecoration(
-                    hintText: 'Contoh: Tekan bel rumah ya pak!',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 14,
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.blue[400]!, width: 1.5),
-                    ),
-                    contentPadding: const EdgeInsets.all(12),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: quickActions.map((action) {
-                    return InkWell(
-                      onTap: () {
-                        catatanController.text = action;
-                      },
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.blue[600]!,
-                            width: 1,
-                          ),
-                        ),
-                        child: Text(
-                          action,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.blue[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _catatanPengiriman = catatanController.text.isEmpty
-                            ? null
-                            : catatanController.text;
-                      });
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Catatan pengiriman disimpan'),
-                          backgroundColor: Colors.green,
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[600],
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Simpan',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildPromoCard(
     BuildContext context, {
