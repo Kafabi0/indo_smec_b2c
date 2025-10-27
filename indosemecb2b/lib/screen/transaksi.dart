@@ -3,6 +3,7 @@ import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:indosemecb2b/models/transaction.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart';
+import 'package:intl/intl.dart';
 
 class TransaksiScreen extends StatefulWidget {
   const TransaksiScreen({Key? key}) : super(key: key);
@@ -11,10 +12,19 @@ class TransaksiScreen extends StatefulWidget {
   State<TransaksiScreen> createState() => _TransaksiScreenState();
 }
 
-class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingObserver {
+class _TransaksiScreenState extends State<TransaksiScreen>
+    with WidgetsBindingObserver {
   String selectedStatus = 'Semua Status';
   String selectedTanggal = 'Semua Tanggal';
   String selectedKategori = 'Semua';
+  String formatRupiah(double number) {
+    final formatCurrency = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp.',
+      decimalDigits: 0,
+    );
+    return formatCurrency.format(number);
+  }
 
   bool _isLoading = true;
   List<Transaction> _transactions = [];
@@ -62,9 +72,9 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
 
   Future<void> _loadTransactions() async {
     if (!mounted) return;
-    
+
     print('📥 Loading transactions...');
-    
+
     setState(() {
       _isLoading = true;
     });
@@ -83,33 +93,50 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
     );
 
     // Debug: Cek jumlah transaksi
-    print('🔍 DEBUG TRANSAKSI - Total transactions loaded: ${transactions.length}');
+    print(
+      '🔍 DEBUG TRANSAKSI - Total transactions loaded: ${transactions.length}',
+    );
     if (transactions.isNotEmpty) {
-      print('🔍 DEBUG TRANSAKSI - Latest transaction ID: ${transactions[0].id}');
-      print('🔍 DEBUG TRANSAKSI - Latest transaction date: ${transactions[0].date}');
+      print(
+        '🔍 DEBUG TRANSAKSI - Latest transaction ID: ${transactions[0].id}',
+      );
+      print(
+        '🔍 DEBUG TRANSAKSI - Latest transaction date: ${transactions[0].date}',
+      );
     }
 
     if (!mounted) return;
-    
+
     setState(() {
       _transactions = transactions;
       _isLoading = false;
     });
-    
+
     print('✅ Transactions loaded successfully');
   }
 
   String _formatDate(DateTime date) {
     final day = date.day.toString().padLeft(2, '0');
     final months = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
     final month = months[date.month];
     final year = date.year;
     final hour = date.hour.toString().padLeft(2, '0');
     final minute = date.minute.toString().padLeft(2, '0');
-    
+
     return '$day $month $year, $hour:$minute';
   }
 
@@ -190,7 +217,11 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
                     Expanded(
                       child: _buildDropdown(
                         selectedTanggal,
-                        ['Semua Tanggal', '7 Hari Terakhir', '30 Hari Terakhir'],
+                        [
+                          'Semua Tanggal',
+                          '7 Hari Terakhir',
+                          '30 Hari Terakhir',
+                        ],
                         (value) {
                           setState(() => selectedTanggal = value!);
                           _loadTransactions();
@@ -205,13 +236,14 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: kategoriList.map((item) {
-                      final isSelected = selectedKategori == item;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: _buildKategoriChip(item, isSelected),
-                      );
-                    }).toList(),
+                    children:
+                        kategoriList.map((item) {
+                          final isSelected = selectedKategori == item;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _buildKategoriChip(item, isSelected),
+                          );
+                        }).toList(),
                   ),
                 ),
 
@@ -277,14 +309,14 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
                 // Content: Loading, Empty, or Transaction List
                 _isLoading
                     ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(40),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
+                      child: Padding(
+                        padding: EdgeInsets.all(40),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
                     : _transactions.isEmpty
-                        ? _buildEmptyState()
-                        : _buildTransactionList(),
+                    ? _buildEmptyState()
+                    : _buildTransactionList(),
               ],
             ),
           ),
@@ -313,10 +345,7 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
           const SizedBox(height: 20),
           const Text(
             'Belum ada transaksi',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           Text(
@@ -329,9 +358,7 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => MainNavigation(),
-                ),
+                MaterialPageRoute(builder: (_) => MainNavigation()),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -339,10 +366,7 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-              padding: const EdgeInsets.symmetric(
-                vertical: 10,
-                horizontal: 22,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 22),
             ),
             child: const Text(
               'Mulai Belanja',
@@ -457,10 +481,7 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
                     ),
                     Text(
                       _formatDate(transaction.date),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -522,7 +543,7 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
                           ),
                         ),
                         Text(
-                          'Rp${item.totalPrice.toStringAsFixed(0)}',
+                          formatRupiah(item.totalPrice),
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -557,13 +578,10 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
                   children: [
                     Text(
                       'Total Belanja',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                     ),
                     Text(
-                      'Rp${transaction.totalPrice.toStringAsFixed(0)}',
+                      formatRupiah(transaction.totalPrice),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -606,9 +624,7 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => MainNavigation(),
-                            ),
+                            MaterialPageRoute(builder: (_) => MainNavigation()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -782,7 +798,7 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Rp${item.price.toStringAsFixed(0)}',
+                                      formatRupiah(item.totalPrice),
                                       style: TextStyle(
                                         fontSize: 13,
                                         color: Colors.grey[600],
@@ -797,7 +813,7 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
                                 ),
                               ),
                               Text(
-                                'Rp${item.totalPrice.toStringAsFixed(0)}',
+                                formatRupiah(item.totalPrice),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
@@ -826,7 +842,7 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
                               ),
                             ),
                             Text(
-                              'Rp${transaction.totalPrice.toStringAsFixed(0)}',
+                              formatRupiah(transaction.totalPrice),
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -853,19 +869,10 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[600],
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -890,12 +897,13 @@ class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingOb
           icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
           style: const TextStyle(fontSize: 13, color: Colors.black),
           onChanged: onChanged,
-          items: options.map((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value, overflow: TextOverflow.ellipsis),
-            );
-          }).toList(),
+          items:
+              options.map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value, overflow: TextOverflow.ellipsis),
+                );
+              }).toList(),
         ),
       ),
     );
