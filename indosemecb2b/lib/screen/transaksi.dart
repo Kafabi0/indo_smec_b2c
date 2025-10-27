@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/models/tracking.dart';
 import 'package:indosemecb2b/screen/lacak.dart';
@@ -93,6 +95,10 @@ class _TransaksiScreenState extends State<TransaksiScreen>
       dateFilter: selectedTanggal,
       category: selectedKategori,
     );
+    final statuses = ['Diproses', 'Selesai',];
+    for (var t in transactions) {
+      t.status = statuses[Random().nextInt(statuses.length)];
+    }
 
     // Debug: Cek jumlah transaksi
     print(
@@ -146,8 +152,8 @@ class _TransaksiScreenState extends State<TransaksiScreen>
     switch (status) {
       case 'Selesai':
         return Colors.green;
-      case 'Dibatalkan':
-        return Colors.red;
+      // case 'Dibatalkan':
+      //   return Colors.red;
       case 'Diproses':
         return Colors.orange;
       default:

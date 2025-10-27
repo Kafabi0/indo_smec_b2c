@@ -2,7 +2,7 @@
 class Transaction {
   final String id;
   final DateTime date;
-  final String status; // 'Selesai', 'Dibatalkan', 'Diproses'
+   String status; // 'Selesai', 'Dibatalkan', 'Diproses'
   final String deliveryOption; // 'xpress' atau 'xtra'
   final Map<String, dynamic>? alamat;
   final List<TransactionItem> items;
