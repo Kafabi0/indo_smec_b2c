@@ -429,8 +429,7 @@ class HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
 
             if (isDefaultLayout) ...[
-              _buildDeliveryOptions(),
-              const SizedBox(height: 16),
+              const SizedBox(height: 4),
 
               if (isLoggedIn) ...[
                 _buildLoyaltyPoints(),
@@ -1234,45 +1233,7 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDeliveryOptions() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            _buildDeliveryOption(
-              isSelected: isXpressSelected,
-              icon: Icons.flash_on_rounded,
-              title: 'Belanja Xpress',
-              subtitle: '1 Jam Sampai',
-              colors: [Colors.orange[400]!, Colors.deepOrange[500]!],
-              onTap: () => setState(() => isXpressSelected = true),
-              isLeft: true,
-            ),
-            _buildDeliveryOption(
-              isSelected: !isXpressSelected,
-              icon: Icons.inventory_2_rounded,
-              title: 'Belanja Xtra',
-              subtitle: 'Banyak & Beragam',
-              colors: [Colors.green[400]!, Colors.green[600]!],
-              onTap: () => setState(() => isXpressSelected = false),
-              isLeft: false,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildDeliveryOption({
     required bool isSelected,
