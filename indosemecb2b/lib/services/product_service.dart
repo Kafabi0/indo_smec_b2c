@@ -789,7 +789,7 @@ class ProductService {
       reviewCount: 145,
       storeName: 'Toko Tani Jaya',
       storeDistance: '2.8 km',
-      imageUrl: 'https://i.pinimg.com/736x/23/c8/d4/23c8d4917eba6bd108d13dcadcab3ccc.jpg'
+      imageUrl: 'https://i.pinimg.com/736x/10/f8/fc/10f8fcf1ecd91bd59d9eaa59f1e3f4f4.jpg'
     ),
     Product(
       id: '28',
