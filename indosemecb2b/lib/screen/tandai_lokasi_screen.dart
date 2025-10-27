@@ -3,7 +3,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:latlong2/latlong.dart';
-import 'tambah_alamat.dart';
 
 class TandaiLokasiScreen extends StatefulWidget {
   const TandaiLokasiScreen({Key? key}) : super(key: key);
@@ -22,14 +21,15 @@ class _TandaiLokasiScreenState extends State<TandaiLokasiScreen> {
   @override
   void initState() {
     super.initState();
+    print('🗺️ TandaiLokasiScreen - initState');
     _getCurrentLocation();
   }
 
   Future<void> _getCurrentLocation() async {
+    print('📍 Getting current location...');
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Pastikan lokasi aktif
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       setState(() {
@@ -46,7 +46,6 @@ class _TandaiLokasiScreenState extends State<TandaiLokasiScreen> {
       return;
     }
 
-    // Minta izin lokasi
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -74,20 +73,20 @@ class _TandaiLokasiScreenState extends State<TandaiLokasiScreen> {
     }
 
     try {
-      // Ambil posisi pengguna
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
       final latLng = LatLng(position.latitude, position.longitude);
+      print('✅ Got location: ${latLng.latitude}, ${latLng.longitude}');
 
-      // Ambil nama alamat
       List<Placemark> placemarks = await placemarkFromCoordinates(
         latLng.latitude,
         latLng.longitude,
       );
 
       Placemark place = placemarks.first;
+      print('🏘️ Placemark: ${place.administrativeArea}, ${place.locality}');
 
       setState(() {
         _currentLatLng = latLng;
@@ -97,13 +96,13 @@ class _TandaiLokasiScreenState extends State<TandaiLokasiScreen> {
         _isLoading = false;
       });
 
-      // Pindahkan kamera setelah map di-render
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _currentLatLng != null) {
           _mapController.move(_currentLatLng!, 16);
         }
       });
     } catch (e) {
+      print('❌ Error getting location: $e');
       setState(() {
         _isLoading = false;
       });
@@ -119,6 +118,7 @@ class _TandaiLokasiScreenState extends State<TandaiLokasiScreen> {
   }
 
   Future<void> _updateLocationOnTap(LatLng point) async {
+    print('📍 Location updated via tap: ${point.latitude}, ${point.longitude}');
     setState(() {
       _currentLatLng = point;
       _currentAddress = 'Memuat alamat...';
@@ -131,6 +131,7 @@ class _TandaiLokasiScreenState extends State<TandaiLokasiScreen> {
       );
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks.first;
+        print('🏘️ New placemark: ${place.administrativeArea}, ${place.locality}');
         setState(() {
           _currentPlacemark = place;
           _currentAddress =
@@ -138,6 +139,7 @@ class _TandaiLokasiScreenState extends State<TandaiLokasiScreen> {
         });
       }
     } catch (e) {
+      print('❌ Error getting placemark: $e');
       setState(() {
         _currentAddress = 'Tidak dapat memuat alamat';
       });
@@ -145,18 +147,22 @@ class _TandaiLokasiScreenState extends State<TandaiLokasiScreen> {
   }
 
   void _pilihLokasiIni() {
+    print('✅ Pilih lokasi button pressed');
     if (_currentLatLng != null && _currentPlacemark != null) {
-      // Kirim data lokasi ke halaman tambah alamat
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TambahAlamatScreen(
-            selectedLocation: _currentLatLng!,
-            placemark: _currentPlacemark!,
-          ),
-        ),
-      );
+      final data = {
+        'location': _currentLatLng!,
+        'placemark': _currentPlacemark!,
+      };
+      
+      print('📦 Returning data to LengkapiAlamatScreen:');
+      print('   Location: ${_currentLatLng!.latitude}, ${_currentLatLng!.longitude}');
+      print('   Placemark: ${_currentPlacemark!.administrativeArea}');
+      
+      // ⭐ PERBAIKAN: Gunakan pop dengan data, bukan pushReplacement
+      Navigator.pop(context, data);
+      print('🔙 Popped with data');
     } else {
+      print('❌ Location or placemark is null');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Silakan pilih lokasi terlebih dahulu'),

@@ -6,9 +6,14 @@ import 'tandai_lokasi_screen.dart';
 class TambahAlamatScreen extends StatefulWidget {
   final LatLng? selectedLocation;
   final Placemark? placemark;
+  final Map<String, dynamic>? existingAddress;
 
-  const TambahAlamatScreen({Key? key, this.selectedLocation, this.placemark})
-      : super(key: key);
+  const TambahAlamatScreen({
+    Key? key,
+    this.selectedLocation,
+    this.placemark,
+    this.existingAddress,
+  }) : super(key: key);
 
   @override
   State<TambahAlamatScreen> createState() => _TambahAlamatScreenState();
@@ -49,33 +54,72 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.selectedLocation != null && widget.placemark != null) {
+    print('🏗️ TambahAlamatScreen - initState');
+
+    if (widget.existingAddress != null) {
+      print('✏️ Edit mode: ${widget.existingAddress!['label']}');
+      _initializeFromExistingAddress();
+    } else if (widget.selectedLocation != null && widget.placemark != null) {
+      print('🗺️ New address from map');
       _initializeLocationData();
+    } else {
+      print('⚠️ No location data provided');
     }
+  }
+
+  void _initializeFromExistingAddress() {
+    final addr = widget.existingAddress!;
+
+    _labelAlamatController.text = addr['label'] ?? '';
+    _alamatLengkapController.text = addr['alamat_lengkap'] ?? '';
+    _namaPenerimaController.text = addr['nama_penerima'] ?? '';
+    _nomorHpController.text = addr['nomor_hp'] ?? '';
+
+    setState(() {
+      if (addr['latitude'] != null && addr['longitude'] != null) {
+        _selectedLocation = LatLng(addr['latitude'], addr['longitude']);
+        _lokasiText =
+            '${addr['latitude'].toStringAsFixed(6)}, ${addr['longitude'].toStringAsFixed(6)}';
+      }
+
+      _provinsi = addr['provinsi'] ?? '-';
+      _kota = addr['kota'] ?? '-';
+      _kecamatan = addr['kecamatan'] ?? '-';
+      _selectedKelurahan = addr['kelurahan'] ?? 'Antapani Kidul';
+      _selectedKodepos = addr['kodepos'] ?? '40291';
+
+      _lokasiDetail = '$_kecamatan, $_kota, $_provinsi';
+
+      if (!_kelurahanList.contains(_selectedKelurahan)) {
+        _kelurahanList.add(_selectedKelurahan);
+      }
+      if (!_kodeposList.contains(_selectedKodepos)) {
+        _kodeposList.add(_selectedKodepos);
+      }
+    });
   }
 
   void _initializeLocationData() {
     final location = widget.selectedLocation!;
     final place = widget.placemark!;
 
+    print('📍 Location: ${location.latitude}, ${location.longitude}');
+    print('🏘️ Placemark: ${place.administrativeArea}, ${place.locality}');
+
     setState(() {
       _selectedLocation = location;
       _lokasiText =
           '${location.latitude.toStringAsFixed(6)}, ${location.longitude.toStringAsFixed(6)}';
 
-      // Set data dari placemark
       _provinsi = place.administrativeArea ?? '-';
       _kota = place.subAdministrativeArea ?? place.locality ?? '-';
       _kecamatan = place.subLocality ?? '-';
 
-      // Set lokasi detail untuk ditampilkan
       _lokasiDetail =
           '${place.subLocality ?? ''}, ${place.locality ?? ''}, ${place.administrativeArea ?? ''}';
 
-      // Update kelurahan dan kodepos jika ada
       if (place.subLocality != null && place.subLocality!.isNotEmpty) {
         _selectedKelurahan = place.subLocality!;
-        // Update list jika belum ada
         if (!_kelurahanList.contains(_selectedKelurahan)) {
           _kelurahanList.add(_selectedKelurahan);
         }
@@ -83,12 +127,13 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
 
       if (place.postalCode != null && place.postalCode!.isNotEmpty) {
         _selectedKodepos = place.postalCode!;
-        // Update list jika belum ada
         if (!_kodeposList.contains(_selectedKodepos)) {
           _kodeposList.add(_selectedKodepos);
         }
       }
     });
+
+    print('✅ Location initialized: $_provinsi, $_kota, $_kecamatan');
   }
 
   @override
@@ -101,14 +146,14 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
   }
 
   Future<void> _pilihLokasiDariPeta() async {
-    // Navigasi ke halaman tandai lokasi dan tunggu hasilnya
+    print('🗺️ Membuka peta untuk pilih lokasi...');
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const TandaiLokasiScreen()),
     );
 
-    // Jika ada result (user memilih lokasi), update form ini
     if (result != null && result is Map<String, dynamic>) {
+      print('✅ Lokasi dipilih dari peta');
       final location = result['location'] as LatLng;
       final place = result['placemark'] as Placemark;
 
@@ -117,16 +162,13 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
         _lokasiText =
             '${location.latitude.toStringAsFixed(6)}, ${location.longitude.toStringAsFixed(6)}';
 
-        // Set data dari placemark
         _provinsi = place.administrativeArea ?? '-';
         _kota = place.subAdministrativeArea ?? place.locality ?? '-';
         _kecamatan = place.subLocality ?? '-';
 
-        // Set lokasi detail untuk ditampilkan
         _lokasiDetail =
             '${place.subLocality ?? ''}, ${place.locality ?? ''}, ${place.administrativeArea ?? ''}';
 
-        // Update kelurahan dan kodepos jika ada
         if (place.subLocality != null && place.subLocality!.isNotEmpty) {
           _selectedKelurahan = place.subLocality!;
           if (!_kelurahanList.contains(_selectedKelurahan)) {
@@ -141,12 +183,20 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
           }
         }
       });
+      print('✅ Form updated dengan lokasi baru');
+    } else {
+      print('❌ Tidak ada lokasi dipilih atau dibatalkan');
     }
   }
 
   void _simpanAlamat() async {
+    print('💾 Tombol Simpan ditekan');
+
     if (_formKey.currentState!.validate()) {
+      print('✅ Validasi form berhasil');
+
       if (_selectedLocation == null) {
+        print('❌ Lokasi belum dipilih');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Silakan pilih titik lokasi dari peta'),
@@ -170,25 +220,29 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
         'kodepos': _selectedKodepos,
         'nama_penerima': _namaPenerimaController.text,
         'nomor_hp': _nomorHpController.text,
+        'is_manual': false,
       };
 
-      // Tutup keyboard terlebih dahulu
+      print('📦 Data alamat yang akan disimpan:');
+      print('   Label: ${alamatData['label']}');
+      print('   Nama: ${alamatData['nama_penerima']}');
+      print('   HP: ${alamatData['nomor_hp']}');
+      print('   Lokasi: ${alamatData['lokasi']}');
+      print('   Alamat: ${alamatData['alamat_lengkap']}');
+
+      // Tutup keyboard
       FocusScope.of(context).unfocus();
-      
-      // Tunggu sebentar untuk memastikan keyboard tertutup
       await Future.delayed(const Duration(milliseconds: 100));
 
-      // Pop ke LengkapiAlamatScreen
-      if (mounted) {
-        Navigator.of(context).pop();
-        // Tunggu sebentar
-        await Future.delayed(const Duration(milliseconds: 50));
-      }
-      
-      // Pop ke CartScreen dengan data
+      print('🔙 Menutup screen dengan data...');
+
+      // Pop dengan data
       if (mounted) {
         Navigator.of(context).pop(alamatData);
+        print('✅ Screen ditutup dengan data alamat');
       }
+    } else {
+      print('❌ Validasi form gagal');
     }
   }
 
@@ -197,9 +251,9 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'Tambah Alamat',
-          style: TextStyle(color: Colors.black, fontSize: 18),
+        title: Text(
+          widget.existingAddress != null ? 'Edit Alamat' : 'Tambah Alamat',
+          style: const TextStyle(color: Colors.black, fontSize: 18),
         ),
         elevation: 0,
         backgroundColor: Colors.white,
@@ -210,6 +264,22 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // Debug info
+            if (_selectedLocation != null)
+              Container(
+                padding: const EdgeInsets.all(8),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green[200]!),
+                ),
+                child: Text(
+                  '✅ Lokasi sudah dipilih: ${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)}',
+                  style: TextStyle(fontSize: 11, color: Colors.green[900]),
+                ),
+              ),
+
             _buildTextField(
               label: 'Label Alamat',
               controller: _labelAlamatController,
@@ -344,7 +414,6 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
         ),
       ),
 
-      /// ✅ Tombol simpan di bawah Scaffold
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -369,9 +438,11 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
                 ),
               ),
               onPressed: _simpanAlamat,
-              child: const Text(
-                'Simpan dan Gunakan Alamat',
-                style: TextStyle(
+              child: Text(
+                widget.existingAddress != null
+                    ? 'Simpan Perubahan'
+                    : 'Simpan dan Gunakan Alamat',
+                style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
@@ -529,12 +600,13 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
               border: InputBorder.none,
             ),
             icon: Icon(Icons.chevron_right, color: Colors.grey[400]),
-            items: items.map((String item) {
-              return DropdownMenuItem<String>(
-                value: item,
-                child: Text(item, style: const TextStyle(fontSize: 14)),
-              );
-            }).toList(),
+            items:
+                items.map((String item) {
+                  return DropdownMenuItem<String>(
+                    value: item,
+                    child: Text(item, style: const TextStyle(fontSize: 14)),
+                  );
+                }).toList(),
             onChanged: onChanged,
           ),
         ),
