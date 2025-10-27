@@ -22,6 +22,8 @@ class CartScreenState extends State<CartScreen> {
   String? _currentUserLogin;
   bool _isLoading = true;
   List<CartItem> _cartItems = [];
+  String? _catatanPengiriman;
+
 
   // ⭐ Formatter untuk harga Indonesia
   final NumberFormat _currencyFormatter = NumberFormat.currency(
@@ -958,134 +960,302 @@ class CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildSudahAdaAlamat() {
-    return Column(
-      children: [
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.blue[50],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.location_on, color: Colors.blue[700], size: 28),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${_savedAlamat!['label'] ?? 'rumah'}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${_savedAlamat!['nama_penerima'] ?? 'kafabi'} (${_savedAlamat!['nomor_hp'] ?? '084664644412'})',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${_savedAlamat!['provinsi'] ?? 'Jawa Barat'}, ${_savedAlamat!['kota'] ?? 'Kota Bandung'}, ${_savedAlamat!['kecamatan'] ?? 'Antapani'}, ${_savedAlamat!['kelurahan'] ?? 'Antapani Kidul'}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[700],
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+  return Column(
+    children: [
+      Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.blue[50],
+          borderRadius: BorderRadius.circular(12),
         ),
-        const SizedBox(height: 12),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Colors.grey[300]!,
-              style: BorderStyle.solid,
-              width: 1.5,
-            ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: InkWell(
-            onTap: _showCatatanPengirimanDialog,
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.location_on, color: Colors.blue[700], size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.add_circle_outline,
-                    color: Colors.blue[700],
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
                   Text(
-                    'Catatan Pengiriman',
-                    style: TextStyle(
-                      fontSize: 14,
+                    '${_savedAlamat!['label'] ?? 'rumah'}',
+                    style: const TextStyle(
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.blue[700],
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${_savedAlamat!['nama_penerima'] ?? 'kafabi'} (${_savedAlamat!['nomor_hp'] ?? '084664644412'})',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${_savedAlamat!['provinsi'] ?? 'Jawa Barat'}, ${_savedAlamat!['kota'] ?? 'Kota Bandung'}, ${_savedAlamat!['kecamatan'] ?? 'Antapani'}, ${_savedAlamat!['kelurahan'] ?? 'Antapani Kidul'}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[700],
+                      height: 1.5,
                     ),
                   ),
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
+      Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Colors.grey[300]!,
+            style: BorderStyle.solid,
+            width: 1.5,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: InkWell(
+          onTap: _showCatatanPengirimanDialog,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  _catatanPengiriman == null
+                      ? Icons.add_circle_outline
+                      : Icons.edit_note,
+                  color: Colors.blue[700],
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Catatan Pengiriman',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue[700],
+                        ),
+                      ),
+                      if (_catatanPengiriman != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          _catatanPengiriman!,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[700],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
-  void _showCatatanPengirimanDialog() {
-    final TextEditingController catatanController = TextEditingController();
+void _showCatatanPengirimanDialog() {
+  final TextEditingController catatanController = TextEditingController(
+    text: _catatanPengiriman ?? '',
+  );
 
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Catatan Pengiriman'),
-            content: TextField(
-              controller: catatanController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                hintText: 'Masukkan catatan untuk kurir...',
-                border: OutlineInputBorder(),
-              ),
+  // Daftar quick action messages
+  final List<String> quickActions = [
+    'Tolong taruh depan pintu',
+    'Taruh di atas meja',
+    'Titip ke resepsionis/satpam',
+    'Tekan bel rumah',
+    'Info kalau sudah sampai',
+  ];
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle bar
+          Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 8),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Batal'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Catatan pengiriman disimpan'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                },
-                child: const Text('Simpan'),
-              ),
-            ],
           ),
-    );
-  }
+          
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Catatan Pengiriman',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Kamu bisa berikan catatan pengiriman ke Delivery Man untuk pengiriman pesanan',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Catatan',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: catatanController,
+                  maxLines: 4,
+                  maxLength: 200,
+                  style: const TextStyle(fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Contoh: Tekan bel rumah ya pak!',
+                    hintStyle: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 14,
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.blue[400]!, width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: quickActions.map((action) {
+                    return InkWell(
+                      onTap: () {
+                        catatanController.text = action;
+                      },
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.blue[600]!,
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          action,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.blue[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _catatanPengiriman = catatanController.text.isEmpty
+                            ? null
+                            : catatanController.text;
+                      });
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Catatan pengiriman disimpan'),
+                          backgroundColor: Colors.green,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[600],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Simpan',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   Widget _buildPromoCard(
     BuildContext context, {
