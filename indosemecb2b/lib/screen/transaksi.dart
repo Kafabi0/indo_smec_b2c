@@ -95,7 +95,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
       dateFilter: selectedTanggal,
       category: selectedKategori,
     );
-    final statuses = ['Diproses', 'Selesai',];
+    final statuses = ['Diproses', 'Selesai'];
     for (var t in transactions) {
       t.status = statuses[Random().nextInt(statuses.length)];
     }
@@ -529,38 +529,53 @@ class _TransaksiScreenState extends State<TransaksiScreen>
             children: [
               OutlinedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => TrackingScreen(
-                            trackingData: OrderTrackingModel(
-                              courierName: "Tryan Gumilar",
-                              courierId: "D 4563 ADP",
-                              statusMessage:
-                                  "Delivery Man akan segera mengambil pesanan",
-                              statusDesc: "Delivery Man sedang menuju ke toko",
-                              updatedAt: DateTime.now(),
+                  if (transaction.status == "Selesai") {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => MainNavigation()),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (_) => TrackingScreen(
+                              trackingData: OrderTrackingModel(
+                                courierName: "Tryan Gumilar",
+                                courierId: "D 4563 ADP",
+                                statusMessage: transaction.status,
+                                statusDesc: "Pesananmu sedang diproses",
+                                updatedAt: transaction.date ?? DateTime.now(),
+                              ),
                             ),
-                          ),
-                    ),
-                  );
+                      ),
+                    );
+                  }
                 },
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: Colors.blue[700]!),
+                  side: BorderSide(
+                    color:
+                        transaction.status == "Selesai"
+                            ? Colors.blue[700]!
+                            : Colors.blue[700]!,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(6),
                   ),
                 ),
                 child: Text(
-                  'Lacak',
+                  transaction.status == "Selesai" ? "Beli Lagi" : "Lacak",
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.blue[700],
+                    color:
+                        transaction.status == "Selesai"
+                            ? Colors.blue[700]
+                            : Colors.blue[700],
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
+
               Text(
                 'Total ${formatRupiah(transaction.totalPrice)}',
                 style: const TextStyle(
