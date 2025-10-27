@@ -1,4 +1,4 @@
-// screen/keranjang.dart - Without Tabs
+// screen/keranjang.dart - With Checkout Validation
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/checkout_screen.dart';
 import 'package:indosemecb2b/screen/favorit.dart';
@@ -105,6 +105,89 @@ class CartScreenState extends State<CartScreen> {
         }
       }
     }
+  }
+
+  // ⭐ VALIDASI CHECKOUT - Cek apakah alamat sudah diisi
+  void _handleCheckout() {
+    // Validasi: Pastikan alamat sudah terisi
+    if (_savedAlamat == null) {
+      _showAlamatKosongDialog();
+      return;
+    }
+
+    // Validasi: Pastikan user sudah login
+    if (_currentUserLogin == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Silakan login terlebih dahulu'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Jika semua validasi terpenuhi, lanjut ke checkout
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => CheckoutScreen(
+              alamat: _savedAlamat,
+              deliveryOption: selectedDelivery,
+            ),
+      ),
+    );
+  }
+
+  // ⭐ Dialog peringatan jika alamat belum diisi
+  void _showAlamatKosongDialog() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: Row(
+              children: [
+                Icon(Icons.location_off, color: Colors.orange[700], size: 28),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Alamat Belum Diisi',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            content: const Text(
+              'Silakan lengkapi alamat pengiriman terlebih dahulu untuk melanjutkan ke checkout.',
+              style: TextStyle(fontSize: 14, height: 1.5),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Nanti', style: TextStyle(color: Colors.grey[600])),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _navigateToLengkapiAlamat();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[700],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Lengkapi Alamat',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+    );
   }
 
   Future<void> _updateQuantity(String productId, int newQuantity) async {
@@ -341,18 +424,7 @@ class CartScreenState extends State<CartScreen> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => CheckoutScreen(
-                                      alamat: _savedAlamat,
-                                      deliveryOption: selectedDelivery,
-                                    ),
-                              ),
-                            );
-                          },
+                          onPressed: _handleCheckout, // ⭐ Pakai fungsi validasi
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue[700],
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -450,11 +522,11 @@ class CartScreenState extends State<CartScreen> {
               ),
             ),
             Image.asset(
-            'assets/keranjang.png',
-            height: 55,
-            width: 60,
-            fit: BoxFit.cover,
-          ),
+              'assets/keranjang.png',
+              height: 55,
+              width: 60,
+              fit: BoxFit.cover,
+            ),
           ],
         ),
       ),

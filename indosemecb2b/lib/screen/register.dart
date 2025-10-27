@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:indosemecb2b/screen/otp.dart'; // Import halaman OTP
 
 class RegisterPage extends StatefulWidget {
   final String userInput;
@@ -268,36 +269,64 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _handleRegister() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final emailOrPhone = widget.userInput;
-    final name = _nameController.text;
-    final password = _passwordController.text;
-
-    final usersString = prefs.getString('registered_users');
-    List<Map<String, dynamic>> users = [];
-
-    if (usersString != null) {
-      users = List<Map<String, dynamic>>.from(jsonDecode(usersString));
-    }
-
-    users.add({
-      'emailOrPhone': emailOrPhone,
-      'name': name,
-      'password': password,
-    });
-
-    await prefs.setString('registered_users', jsonEncode(users));
-
-    // ✅ Ganti bagian ini
-    await UserDataManager.setCurrentUser(emailOrPhone);
-    await prefs.setString('userName', name);
-    await prefs.setBool('isLoggedIn', true);
-
-    ScaffoldMessenger.of(
+    // ✅ Navigasi ke halaman OTP untuk verifikasi
+    final result = await Navigator.push(
       context,
-    ).showSnackBar(const SnackBar(content: Text("Akun berhasil dibuat!")));
+      MaterialPageRoute(
+        builder:
+            (_) => OTPVerificationPage(
+              userInput: widget.userInput,
+              name: _nameController.text,
+              password: _passwordController.text,
+            ),
+      ),
+    );
 
-    Navigator.pop(context, emailOrPhone);
+    // ✅ Cek apakah widget masih mounted
+    if (!mounted) return;
+
+    // ✅ Jika OTP berhasil diverifikasi
+    if (result != null && result['success'] == true) {
+      final prefs = await SharedPreferences.getInstance();
+
+      final emailOrPhone = result['emailOrPhone'];
+      final name = result['name'];
+      final password = result['password'];
+
+      final usersString = prefs.getString('registered_users');
+      List<Map<String, dynamic>> users = [];
+
+      if (usersString != null) {
+        users = List<Map<String, dynamic>>.from(jsonDecode(usersString));
+      }
+
+      users.add({
+        'emailOrPhone': emailOrPhone,
+        'name': name,
+        'password': password,
+      });
+
+      await prefs.setString('registered_users', jsonEncode(users));
+
+      // ✅ Set user data
+      await UserDataManager.setCurrentUser(emailOrPhone);
+      await prefs.setString('userName', name);
+      await prefs.setBool('isLoggedIn', true);
+
+      // ✅ Cek mounted lagi sebelum menggunakan context
+      if (!mounted) return;
+
+      // ✅ Tampilkan snackbar dengan aman
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Akun berhasil dibuat! Silakan login."),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // ✅ Kembali ke halaman login (tutup halaman register)
+      Navigator.pop(context, emailOrPhone);
+    }
   }
 }

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:indosemecb2b/models/transaction.dart';
-
-// Tambahkan untuk debugging
 import 'package:indosemecb2b/utils/user_data_manager.dart';
 
 class TransaksiScreen extends StatefulWidget {
@@ -13,7 +11,7 @@ class TransaksiScreen extends StatefulWidget {
   State<TransaksiScreen> createState() => _TransaksiScreenState();
 }
 
-class _TransaksiScreenState extends State<TransaksiScreen> {
+class _TransaksiScreenState extends State<TransaksiScreen> with WidgetsBindingObserver {
   String selectedStatus = 'Semua Status';
   String selectedTanggal = 'Semua Tanggal';
   String selectedKategori = 'Semua';
@@ -33,17 +31,50 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
   @override
   void initState() {
     super.initState();
+    // ⭐ Tambahkan observer untuk detect app lifecycle
+    WidgetsBinding.instance.addObserver(this);
+    _loadTransactions();
+  }
+
+  @override
+  void dispose() {
+    // ⭐ Remove observer saat dispose
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // ⭐ Detect ketika app kembali ke foreground
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      print('🔄 App resumed - Reloading transactions...');
+      _loadTransactions();
+    }
+  }
+
+  // ⭐ PENTING: Ini akan dipanggil setiap kali widget rebuild
+  @override
+  void didUpdateWidget(TransaksiScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    print('🔄 Widget updated - Reloading transactions...');
     _loadTransactions();
   }
 
   Future<void> _loadTransactions() async {
+    if (!mounted) return;
+    
+    print('📥 Loading transactions...');
+    
     setState(() {
       _isLoading = true;
     });
 
+    // Tambahkan sedikit delay untuk memastikan data sudah tersimpan
+    await Future.delayed(const Duration(milliseconds: 100));
+
     // Debug: Cek user login
     final userLogin = await UserDataManager.getCurrentUserLogin();
-    print('🔍 DEBUG - Current user login: $userLogin');
+    print('🔍 DEBUG TRANSAKSI - Current user login: $userLogin');
 
     final transactions = await TransactionManager.getFilteredTransactions(
       status: selectedStatus,
@@ -52,20 +83,23 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
     );
 
     // Debug: Cek jumlah transaksi
-    print('🔍 DEBUG - Total transactions loaded: ${transactions.length}');
+    print('🔍 DEBUG TRANSAKSI - Total transactions loaded: ${transactions.length}');
     if (transactions.isNotEmpty) {
-      print('🔍 DEBUG - First transaction ID: ${transactions[0].id}');
-      print('🔍 DEBUG - First transaction items: ${transactions[0].items.length}');
+      print('🔍 DEBUG TRANSAKSI - Latest transaction ID: ${transactions[0].id}');
+      print('🔍 DEBUG TRANSAKSI - Latest transaction date: ${transactions[0].date}');
     }
 
+    if (!mounted) return;
+    
     setState(() {
       _transactions = transactions;
       _isLoading = false;
     });
+    
+    print('✅ Transactions loaded successfully');
   }
 
   String _formatDate(DateTime date) {
-    // Format manual tanpa intl package
     final day = date.day.toString().padLeft(2, '0');
     final months = [
       '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
@@ -121,6 +155,12 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
           IconButton(
             icon: const Icon(Icons.search, color: Colors.black),
             onPressed: () {},
+          ),
+          // Tombol refresh manual
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.black),
+            onPressed: _loadTransactions,
+            tooltip: 'Refresh',
           ),
         ],
       ),
@@ -564,7 +604,6 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          // Navigate to shopping
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -658,7 +697,6 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
                     controller: scrollController,
                     padding: const EdgeInsets.all(16),
                     children: [
-                      // Transaction Info
                       _buildDetailRow('ID Transaksi', transaction.id),
                       _buildDetailRow('Tanggal', _formatDate(transaction.date)),
                       _buildDetailRow('Status', transaction.status),
@@ -701,7 +739,6 @@ class _TransaksiScreenState extends State<TransaksiScreen> {
                       ),
                       const SizedBox(height: 12),
 
-                      // All Products
                       ...transaction.items.map((item) {
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),

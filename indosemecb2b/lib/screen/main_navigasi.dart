@@ -166,7 +166,7 @@ class _MainNavigationState extends State<MainNavigation> {
               ),
               const SizedBox(height: 6),
               const Text(
-                "One stop online store yang menyediakan berbagai macam produk dalam satu aplikasi",
+                "IndoSmec online store yang menyediakan berbagai macam produk dalam satu aplikasi",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: Colors.black54),
               ),
