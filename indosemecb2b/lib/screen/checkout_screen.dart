@@ -456,7 +456,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     context,
                     MaterialPageRoute(
                       builder:
-                          (_) => PaymentMethodScreen(totalPembayaran: total),
+                          (_) => PaymentMethodScreen(totalPembayaran: total,),
                     ),
                   );
 

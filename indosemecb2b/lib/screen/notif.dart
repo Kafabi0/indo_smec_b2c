@@ -1,109 +1,111 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'notification_provider.dart';
+import '../models/notification_model.dart';
+import 'package:intl/intl.dart';
 
-class NotificationScreen extends StatefulWidget {
-  @override
-  State<NotificationScreen> createState() => _NotificationScreenState();
-}
-
-class _NotificationScreenState extends State<NotificationScreen> with SingleTickerProviderStateMixin {
-
-  late TabController _tabController;
-  List<String> filters = [
-    "Semua", "Akun", "Info", "Promo", "Kupon", "iSaku dan Poinku"
-  ];
-
-  int selectedFilterIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
+class NotificationScreen extends StatelessWidget {
+  final currency = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ');
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        elevation: 1,
-        title: Text("Notifikasi"),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Colors.blue,
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: Colors.blue,
-          tabs: [
-            Tab(text: "Informasi"),
-            Tab(text: "Transaksi"),
+    final notifProvider = Provider.of<NotificationProvider>(context);
+    final transaksiNotifs = notifProvider.getTransaksiNotifs();
+
+    return DefaultTabController(
+      length: 2, // <-- tambahkan ini supaya TabBar punya kontrol
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Notifikasi"),
+          bottom: const TabBar(
+            tabs: [Tab(text: "Informasi"), Tab(text: "Transaksi")],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildEmptyState(), // tab "Informasi"
+            transaksiNotifs.isEmpty
+                ? _buildEmptyState()
+                : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: transaksiNotifs.length,
+                  itemBuilder: (context, index) {
+                    final notif = transaksiNotifs[index];
+                    return _buildNotifCard(notif);
+                  },
+                ),
           ],
         ),
       ),
-      body: Column(
-        children: [
-          SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              children: List.generate(filters.length, (index) {
-                final isSelected = index == selectedFilterIndex;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedFilterIndex = index;
-                    });
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(right: 10),
-                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.blue : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(20),
+    );
+  }
+
+  Widget _buildEmptyState() => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: const [
+        Icon(Icons.notifications_none, size: 80, color: Colors.grey),
+        SizedBox(height: 10),
+        Text("Belum Ada Notifikasi"),
+        Text("Nanti notifikasimu akan muncul di sini"),
+      ],
+    ),
+  );
+
+  Widget _buildNotifCard(AppNotification notif) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Xpress", style: TextStyle(color: Colors.blue, fontSize: 12)),
+            const SizedBox(height: 8),
+            Text(
+              notif.title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 4),
+            Text(notif.message, style: const TextStyle(color: Colors.black54)),
+            const SizedBox(height: 12),
+            if (notif.image != null)
+              Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      notif.image!,
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder:
+                          (context, error, stackTrace) => const Icon(
+                            Icons.image_not_supported,
+                            size: 60,
+                            color: Colors.grey,
+                          ),
                     ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: Text(
-                      filters[index],
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black54,
+                      "Total ${currency.format(notif.total ?? 0)}",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
                     ),
                   ),
-                );
-              }),
-            ),
-          ),
-
-          SizedBox(height: 30),
-
-          // UI jika belum ada notifikasi
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.notifications_none,
-                    color: Colors.grey[300],
-                    size: 80,
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    "Belum Ada Notifikasi",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  SizedBox(height: 5),
-                  Text(
-                    "Nanti notifikasimu akan ada di sini ya",
-                    style: TextStyle(
-                      color: Colors.black54,
-                    ),
+                  ElevatedButton(
+                    onPressed: () {},
+                    child: Text(notif.detailButtonText ?? "Lihat Detail"),
                   ),
                 ],
               ),
-            ),
-          )
-        ],
+          ],
+        ),
       ),
     );
   }

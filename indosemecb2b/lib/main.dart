@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
+import 'package:indosemecb2b/screen/notification_provider.dart'; // tambahkan import ini
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,14 +18,21 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'IndoSemec b2c',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.grey[100],
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => NotificationProvider(),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'IndoSemec b2c',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          scaffoldBackgroundColor: Colors.grey[100],
+        ),
+        home: const MainNavigation(),
+        debugShowCheckedModeBanner: false,
       ),
-      home: const MainNavigation(),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
