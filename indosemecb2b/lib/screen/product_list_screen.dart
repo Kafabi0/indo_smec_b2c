@@ -4,6 +4,7 @@ import '../services/favorite_service.dart';
 import '../utils/cart_manager.dart';
 import '../utils/user_data_manager.dart';
 import 'detail_produk.dart';
+import 'package:intl/intl.dart';
 
 class ProductListScreen extends StatefulWidget {
   final String title;
@@ -43,6 +44,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
         favoriteStatus[product.id] = favoriteIds.contains(product.id);
       }
     });
+  }
+
+  String formatRupiah(double amount) {
+    final formatter = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp.',
+      decimalDigits: 0,
+    );
+    return formatter.format(amount);
   }
 
   Future<void> _loadCartQuantities() async {
@@ -400,7 +410,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: 4),
-                    
+
                     // Rating - TAMBAHKAN INI
                     Row(
                       children: [
@@ -428,10 +438,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         ),
                       ],
                     ),
-                    
+
                     SizedBox(height: 4),
                     Text(
-                      'Rp${product.price.toStringAsFixed(0)}',
+                      formatRupiah(product.price),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -443,7 +453,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       Row(
                         children: [
                           Text(
-                            'Rp${product.originalPrice!.toStringAsFixed(0)}',
+                            formatRupiah(product.originalPrice!),
                             style: TextStyle(
                               fontSize: 10,
                               decoration: TextDecoration.lineThrough,
@@ -539,7 +549,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 4),
-                  
+
                   // Rating - TAMBAHKAN INI
                   Row(
                     children: [
@@ -560,14 +570,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       SizedBox(width: 4),
                       Text(
                         '(${product.reviewCount})',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey[500],
-                        ),
+                        style: TextStyle(fontSize: 10, color: Colors.grey[500]),
                       ),
                     ],
                   ),
-                  
+
                   SizedBox(height: 6),
                   Text(
                     'Rp${product.price.toStringAsFixed(0)}',
