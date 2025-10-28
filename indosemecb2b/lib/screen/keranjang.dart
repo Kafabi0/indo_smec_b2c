@@ -30,7 +30,7 @@ class CartScreenState extends State<CartScreen> with RouteAware {
 
   final NumberFormat _currencyFormatter = NumberFormat.currency(
     locale: 'id_ID',
-    symbol: 'Rp',
+    symbol: 'Rp.',
     decimalDigits: 0,
   );
 
