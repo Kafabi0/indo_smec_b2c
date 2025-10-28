@@ -99,7 +99,8 @@ class PaymentMethodScreen extends StatelessWidget {
           _sectionHeader("E-Wallet"),
           _paymentItem(
             context: context,
-            icon: Icons.account_balance_wallet,
+            imageUrl:
+                "https://i.pinimg.com/736x/c7/40/65/c74065540ccade0683a869b622cdc4a6.jpg",
             title: "GoPay",
             subtitle: "Bayar dengan GoPay",
             badge: "Promo 50%",
@@ -107,28 +108,32 @@ class PaymentMethodScreen extends StatelessWidget {
           ),
           _paymentItem(
             context: context,
-            icon: Icons.account_balance_wallet,
+            imageUrl:
+                "https://i.pinimg.com/736x/c1/0a/d6/c10ad6ece8ee01e5d2eacc07bc2c1490.jpg",
             title: "OVO",
             subtitle: "Bayar dengan OVO",
             paymentType: "OVO",
           ),
           _paymentItem(
             context: context,
-            icon: Icons.account_balance_wallet,
+            imageUrl:
+                "https://i.pinimg.com/1200x/2b/1f/11/2b1f11dec29fe28b5137b46fffa0b25f.jpg",
             title: "DANA",
             subtitle: "Bayar dengan DANA",
             paymentType: "DANA",
           ),
           _paymentItem(
             context: context,
-            icon: Icons.account_balance_wallet,
+            imageUrl:
+                "https://i.pinimg.com/736x/d4/9f/70/d49f702b94f54a479ff6a44525650537.jpg",
             title: "ShopeePay",
             subtitle: "Bayar dengan ShopeePay",
             paymentType: "ShopeePay",
           ),
           _paymentItem(
             context: context,
-            icon: Icons.account_balance_wallet,
+            imageUrl:
+                "https://i.pinimg.com/736x/a3/ac/dc/a3acdc5237d8c3cd9634b8eb7561c16f.jpg",
             title: "LinkAja",
             subtitle: "Bayar dengan LinkAja",
             paymentType: "LinkAja",
@@ -140,35 +145,40 @@ class PaymentMethodScreen extends StatelessWidget {
           _sectionHeader("Virtual Account"),
           _paymentItem(
             context: context,
-            icon: Icons.account_balance,
+            imageUrl:
+                "https://i.pinimg.com/736x/0b/ed/5c/0bed5c44c43dc1efd1cbf6acf3aa1d89.jpg",
             title: "BCA Virtual Account",
             subtitle: "Gratis biaya admin",
             paymentType: "BCA VA",
           ),
           _paymentItem(
             context: context,
-            icon: Icons.account_balance,
+            imageUrl:
+                "https://i.pinimg.com/1200x/41/5f/61/415f6193712cbf8e90613921937aa86b.jpg",
             title: "Mandiri Virtual Account",
             subtitle: "Gratis biaya admin",
             paymentType: "Mandiri VA",
           ),
           _paymentItem(
             context: context,
-            icon: Icons.account_balance,
+            imageUrl:
+                "https://i.pinimg.com/736x/13/16/5f/13165f728ca28d89ac144c599dca049b.jpg",
             title: "BNI Virtual Account",
             subtitle: "Gratis biaya admin",
             paymentType: "BNI VA",
           ),
           _paymentItem(
             context: context,
-            icon: Icons.account_balance,
+            imageUrl:
+                "https://i.pinimg.com/736x/f8/89/3c/f8893c524e737a00d7aabc02a1737ce9.jpg",
             title: "BRI Virtual Account",
             subtitle: "Gratis biaya admin",
             paymentType: "BRI VA",
           ),
           _paymentItem(
             context: context,
-            icon: Icons.account_balance,
+            imageUrl:
+                "https://i.pinimg.com/1200x/62/6d/d1/626dd13e3b9db99ed728f6363d2ca274.jpg",
             title: "Permata Virtual Account",
             subtitle: "Gratis biaya admin",
             paymentType: "Permata VA",
@@ -180,7 +190,8 @@ class PaymentMethodScreen extends StatelessWidget {
           _sectionHeader("Transfer Bank"),
           _paymentItem(
             context: context,
-            icon: Icons.compare_arrows,
+            imageUrl:
+                "https://i.pinimg.com/1200x/a2/9d/29/a29d290535c8a5fd55f67631c7e454f1.jpg",
             title: "Transfer Bank Manual",
             subtitle: "BCA, Mandiri, BNI, BRI, dll",
             paymentType: "Transfer Bank",
@@ -192,7 +203,8 @@ class PaymentMethodScreen extends StatelessWidget {
           _sectionHeader("Kartu Kredit/Debit"),
           _paymentItem(
             context: context,
-            icon: Icons.credit_card,
+            imageUrl:
+                "https://i.pinimg.com/736x/65/c4/1d/65c41db5a939f1e45c5f1ff1244689f5.jpg",
             title: "Kartu Kredit",
             subtitle: "Visa, Mastercard, JCB",
             badge: "Cicilan 0%",
@@ -200,7 +212,8 @@ class PaymentMethodScreen extends StatelessWidget {
           ),
           _paymentItem(
             context: context,
-            icon: Icons.credit_card,
+            imageUrl:
+                "https://i.pinimg.com/736x/4e/56/b0/4e56b0a53d2857bcb414c6fe67d76b06.jpg",
             title: "Kartu Debit",
             subtitle: "Semua bank",
             paymentType: "Kartu Debit",
@@ -212,14 +225,16 @@ class PaymentMethodScreen extends StatelessWidget {
           _sectionHeader("Gerai Retail"),
           _paymentItem(
             context: context,
-            icon: Icons.store,
+            imageUrl:
+                "https://i.pinimg.com/736x/e7/26/25/e72625c9daad5afee9521ecfb2abec53.jpg",
             title: "Indomaret",
             subtitle: "Bayar di kasir Indomaret",
             paymentType: "Indomaret",
           ),
           _paymentItem(
             context: context,
-            icon: Icons.store,
+            imageUrl:
+                "https://i.pinimg.com/1200x/4e/59/af/4e59afc6923d959e8ebc9d10d7f66c33.jpg",
             title: "Alfamart",
             subtitle: "Bayar di kasir Alfamart",
             paymentType: "Alfamart",
@@ -231,7 +246,8 @@ class PaymentMethodScreen extends StatelessWidget {
           _sectionHeader("Paylater"),
           _paymentItem(
             context: context,
-            icon: Icons.schedule,
+            imageUrl:
+                "https://i.pinimg.com/736x/69/77/da/6977da92f7d18a2f667de0b575a4d1b6.jpg",
             title: "Kredivo",
             subtitle: "Bayar dalam 30 hari",
             badge: "Bunga 0%",
@@ -239,14 +255,16 @@ class PaymentMethodScreen extends StatelessWidget {
           ),
           _paymentItem(
             context: context,
-            icon: Icons.schedule,
+            imageUrl:
+                "https://i.pinimg.com/736x/d5/16/b5/d516b5226688dccc16ba2bfa3b32230e.jpg",
             title: "Akulaku",
             subtitle: "Cicilan tanpa kartu kredit",
             paymentType: "Akulaku",
           ),
           _paymentItem(
             context: context,
-            icon: Icons.schedule,
+            imageUrl:
+                "https://i.pinimg.com/1200x/7c/50/f0/7c50f0b7ebf83989a200063ed2605d15.jpg",
             title: "GoPayLater",
             subtitle: "Bayar bulan depan",
             paymentType: "GoPayLater",
@@ -274,7 +292,7 @@ class PaymentMethodScreen extends StatelessWidget {
 
   Widget _paymentItem({
     required BuildContext context,
-    required IconData icon,
+    required String imageUrl,
     required String title,
     required String subtitle,
     String? badge,
@@ -290,13 +308,13 @@ class PaymentMethodScreen extends StatelessWidget {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
-          width: 48,
-          height: 48,
+          width: 50,
+          height: 50,
           decoration: BoxDecoration(
             color: Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(20),
           ),
-          child: Icon(icon, color: Colors.blue, size: 28),
+          child: Image.network(imageUrl, fit: BoxFit.cover),
         ),
         title: Row(
           children: [
