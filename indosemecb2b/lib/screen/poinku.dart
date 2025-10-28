@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/product_service.dart';
 
 // Fungsi helper untuk format mata uang Indonesia
 String formatCurrency(int amount) {
-  return 'Rp ${amount.toString().replaceAllMapped(
-    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), 
-    (Match m) => '${m[1]}.'
-  )}';
+  return 'Rp ${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
 }
 
 // ==== POINKU MAIN SCREEN DENGAN BOTTOM NAV SENDIRI ====
@@ -143,15 +141,13 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
                       Positioned.fill(
                         child: Opacity(
                           opacity: 0.1,
-                          child: CustomPaint(
-                            painter: PatternPainter(),
-                          ),
+                          child: CustomPaint(painter: PatternPainter()),
                         ),
                       ),
                     ],
                   ),
                 ),
-                
+
                 // Curve Shape
                 Positioned(
                   bottom: 0,
@@ -170,7 +166,10 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
 
                 // Content
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                   child: Column(
                     children: [
                       // Top Bar
@@ -178,8 +177,20 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
-                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(
+                              Icons.arrow_back,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+
+                            onPressed: () {
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                  builder: (_) => const MainNavigation(),
+                                ),
+                                (route) => false,
+                              );
+                            },
                           ),
                           Text(
                             'Poinku',
@@ -191,12 +202,16 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
+                            icon: const Icon(
+                              Icons.notifications_outlined,
+                              color: Colors.white,
+                              size: 24,
+                            ),
                             onPressed: () {},
                           ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 20),
 
                       // ==== PREMIUM MEMBER CARD ====
@@ -205,10 +220,7 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [
-                              Colors.white,
-                              Colors.blue[50]!,
-                            ],
+                            colors: [Colors.white, Colors.blue[50]!],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -235,7 +247,10 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
-                                          colors: [Colors.blue[400]!, Colors.blue[700]!],
+                                          colors: [
+                                            Colors.blue[400]!,
+                                            Colors.blue[700]!,
+                                          ],
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                         ),
@@ -256,7 +271,8 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
                                     ),
                                     const SizedBox(width: 10),
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           userName,
@@ -279,7 +295,7 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
                                     ),
                                   ],
                                 ),
-                                
+
                                 // Toggle Visibility
                                 Container(
                                   decoration: BoxDecoration(
@@ -288,35 +304,48 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
                                   ),
                                   child: IconButton(
                                     icon: Icon(
-                                      _isPointsVisible 
-                                        ? Icons.visibility_outlined 
-                                        : Icons.visibility_off_outlined,
+                                      _isPointsVisible
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined,
                                       color: Colors.blue[700],
                                       size: 20,
                                     ),
                                     onPressed: _togglePointsVisibility,
-                                    tooltip: _isPointsVisible ? 'Sembunyikan Saldo' : 'Tampilkan Saldo',
+                                    tooltip:
+                                        _isPointsVisible
+                                            ? 'Sembunyikan Saldo'
+                                            : 'Tampilkan Saldo',
                                     padding: const EdgeInsets.all(8),
                                     constraints: const BoxConstraints(),
                                   ),
                                 ),
                               ],
                             ),
-                            
+
                             const SizedBox(height: 14),
-                            
+
                             // Member ID
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 7,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.blue[50],
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.blue[100]!, width: 1),
+                                border: Border.all(
+                                  color: Colors.blue[100]!,
+                                  width: 1,
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.credit_card, size: 13, color: Colors.blue[700]),
+                                  Icon(
+                                    Icons.credit_card,
+                                    size: 13,
+                                    color: Colors.blue[700],
+                                  ),
                                   const SizedBox(width: 6),
                                   Text(
                                     'ID: INDOSMEC-2025-001',
@@ -333,7 +362,7 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(height: 20),
 
                       // ==== 3 KARTU POIN HORIZONTAL (DI HEADER) ====
@@ -387,7 +416,11 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.qr_code_scanner, color: Colors.blue[700], size: 18),
+                                Icon(
+                                  Icons.qr_code_scanner,
+                                  color: Colors.blue[700],
+                                  size: 18,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Scan untuk Belanja',
@@ -407,7 +440,10 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.grey[50],
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Colors.grey[200]!, width: 2),
+                                border: Border.all(
+                                  color: Colors.grey[200]!,
+                                  width: 2,
+                                ),
                               ),
                               child: Icon(
                                 Icons.qr_code_2_rounded,
@@ -418,7 +454,9 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
                             const SizedBox(height: 12),
 
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               child: Text(
                                 'Tunjukkan ke kasir untuk dapat promo & bayar pakai Poin Cash.',
                                 textAlign: TextAlign.center,
@@ -460,7 +498,7 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
                       Colors.red[700]!,
                       false,
                     ),
-                    
+
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -472,7 +510,13 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
     );
   }
 
-  Widget _buildPointCard(String title, String value, IconData icon, Color color, Color bgColor) {
+  Widget _buildPointCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    Color bgColor,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
@@ -521,7 +565,13 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
     );
   }
 
-  Widget _buildPaymentMethod(String title, String subtitle, IconData icon, Color color, bool isActive) {
+  Widget _buildPaymentMethod(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    bool isActive,
+  ) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -564,10 +614,7 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
                 const SizedBox(height: 2),
                 Text(
                   _isPointsVisible ? subtitle : '••••••',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],
             ),
@@ -600,10 +647,11 @@ class _PoinkuScreenState extends State<PoinkuScreen> {
 class PatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
+    final paint =
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5;
 
     for (var i = 0; i < 5; i++) {
       canvas.drawCircle(
@@ -640,10 +688,10 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
   void _loadTransactions() {
     // Ambil semua toko dari ProductService
     final allStores = _productService.getStoresByCategory('Semua');
-    
+
     // Generate data transaksi dummy berdasarkan toko UMKM
     List<Map<String, dynamic>> transactions = [];
-    
+
     // Tambahkan beberapa transaksi dari toko-toko yang ada
     final maxTransactions = allStores.length > 4 ? 4 : allStores.length;
     for (int i = 0; i < maxTransactions; i++) {
@@ -659,7 +707,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
         'storeDistance': '${store.distance} km',
       });
     }
-    
+
     setState(() {
       _transactions = transactions;
     });
@@ -699,11 +747,9 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
               ],
             ),
           ),
-          
+
           // ==== CONTENT ====
-          Expanded(
-            child: _buildTabContent(),
-          ),
+          Expanded(child: _buildTabContent()),
         ],
       ),
     );
@@ -720,15 +766,16 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
           decoration: BoxDecoration(
             color: isSelected ? Colors.blue[700] : Colors.grey[100],
             borderRadius: BorderRadius.circular(12),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.blue.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ]
-                : [],
+            boxShadow:
+                isSelected
+                    ? [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                    : [],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -771,28 +818,29 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
   Widget _buildStrukContent() {
     return ListView(
       padding: const EdgeInsets.all(16),
-      children: _transactions.map((transaction) {
-        return _buildStrukItem(
-          transaction['invoice'],
-          transaction['store'],
-          transaction['storeCategory'],
-          transaction['amount'], // Sekarang integer
-          transaction['points'],
-          transaction['date'],
-          transaction['color'],
-          transaction['storeDistance'],
-        );
-      }).toList(),
+      children:
+          _transactions.map((transaction) {
+            return _buildStrukItem(
+              transaction['invoice'],
+              transaction['store'],
+              transaction['storeCategory'],
+              transaction['amount'], // Sekarang integer
+              transaction['points'],
+              transaction['date'],
+              transaction['color'],
+              transaction['storeDistance'],
+            );
+          }).toList(),
     );
   }
 
   Widget _buildStrukItem(
-    String invoice, 
-    String store, 
+    String invoice,
+    String store,
     String storeCategory,
     int amount, // Ubah tipe menjadi int
-    String points, 
-    String date, 
+    String points,
+    String date,
     Color color,
     String storeDistance,
   ) {
@@ -823,7 +871,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
       default:
         storeIcon = Icons.store;
     }
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -878,7 +926,10 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                           ),
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.blue[50],
                               borderRadius: BorderRadius.circular(4),
@@ -912,10 +963,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                 children: [
                   Text(
                     'Total Belanja',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 11),
                   ),
                   const SizedBox(height: 3),
                   Text(
@@ -929,7 +977,10 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -946,13 +997,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            date,
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 11,
-            ),
-          ),
+          Text(date, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
         ],
       ),
     );
@@ -999,7 +1044,14 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
     );
   }
 
-  Widget _buildAktivasiItem(String title, String desc, String badge, String date, Color color, IconData icon) {
+  Widget _buildAktivasiItem(
+    String title,
+    String desc,
+    String badge,
+    String date,
+    Color color,
+    IconData icon,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -1039,16 +1091,16 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                 const SizedBox(height: 4),
                 Text(
                   desc,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
                 const SizedBox(height: 6),
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: color.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
@@ -1065,10 +1117,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                     const SizedBox(width: 8),
                     Text(
                       date,
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 10,
-                      ),
+                      style: TextStyle(color: Colors.grey[500], fontSize: 10),
                     ),
                   ],
                 ),
@@ -1114,7 +1163,11 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.account_balance_wallet, color: Colors.red[700], size: 28),
+                    child: Icon(
+                      Icons.account_balance_wallet,
+                      color: Colors.red[700],
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -1146,7 +1199,11 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                    child: const Icon(
+                      Icons.check_circle,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ],
               ),
@@ -1191,7 +1248,14 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
     );
   }
 
-  Widget _buildISakuTransaction(String title, String desc, String amount, String date, Color color, IconData icon) {
+  Widget _buildISakuTransaction(
+    String title,
+    String desc,
+    String amount,
+    String date,
+    Color color,
+    IconData icon,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -1231,18 +1295,12 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                 const SizedBox(height: 4),
                 Text(
                   desc,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   date,
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 11,
-                  ),
+                  style: TextStyle(color: Colors.grey[500], fontSize: 11),
                 ),
               ],
             ),
@@ -1354,7 +1412,7 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                
+
                 // User Info
                 Expanded(
                   child: Column(
@@ -1370,7 +1428,10 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
                       ),
                       const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(6),
@@ -1387,7 +1448,11 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.phone, color: Colors.white.withOpacity(0.9), size: 14),
+                          Icon(
+                            Icons.phone,
+                            color: Colors.white.withOpacity(0.9),
+                            size: 14,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             userPhone,
@@ -1414,7 +1479,7 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
             () {},
           ),
           const SizedBox(height: 12),
-          
+
           _buildMenuItem(
             Icons.help_outline,
             'FAQ',
@@ -1422,7 +1487,7 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
             () {},
           ),
           const SizedBox(height: 12),
-          
+
           _buildMenuItem(
             Icons.phone_outlined,
             'Hubungi Kami',
@@ -1434,7 +1499,12 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
     );
   }
 
-  Widget _buildMenuItem(IconData icon, String title, String subtitle, VoidCallback onTap) {
+  Widget _buildMenuItem(
+    IconData icon,
+    String title,
+    String subtitle,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -1476,10 +1546,7 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
                   const SizedBox(height: 3),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
                   ),
                 ],
               ),
