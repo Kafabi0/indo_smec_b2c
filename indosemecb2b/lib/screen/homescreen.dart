@@ -13,6 +13,7 @@ import '../services/product_service.dart';
 import 'login.dart';
 import '../services/favorite_service.dart';
 import 'favorit.dart';
+import 'package:indosemecb2b/screen/lengkapi_alamat_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -44,6 +45,9 @@ class HomeScreenState extends State<HomeScreen> {
   late List<SubCategory> subCategories;
   Store? flagshipStore;
   Map<String, bool> favoriteStatus = {};
+  Map<String, dynamic>? _savedAlamat;
+  List<Map<String, dynamic>> _listAlamat = [];
+  int _selectedAlamatIndex = 0;
 
   final List<Map<String, dynamic>> categories = [
     {'name': 'Semua', 'icon': Icons.apps},
@@ -63,20 +67,71 @@ class HomeScreenState extends State<HomeScreen> {
     _loadData();
   }
 
-  Future<void> _checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> _loadAlamat() async {
+  if (isLoggedIn && userEmail.isNotEmpty) {
+    final alamatList = await UserDataManager.getAlamatList(userEmail);
     setState(() {
-      isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-      userEmail = prefs.getString('userEmail') ?? '';
+      _savedAlamat = alamatList.isNotEmpty ? alamatList[0] : null;
     });
-    if (isLoggedIn) {
-      _loadFavoriteStatus();
-    } else {
-      setState(() {
-        favoriteStatus = {};
-      });
-    }
   }
+}
+
+  Future<void> _checkLoginStatus() async {
+  final prefs = await SharedPreferences.getInstance();
+  
+  final currentUser = await UserDataManager.getCurrentUserLogin();
+  
+  setState(() {
+    isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    userEmail = currentUser ?? ''; 
+  });
+  
+  print('🔐 [HOME] Login status check:');
+  print('   isLoggedIn: $isLoggedIn');
+  print('   userEmail: $userEmail');
+  
+  if (isLoggedIn && userEmail.isNotEmpty) {
+    _loadFavoriteStatus();
+    await _loadAlamatData();
+  } else {
+    setState(() {
+      favoriteStatus = {};
+      _savedAlamat = null;
+    });
+  }
+}
+
+  Future<void> _loadAlamatData() async {
+  print('🔍 [HOME] _loadAlamatData() dipanggil');
+  print('📧 [HOME] userEmail: $userEmail');
+  print('🔐 [HOME] isLoggedIn: $isLoggedIn');
+  
+  if (userEmail.isNotEmpty) {
+    print('⏳ [HOME] Mengambil alamat dari UserDataManager...');
+    final alamatList = await UserDataManager.getAlamatList(userEmail);
+    
+    print('📦 [HOME] Alamat list length: ${alamatList.length}');
+    if (alamatList.isNotEmpty) {
+      print('✅ [HOME] Alamat ditemukan: ${alamatList[0]['label']}');
+      print('📍 [HOME] Detail alamat: ${alamatList[0]}');
+    } else {
+      print('❌ [HOME] Tidak ada alamat tersimpan');
+    }
+    
+    if (mounted) {
+      setState(() {
+        // ⭐ UBAH BAGIAN INI:
+        _listAlamat = alamatList; // Set semua alamat ke list
+        _savedAlamat = alamatList.isNotEmpty ? alamatList[0] : null;
+        _selectedAlamatIndex = 0; // Set index pertama sebagai default
+      });
+      print('🔄 [HOME] setState() selesai, _savedAlamat: ${_savedAlamat != null ? "ADA" : "NULL"}');
+      print('📋 [HOME] Total alamat di _listAlamat: ${_listAlamat.length}');
+    }
+  } else {
+    print('⚠️ [HOME] userEmail kosong, tidak bisa load alamat');
+  }
+}
 
   Future<void> _loadFavoriteStatus() async {
     final favoriteIds = await _favoriteService.getAllFavoriteIds();
@@ -820,7 +875,10 @@ class HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 4),
                 ],
                 Text(
-                  'Area Antapani Kidul',
+                  // ⭐ UBAH JADI DINAMIS
+                  isLoggedIn && _savedAlamat != null
+                      ? _savedAlamat!['label'] ?? 'rumah'
+                      : 'Area Antapani Kidul',
                   style: TextStyle(
                     color: Colors.black87,
                     fontSize: 14,
@@ -860,197 +918,255 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   void _showLocationModal() {
-    showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          padding: EdgeInsets.all(20),
-          child:
-              isLoggedIn
-                  ? _buildLoggedInLocationModal()
-                  : _buildGuestLocationModal(),
-        );
-      },
-    );
-  }
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.white,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    isScrollControlled: true,
+    builder: (context) {
+      // ⭐ HAPUS Container wrapper, langsung return modal
+      return isLoggedIn
+          ? _buildLoggedInLocationModal()
+          : _buildGuestLocationModal();
+    },
+  );
+}
 
-  Widget _buildLoggedInLocationModal() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+Widget _buildLoggedInLocationModal() {
+  print('🏗️ [HOME] _buildLoggedInLocationModal() building...');
+  print('📍 [HOME] _savedAlamat saat build: ${_savedAlamat != null ? "ADA" : "NULL"}');
+
+  // ⭐ PAKAI StatefulBuilder supaya modal bisa rebuild
+  return StatefulBuilder(
+    builder: (BuildContext context, StateSetter setModalState) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Tipe Pemesanan',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            IconButton(
-              onPressed: () => Navigator.pop(context),
-              icon: Icon(Icons.close_rounded, color: Colors.grey[600]),
-              padding: EdgeInsets.zero,
-              constraints: BoxConstraints(),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-
-        Row(
-          children: [
-            Expanded(
-              child: _buildOrderTypeCard(
-                icon: Icons.delivery_dining_rounded,
-                label: 'Pesan Antar',
-                isSelected: true,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildOrderTypeCard(
-                icon: Icons.store_rounded,
-                label: 'Ambil di Toko',
-                isSelected: false,
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 24),
-
-        Text(
-          'Pilih Alamat',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        InkWell(
-          onTap: () {
-            Navigator.pop(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Membuka form tambah alamat...'),
-                duration: Duration(seconds: 2),
-              ),
-            );
-          },
-          child: Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.blue[700]!, width: 2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
+            // Header - Compact
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.add_rounded,
-                    color: Colors.blue[700],
-                    size: 24,
+                Text(
+                  'Tipe Pemesanan',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Tambah Alamat Pengiriman',
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(Icons.close, color: Colors.grey[600], size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Tipe Pemesanan - Simplified
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[700]!, width: 1.5),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.delivery_dining, color: Colors.blue[700], size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Pesan Antar',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.blue[700],
                     ),
                   ),
-                ),
-                Icon(Icons.chevron_right_rounded, color: Colors.blue[700]),
-              ],
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        Divider(height: 1, color: Colors.grey[300]),
-
-        const SizedBox(height: 16),
-
-        Text(
-          'Cara Lain',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[700],
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        InkWell(
-          onTap: () {
-            Navigator.pop(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Membuka pilihan lokasi...'),
-                duration: Duration(seconds: 2),
+                ],
               ),
-            );
-          },
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.location_on_rounded,
-                  color: Colors.grey[700],
-                  size: 24,
+            ),
+
+            const SizedBox(height: 16),
+            Divider(height: 1, color: Colors.grey[200]),
+            const SizedBox(height: 16),
+
+            // Header Pilih Alamat
+            Text(
+              'Pilih Alamat',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // List Alamat - Bisa lebih dari satu
+            if (_listAlamat.isNotEmpty) ...[
+              ...(_listAlamat.asMap().entries.map((entry) {
+                final index = entry.key;
+                final alamat = entry.value;
+                final isSelected = _selectedAlamatIndex == index;
+                
+                return Padding(
+                  padding: EdgeInsets.only(bottom: 8),
+                  child: InkWell(
+                    onTap: () {
+                      // ⭐ PAKAI setModalState + setState BIAR KEDUANYA UPDATE
+                      setModalState(() {
+                        _selectedAlamatIndex = index;
+                        _savedAlamat = alamat;
+                      });
+                      setState(() {
+                        _selectedAlamatIndex = index;
+                        _savedAlamat = alamat;
+                      });
+                    },
+                    child: Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(
+                          color: isSelected ? Colors.blue[700]! : Colors.grey[300]!,
+                          width: isSelected ? 1.5 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            color: isSelected ? Colors.blue[700] : Colors.grey[600],
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  alamat['label'] ?? 'rumah',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${alamat['nama_penerima'] ?? ''} (${alamat['nomor_hp'] ?? ''})',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[600],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  alamat['is_manual'] == true
+                                      ? '${alamat['alamat_lengkap'] ?? ''}, ${alamat['kelurahan'] ?? ''}'
+                                      : 'Jl. ${alamat['jalan'] ?? alamat['alamat_lengkap'] ?? ''}, ${alamat['kelurahan'] ?? ''}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[600],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            Icon(Icons.check_circle, color: Colors.blue[700], size: 20)
+                          else
+                            Icon(Icons.circle_outlined, color: Colors.grey[400], size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList()),
+            ],
+
+            // Tombol Tambah Alamat - Simplified
+            InkWell(
+              onTap: () async {
+                print('➕ [HOME] Tombol Tambah Alamat ditekan');
+                Navigator.pop(context);
+
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LengkapiAlamatScreen(
+                      existingAddress: null,
+                    ),
+                  ),
+                );
+
+                if (result != null && result is Map<String, dynamic>) {
+                  setState(() {
+                    _listAlamat.add(result);
+                    _selectedAlamatIndex = _listAlamat.length - 1;
+                    _savedAlamat = result;
+                  });
+                  
+                  final saved = await UserDataManager.saveAlamat(userEmail, result);
+                  if (saved && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Alamat berhasil disimpan'),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                }
+              },
+              child: Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey[300]!, width: 1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Pilih Lokasi',
+                child: Row(
+                  children: [
+                    Icon(Icons.add_circle_outline, color: Colors.blue[700], size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _listAlamat.isEmpty ? 'Tambah Alamat' : 'Tambah Alamat Lain',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: Colors.blue[700],
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Pilih area kota atau kecamatan',
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
+                    ),
+                    Icon(Icons.chevron_right, color: Colors.grey[400], size: 18),
+                  ],
                 ),
-                Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
-              ],
+              ),
             ),
-          ),
+            const SizedBox(height: 12),
+          ],
         ),
-
-        const SizedBox(height: 20),
-      ],
-    );
-  }
+      );
+    },
+  );
+}
 
   Widget _buildGuestLocationModal() {
     return Column(
