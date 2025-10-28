@@ -169,10 +169,13 @@ class TransactionDetailScreen extends StatelessWidget {
             const SizedBox(height: 10),
             _buildDetailRow(
               "Penerima",
-              "${alamat['nama']} - ${alamat['phone']}",
+              "${alamat['nama_penerima'] ?? alamat['nama'] ?? 'N/A'}" ,
             ),
             const SizedBox(height: 10),
-            _buildDetailRow("Alamat", alamat['alamat'] ?? "-"),
+            _buildDetailRow(
+              "Alamat",
+              alamat['alamat_lengkap'] ?? alamat['alamat'] ?? "-",
+            ),
 
             const SizedBox(height: 18),
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:intl/intl.dart';
 
 class DetailPembayaranScreen extends StatelessWidget {
@@ -88,7 +89,12 @@ class DetailPembayaranScreen extends StatelessWidget {
         elevation: 0.5,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const MainNavigation()),
+                    (route) => false,
+                  );
+                },
         ),
         title: const Text(
           'Detail Transaksi',
