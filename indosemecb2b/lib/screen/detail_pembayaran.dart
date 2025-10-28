@@ -77,6 +77,61 @@ class DetailPembayaranScreen extends StatelessWidget {
     return subtotal + biayaPengiriman + biayaAdmin;
   }
 
+  // ✅ Helper function untuk extract alamat (jika masih berbentuk Map)
+  String _getAlamatString() {
+    final alamat = transaksi['alamat'];
+
+    // Jika sudah String, langsung return
+    if (alamat is String) {
+      return alamat;
+    }
+
+    // Jika Map, konversi ke String
+    if (alamat is Map) {
+      final List<String> parts = [];
+
+      if (alamat['alamat_lengkap'] != null) {
+        parts.add(alamat['alamat_lengkap'].toString());
+      }
+      if (alamat['kelurahan'] != null) {
+        parts.add('Kel. ${alamat['kelurahan']}');
+      }
+      if (alamat['kecamatan'] != null) {
+        parts.add('Kec. ${alamat['kecamatan']}');
+      }
+      if (alamat['kota'] != null) {
+        parts.add(alamat['kota'].toString());
+      }
+      if (alamat['provinsi'] != null) {
+        parts.add(alamat['provinsi'].toString());
+      }
+      if (alamat['kodepos'] != null) {
+        parts.add(alamat['kodepos'].toString());
+      }
+
+      return parts.isNotEmpty ? parts.join(', ') : 'Alamat tidak tersedia';
+    }
+
+    return 'Alamat tidak tersedia';
+  }
+
+  // ✅ Helper function untuk extract nama penerima
+  String _getPenerimaString() {
+    final penerima = transaksi['penerima'];
+
+    if (penerima is String) {
+      return penerima;
+    }
+
+    if (penerima is Map) {
+      return penerima['nama_penerima']?.toString() ??
+          penerima['nama']?.toString() ??
+          'N/A';
+    }
+
+    return 'N/A';
+  }
+
   @override
   Widget build(BuildContext context) {
     final subtotal = _hitungSubtotal();
@@ -90,11 +145,11 @@ class DetailPembayaranScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const MainNavigation()),
-                    (route) => false,
-                  );
-                },
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const MainNavigation()),
+              (route) => false,
+            );
+          },
         ),
         title: const Text(
           'Detail Transaksi',
@@ -144,37 +199,37 @@ class DetailPembayaranScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Belanja Xpress',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.blue[50],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.shopping_cart,
-                          color: Colors.blue[700],
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Grocery',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(height: 1),
+                  // const Text(
+                  //   'Belanja Xpress',
+                  //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  // ),
+                  // const SizedBox(height: 16),
+                  // Row(
+                  //   children: [
+                  //     Container(
+                  //       padding: const EdgeInsets.all(8),
+                  //       decoration: BoxDecoration(
+                  //         color: Colors.blue[50],
+                  //         borderRadius: BorderRadius.circular(8),
+                  //       ),
+                  //       child: Icon(
+                  //         Icons.shopping_cart,
+                  //         color: Colors.blue[700],
+                  //         size: 24,
+                  //       ),
+                  //     ),
+                  //     const SizedBox(width: 12),
+                  //     const Text(
+                  //       'Grocery',
+                  //       style: TextStyle(
+                  //         fontSize: 14,
+                  //         fontWeight: FontWeight.w500,
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
+                  // const SizedBox(height: 16),
+                  // const Divider(height: 1),
                   const SizedBox(height: 16),
                   ...(transaksi['items'] as List? ?? []).map(
                     (item) => _buildProductItem(item),
@@ -217,12 +272,9 @@ class DetailPembayaranScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
-                  _buildDetailItem('Penerima', transaksi['penerima'] ?? 'N/A'),
+                  _buildDetailItem('Penerima', _getPenerimaString()),
                   const SizedBox(height: 12),
-                  _buildDetailItem(
-                    'Alamat',
-                    transaksi['alamat'] ?? 'Alamat tidak tersedia',
-                  ),
+                  _buildDetailItem('Alamat', _getAlamatString()),
                   const SizedBox(height: 16),
                   const Text(
                     'Metode Pengiriman',
@@ -363,18 +415,11 @@ class DetailPembayaranScreen extends StatelessWidget {
           ),
           child: Row(
             children: [
-              IconButton(
-                onPressed: () {
-                  // Show more options
-                },
-                icon: const Icon(Icons.more_vert),
-              ),
+              IconButton(onPressed: () {}, icon: const Icon(Icons.more_vert)),
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {
-                    // Navigate to help
-                  },
+                  onPressed: () {},
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     side: const BorderSide(color: Colors.blue),
@@ -410,13 +455,10 @@ class DetailPembayaranScreen extends StatelessWidget {
       children: [
         Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
         Row(
-          mainAxisSize: MainAxisSize.min, // ✅ Tambahkan ini
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // ✅ Ubah Flexible menjadi Constrained
             ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: 150,
-              ), // Batasi lebar maksimal
+              constraints: const BoxConstraints(maxWidth: 150),
               child: Text(
                 value,
                 style: const TextStyle(

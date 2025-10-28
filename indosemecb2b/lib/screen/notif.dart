@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'notification_provider.dart';
 import '../models/notification_model.dart';
 import 'package:intl/intl.dart';
+import 'detail_pembayaran.dart';
 
 class NotificationScreen extends StatelessWidget {
   final currency = NumberFormat.currency(
@@ -83,12 +84,9 @@ class NotificationScreen extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            // Tab Informasi
             infoNotifs.isEmpty
                 ? _buildEmptyState('Belum Ada Informasi')
                 : _buildNotifList(infoNotifs, notifProvider),
-
-            // Tab Transaksi
             transaksiNotifs.isEmpty
                 ? _buildEmptyState('Belum Ada Transaksi')
                 : _buildNotifList(transaksiNotifs, notifProvider),
@@ -143,15 +141,18 @@ class NotificationScreen extends StatelessWidget {
           ),
           onDismissed: (_) {
             provider.deleteNotification(notif.id);
-            // Bisa tambahkan snackbar confirmation
           },
-          child: _buildNotifCard(notif, provider),
+          child: _buildNotifCard(notif, provider, context),
         );
       },
     );
   }
 
-  Widget _buildNotifCard(AppNotification notif, NotificationProvider provider) {
+  Widget _buildNotifCard(
+    AppNotification notif,
+    NotificationProvider provider,
+    context,
+  ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
@@ -176,7 +177,6 @@ class NotificationScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
               Row(
                 children: [
                   Container(
@@ -221,10 +221,7 @@ class NotificationScreen extends StatelessWidget {
                   ],
                 ],
               ),
-
               const SizedBox(height: 12),
-
-              // Title
               Text(
                 notif.title,
                 style: const TextStyle(
@@ -233,10 +230,7 @@ class NotificationScreen extends StatelessWidget {
                   color: Colors.black87,
                 ),
               ),
-
               const SizedBox(height: 6),
-
-              // Message
               Text(
                 notif.message,
                 style: TextStyle(
@@ -245,8 +239,6 @@ class NotificationScreen extends StatelessWidget {
                   height: 1.4,
                 ),
               ),
-
-              // Product Image & Total (jika ada)
               if (notif.image != null || notif.total != null) ...[
                 const SizedBox(height: 12),
                 const Divider(height: 1),
@@ -306,8 +298,8 @@ class NotificationScreen extends StatelessWidget {
                     if (notif.detailButtonText != null)
                       OutlinedButton(
                         onPressed: () {
-                          // Handle navigation to detail
                           provider.markAsRead(notif.id);
+                          _navigateToDetail(context, notif);
                         },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.blue[700],
@@ -405,5 +397,44 @@ class NotificationScreen extends StatelessWidget {
             ],
           ),
     );
+  }
+
+  // ✅ PERBAIKAN - Langsung gunakan transactionData dari notifikasi
+  void _navigateToDetail(BuildContext context, AppNotification notif) async {
+    print('🔍 Navigating to detail for Order ID: ${notif.orderId}');
+    print('📦 Transaction data: ${notif.transactionData}');
+
+    // ✅ Cek apakah transactionData ada
+    if (notif.transactionData == null || notif.transactionData!.isEmpty) {
+      print('❌ Transaction data is null or empty');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Data transaksi tidak ditemukan'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
+
+    // ✅ Langsung gunakan data dari notifikasi dengan validasi tipe data
+    final transaksiMap = Map<String, dynamic>.from(notif.transactionData!);
+
+    // ✅ Debug: print setiap field dan tipe datanya
+    print('✅ Using transaction data from notification');
+    transaksiMap.forEach((key, value) {
+      print('📋 $key: ${value.runtimeType} = $value');
+    });
+
+    if (context.mounted) {
+      // Navigate ke DetailPembayaranScreen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DetailPembayaranScreen(transaksi: transaksiMap),
+        ),
+      );
+    }
   }
 }

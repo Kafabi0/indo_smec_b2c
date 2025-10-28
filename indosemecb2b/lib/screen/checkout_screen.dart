@@ -25,6 +25,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   List<CartItem> _cartItems = [];
   bool _isLoading = true;
   bool _isProcessing = false;
+
   String formatRupiah(double value) {
     final format = NumberFormat.currency(
       locale: 'id_ID',
@@ -64,6 +65,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       print('🔍 DEBUG CHECKOUT - Alamat: ${widget.alamat}');
       print('🔍 DEBUG CHECKOUT - Payment type: $paymentType');
 
+      // ✅ Generate transaction ID
+      final transactionId = 'TRX${DateTime.now().millisecondsSinceEpoch}';
+      print('✅ Generated Transaction ID: $transactionId');
+
       // Simpan transaksi
       final success = await TransactionManager.createTransaction(
         cartItems: _cartItems,
@@ -82,37 +87,123 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           print('⚠️ Warning: Cart clearing failed, but transaction was saved');
         }
 
-        // ✅ TRIGGER NOTIFIKASI
+        // ✅ TRIGGER NOTIFIKASI dengan data lengkap
         if (mounted) {
-          // Generate order ID
-          final orderId = 'ORD${DateTime.now().millisecondsSinceEpoch}';
-
           // Ambil gambar produk pertama (jika ada)
           final firstProductImage =
               _cartItems.isNotEmpty ? _cartItems.first.imageUrl : null;
 
+          // ✅ Extract alamat dengan aman (SEMUA jadi String!)
+          String penerimaName = 'N/A';
+          String alamatLengkap = 'Alamat tidak tersedia';
+          String nomorHP = 'N/A';
+
+          if (widget.alamat != null) {
+            // Ambil nama penerima
+            penerimaName =
+                widget.alamat!['nama_penerima']?.toString() ??
+                widget.alamat!['nama']?.toString() ??
+                'N/A';
+
+            // Ambil nomor HP
+            nomorHP = widget.alamat!['nomor_hp']?.toString() ?? 'N/A';
+
+            // ✅ Format alamat lengkap dari field-field yang ada
+            final List<String> alamatParts = [];
+
+            if (widget.alamat!['alamat_lengkap'] != null &&
+                widget.alamat!['alamat_lengkap'].toString().isNotEmpty) {
+              alamatParts.add(widget.alamat!['alamat_lengkap'].toString());
+            }
+
+            if (widget.alamat!['kelurahan'] != null) {
+              alamatParts.add('Kel. ${widget.alamat!['kelurahan']}');
+            }
+
+            if (widget.alamat!['kecamatan'] != null) {
+              alamatParts.add('Kec. ${widget.alamat!['kecamatan']}');
+            }
+
+            if (widget.alamat!['kota'] != null) {
+              alamatParts.add(widget.alamat!['kota'].toString());
+            }
+
+            if (widget.alamat!['provinsi'] != null) {
+              alamatParts.add(widget.alamat!['provinsi'].toString());
+            }
+
+            if (widget.alamat!['kodepos'] != null) {
+              alamatParts.add(widget.alamat!['kodepos'].toString());
+            }
+
+            if (alamatParts.isNotEmpty) {
+              alamatLengkap = alamatParts.join(', ');
+            }
+          }
+
+          print('📍 Penerima: $penerimaName');
+          print('📍 Nomor HP: $nomorHP');
+          print('📍 Alamat: $alamatLengkap');
+
+          // ✅ Buat transaction data LENGKAP dengan tipe data yang benar
+          final transactionData = {
+            'no_transaksi': transactionId,
+            'tanggal': DateTime.now().toIso8601String(),
+            'status': 'Pembayaran Lunas',
+            'metode_pembayaran': paymentType,
+            'items':
+                _cartItems
+                    .map(
+                      (item) => {
+                        'nama': item.name,
+                        'name': item.name,
+                        'quantity': item.quantity,
+                        'harga': item.price,
+                        'image': item.imageUrl ?? '',
+                      },
+                    )
+                    .toList(),
+            'penerima': penerimaName, // ✅ String, bukan Map
+            'alamat': alamatLengkap, // ✅ String, bukan Map
+            'metode_pengiriman':
+                widget.deliveryOption == 'xpress'
+                    ? 'Xpress (Rp5.000)'
+                    : 'Reguler (Rp5.000)',
+            'jadwal_pengiriman':
+                'Dikirim : ${DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID').format(DateTime.now())}',
+            'biaya_pengiriman': 5000.0,
+            'biaya_admin': 0.0,
+            'delivery_option': widget.deliveryOption,
+          };
+
+          print('📦 Transaction data prepared:');
+          transactionData.forEach((key, value) {
+            print('  $key: ${value.runtimeType} = $value');
+          });
+
           // 1. Tampilkan Local Notification
           await NotificationService().showPaymentSuccessNotification(
-            orderId: orderId,
+            orderId: transactionId,
             paymentMethod: paymentType,
             totalAmount: getTotal(),
             productImage: firstProductImage,
           );
 
-          // 2. Simpan ke NotificationProvider (untuk halaman notifikasi)
+          // 2. Simpan ke NotificationProvider dengan data lengkap
           final notifProvider = Provider.of<NotificationProvider>(
             context,
             listen: false,
           );
 
           await notifProvider.addPaymentSuccessNotification(
-            orderId: orderId,
+            orderId: transactionId,
             paymentMethod: paymentType,
             total: getTotal(),
             productImage: firstProductImage,
+            transactionData: transactionData,
           );
 
-          print('🔔 Notification sent successfully!');
+          print('🔔 Notification sent successfully with ID: $transactionId');
 
           // 3. Navigasi ke halaman sukses
           Navigator.of(context).pushAndRemoveUntil(
@@ -138,8 +229,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           );
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('❌ ERROR CHECKOUT: $e');
+      print('❌ STACK TRACE: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -342,14 +434,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     _isProcessing
                         ? null
                         : () async {
-                          // Hitung total
                           double total = getTotal();
 
-                          // Debug: cek nilai total
-                          print("💰 DEBUG - Total pembayaran: $total");
-                          print("🛒 DEBUG - Cart items: ${_cartItems.length}");
-
-                          // Validasi keranjang tidak kosong
                           if (_cartItems.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -360,7 +446,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             return;
                           }
 
-                          // Validasi total valid
                           if (total <= 0 || total.isNaN || total.isInfinite) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -373,8 +458,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             return;
                           }
 
-                          // ✅ Navigasi ke halaman pilih metode pembayaran
-                          print("🚀 Navigating to PaymentMethodScreen...");
                           final selectedPayment = await Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -385,15 +468,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             ),
                           );
 
-                          // ✅ Jika user memilih metode pembayaran, proses checkout
                           if (selectedPayment != null && mounted) {
                             print("✅ Metode dipilih: $selectedPayment");
-                            print("🔄 Processing checkout...");
                             await _processCheckout(selectedPayment);
-                          } else {
-                            print(
-                              "❌ Pembayaran dibatalkan atau tidak ada metode dipilih",
-                            );
                           }
                         },
                 style: ElevatedButton.styleFrom(

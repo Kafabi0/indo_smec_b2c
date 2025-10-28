@@ -10,6 +10,9 @@ class AppNotification {
   final String? image;
   final double? total;
   final String? detailButtonText;
+  final String? orderId; // ✅ TAMBAHAN
+  final Map<String, dynamic>?
+  transactionData; // ✅ TAMBAHAN - untuk menyimpan data lengkap
 
   AppNotification({
     required this.id,
@@ -21,6 +24,8 @@ class AppNotification {
     this.image,
     this.total,
     this.detailButtonText,
+    this.orderId, // ✅ TAMBAHAN
+    this.transactionData, // ✅ TAMBAHAN
   });
 
   // CopyWith method untuk update properties
@@ -34,6 +39,8 @@ class AppNotification {
     String? image,
     double? total,
     String? detailButtonText,
+    String? orderId,
+    Map<String, dynamic>? transactionData,
   }) {
     return AppNotification(
       id: id ?? this.id,
@@ -45,6 +52,8 @@ class AppNotification {
       image: image ?? this.image,
       total: total ?? this.total,
       detailButtonText: detailButtonText ?? this.detailButtonText,
+      orderId: orderId ?? this.orderId,
+      transactionData: transactionData ?? this.transactionData,
     );
   }
 
@@ -60,6 +69,8 @@ class AppNotification {
       'image': image,
       'total': total,
       'detailButtonText': detailButtonText,
+      'orderId': orderId,
+      'transactionData': transactionData,
     };
   }
 
@@ -78,6 +89,8 @@ class AppNotification {
       image: json['image'] as String?,
       total: json['total'] as double?,
       detailButtonText: json['detailButtonText'] as String?,
+      orderId: json['orderId'] as String?,
+      transactionData: json['transactionData'] as Map<String, dynamic>?,
     );
   }
 }

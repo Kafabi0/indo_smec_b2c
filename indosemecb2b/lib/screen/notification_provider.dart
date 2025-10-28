@@ -68,6 +68,7 @@ class NotificationProvider with ChangeNotifier {
     required String paymentMethod,
     required double total,
     String? productImage,
+    Map<String, dynamic>? transactionData, // ✅ TAMBAHAN untuk data transaksi
   }) async {
     final notification = AppNotification(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -80,6 +81,8 @@ class NotificationProvider with ChangeNotifier {
       image: productImage,
       total: total,
       detailButtonText: 'Lihat Detail',
+      orderId: orderId, // ✅ Simpan orderId
+      transactionData: transactionData, // ✅ Simpan data transaksi lengkap
     );
 
     await addNotification(notification);
@@ -90,6 +93,7 @@ class NotificationProvider with ChangeNotifier {
     required String orderId,
     required String deliveryTime,
     String? productImage,
+    Map<String, dynamic>? transactionData,
   }) async {
     final notification = AppNotification(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -100,6 +104,8 @@ class NotificationProvider with ChangeNotifier {
       isRead: false,
       image: productImage,
       detailButtonText: 'Lacak Pesanan',
+      orderId: orderId,
+      transactionData: transactionData,
     );
 
     await addNotification(notification);
