@@ -3,6 +3,7 @@ import '../models/product_model.dart';
 import '../services/product_service.dart';
 import '../services/favorite_service.dart';
 import '../utils/user_data_manager.dart'; // tambahkan import ini
+import 'package:intl/intl.dart';
 
 class FavoritScreen extends StatefulWidget {
   const FavoritScreen({Key? key}) : super(key: key);
@@ -25,6 +26,15 @@ class _FavoritScreenState extends State<FavoritScreen> {
     super.initState();
     _loadFavoriteProducts();
     _searchController.addListener(_onSearchChanged);
+  }
+
+  String formatRupiah(double amount) {
+    final formatter = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp.',
+      decimalDigits: 0,
+    );
+    return formatter.format(amount);
   }
 
   void _onSearchChanged() {
@@ -338,7 +348,7 @@ class _FavoritScreenState extends State<FavoritScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Rp${product.price.toStringAsFixed(0)}',
+                      formatRupiah(product.price),
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -351,7 +361,7 @@ class _FavoritScreenState extends State<FavoritScreen> {
                       Row(
                         children: [
                           Text(
-                            'Rp${product.originalPrice!.toStringAsFixed(0)}',
+                            formatRupiah(product.originalPrice!),
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[500],
