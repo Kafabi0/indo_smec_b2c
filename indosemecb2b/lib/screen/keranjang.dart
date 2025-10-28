@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // ⭐ Tambahkan import ini
+import 'package:intl/intl.dart';
 import 'package:indosemecb2b/screen/checkout_screen.dart';
 import 'package:indosemecb2b/screen/favorit.dart';
 import 'package:indosemecb2b/screen/lengkapi_alamat_screen.dart';
@@ -15,7 +15,7 @@ class CartScreen extends StatefulWidget {
   State<CartScreen> createState() => CartScreenState();
 }
 
-class CartScreenState extends State<CartScreen> {
+class CartScreenState extends State<CartScreen> with RouteAware {
   String selectedDelivery = 'xpress';
 
   Map<String, dynamic>? _savedAlamat;
@@ -24,11 +24,10 @@ class CartScreenState extends State<CartScreen> {
   List<CartItem> _cartItems = [];
   String? _catatanPengiriman;
 
-  String selectedDeliveryType = "antar"; // antar / pickup
-  String selectedShipping = "reguler"; // instan / reguler
+  String selectedDeliveryType = "antar";
+  String selectedShipping = "reguler";
   String? selectedRegulerTime;
 
-  // ⭐ Formatter untuk harga Indonesia
   final NumberFormat _currencyFormatter = NumberFormat.currency(
     locale: 'id_ID',
     symbol: 'Rp',
@@ -45,6 +44,7 @@ class CartScreenState extends State<CartScreen> {
     _loadUserData();
   }
 
+  // ⭐ AUTO RELOAD: Dipanggil setiap kali halaman muncul kembali
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -249,11 +249,14 @@ class CartScreenState extends State<CartScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.favorite_sharp, color: Colors.grey[700]),
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              // ⭐ Gunakan await untuk menunggu halaman favorit selesai
+              await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => FavoritScreen()),
               );
+              // ⭐ Setelah kembali dari Favorit, reload data
+              await _loadUserData();
             },
           ),
         ],
@@ -305,7 +308,7 @@ class CartScreenState extends State<CartScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              _formatPrice(_calculateTotal()), // ⭐ Format harga
+                              _formatPrice(_calculateTotal()),
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -346,360 +349,381 @@ class CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildDeliveryOptionsSheet() {
-  return StatefulBuilder(
-    builder: (context, setState) {
-      return Container(
-        decoration: const BoxDecoration(
-          color: Colors.white, // ✅ BACKGROUND PUTIH
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(20), // ✅ Sudut atas membulat
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Tipe Pemesanan",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: _optionButton(
-                      label: "Pesan Antar",
-                      icon: Icons.delivery_dining,
-                      isActive: selectedDeliveryType == "antar",
-                      onTap: () => setState(() => selectedDeliveryType = "antar"),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-              const Text(
-                "Pilih salah satu tipe pengiriman",
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-
-              _radioShipping(
-                title: "Reguler - Pilih Waktu (Rp5.000)",
-                subtitle: selectedRegulerTime ?? "Pilih jadwal pengiriman",
-                value: "reguler",
-                groupValue: selectedShipping,
-                onChanged: (v) {
-                  setState(() => selectedShipping = v!);
-                  _openTimePickerSheet();
-                },
-              ),
-
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text("Batal"),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (selectedShipping == "reguler" &&
-                            selectedRegulerTime == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Silakan pilih waktu pengiriman dulu"),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CheckoutScreen(
-                              alamat: _savedAlamat,
-                              deliveryOption:
-                                  "$selectedShipping - $selectedRegulerTime",
-                            ),
-                          ),
-                        );
-                      },
-                      child: const Text("Konfirmasi"),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      );
-    },
-  );
-}
-
-void _openTimePickerSheet() {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (_) => _buildTimeSelectorSheet(),
-  );
-}
-
-Widget _buildTimeSelectorSheet() {
-  List<String> allTimes = [
-    "14.00 - 14.59",
-    "15.00 - 15.59",
-    "16.00 - 16.59",
-    "17.00 - 17.59",
-    "18.00 - 18.59",
-    "19.00 - 19.59",
-    "20.00 - 20.59",
-  ];
-
-  DateTime today = DateTime.now();
-  List<DateTime> dateOptions = [
-    today,
-    today.add(const Duration(days: 1)),
-    today.add(const Duration(days: 2)),
-  ];
-
-  int selectedDayIndex = 0;
-  String? selectedTime;
-
-  return StatefulBuilder(
-    builder: (context, setStateSB) {
-      List<String> times = List.from(allTimes);
-
-      // FILTER REAL-TIME → HANYA HARI INI
-      if (selectedDayIndex == 0) {
-        int nowHour = DateTime.now().hour;
-        times = times.where((t) {
-          int h = int.parse(t.substring(0, 2));
-          return h > nowHour; // hanya tampil jam yang belum lewat
-        }).toList();
-      }
-
-      return Padding(
-        padding: const EdgeInsets.all(20),
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.7,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("Waktu Pengiriman",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 20),
-
-              const Text("Hari", style: TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 10),
-
-              Row(
-                children: List.generate(dateOptions.length, (index) {
-                  DateTime d = dateOptions[index];
-                  String labelDay = index == 0
-                      ? "Hari Ini"
-                      : index == 1
-                          ? "Besok"
-                          : "Lusa";
-
-                  return Expanded(
-                    child: GestureDetector(
-                      onTap: () => setStateSB(() => selectedDayIndex = index),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        margin: const EdgeInsets.only(right: 8),
-                        decoration: BoxDecoration(
-                          color: selectedDayIndex == index
-                              ? Colors.blue
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: selectedDayIndex == index
-                                ? Colors.blue
-                                : Colors.grey.shade300,
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              labelDay,
-                              style: TextStyle(
-                                color: selectedDayIndex == index
-                                    ? Colors.white
-                                    : Colors.black,
-                                fontSize: 13,
-                              ),
-                            ),
-                            Text(
-                              "${d.day} Okt",
-                              style: TextStyle(
-                                color: selectedDayIndex == index
-                                    ? Colors.white
-                                    : Colors.black,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Tipe Pemesanan",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _optionButton(
+                        label: "Pesan Antar",
+                        icon: Icons.delivery_dining,
+                        isActive: selectedDeliveryType == "antar",
+                        onTap:
+                            () =>
+                                setState(() => selectedDeliveryType = "antar"),
                       ),
                     ),
-                  );
-                }),
-              ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  "Pilih salah satu tipe pengiriman",
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 12),
+                _radioShipping(
+                  title: "Reguler - Pilih Waktu (Rp5.000)",
+                  subtitle: selectedRegulerTime ?? "Pilih jadwal pengiriman",
+                  value: "reguler",
+                  groupValue: selectedShipping,
+                  onChanged: (v) {
+                    setState(() => selectedShipping = v!);
+                    _openTimePickerSheet();
+                  },
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text("Batal"),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (selectedShipping == "reguler" &&
+                              selectedRegulerTime == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Silakan pilih waktu pengiriman dulu",
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
 
-              const SizedBox(height: 20),
-              const Text("Waktu", style: TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 10),
-
-              Expanded(
-                child: times.isEmpty
-                    ? const Center(
-                        child: Text("Tidak ada jadwal tersisa untuk hari ini"))
-                    : ListView.builder(
-                        itemCount: times.length,
-                        itemBuilder: (ctx, i) {
-                          return ListTile(
-                            title: Text(times[i]),
-                            trailing: selectedTime == times[i]
-                                ? const Icon(Icons.check, color: Colors.blue)
-                                : null,
-                            onTap: () => setStateSB(
-                              () => selectedTime = times[i],
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => CheckoutScreen(
+                                    alamat: _savedAlamat,
+                                    deliveryOption:
+                                        "$selectedShipping - $selectedRegulerTime",
+                                  ),
                             ),
                           );
                         },
+                        child: const Text("Konfirmasi"),
                       ),
-              ),
-
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: selectedTime == null
-                    ? null
-                    : () {
-                        setState(() {
-                          selectedRegulerTime = selectedTime!;
-                        });
-                        Navigator.pop(context);
-                      },
-                child: const Text("Pilih Waktu"),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      );
-    },
-  );
-}
-
-
-Widget _radioShipping({
-  required String title,
-  required String subtitle,
-  required String value,
-  required String groupValue,
-  required ValueChanged<String?> onChanged,
-}) {
-  return InkWell(
-    onTap: () => onChanged(value),
-    child: Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: groupValue == value ? Colors.blue : Colors.grey.shade300,
-          width: 1.4,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Radio<String>(
-            value: value,
-            groupValue: groupValue,
-            onChanged: onChanged,
-            activeColor: Colors.blue,
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(subtitle,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
-        ],
-      ),
-    ),
-  );
-}
+        );
+      },
+    );
+  }
 
-Widget _optionButton({
-  required String label,
-  required IconData icon,
-  required bool isActive,
-  required VoidCallback onTap,
-}) {
-  return GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: isActive ? Colors.blue[700] : Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isActive ? Colors.blue : Colors.grey[300]!,
-          width: 1.4,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
+  void _openTimePickerSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: isActive ? Colors.white : Colors.blue),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: isActive ? Colors.white : Colors.blue,
-              fontWeight: FontWeight.bold,
+      builder: (_) => _buildTimeSelectorSheet(),
+    );
+  }
+
+  Widget _buildTimeSelectorSheet() {
+    List<String> allTimes = [
+      "14.00 - 14.59",
+      "15.00 - 15.59",
+      "16.00 - 16.59",
+      "17.00 - 17.59",
+      "18.00 - 18.59",
+      "19.00 - 19.59",
+      "20.00 - 20.59",
+    ];
+
+    DateTime today = DateTime.now();
+    List<DateTime> dateOptions = [
+      today,
+      today.add(const Duration(days: 1)),
+      today.add(const Duration(days: 2)),
+    ];
+
+    int selectedDayIndex = 0;
+    String? selectedTime;
+
+    return StatefulBuilder(
+      builder: (context, setStateSB) {
+        List<String> times = List.from(allTimes);
+
+        if (selectedDayIndex == 0) {
+          int nowHour = DateTime.now().hour;
+          times =
+              times.where((t) {
+                int h = int.parse(t.substring(0, 2));
+                return h > nowHour;
+              }).toList();
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.7,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Waktu Pengiriman",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  "Hari",
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: List.generate(dateOptions.length, (index) {
+                    DateTime d = dateOptions[index];
+                    String labelDay =
+                        index == 0
+                            ? "Hari Ini"
+                            : index == 1
+                            ? "Besok"
+                            : "Lusa";
+
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () => setStateSB(() => selectedDayIndex = index),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color:
+                                selectedDayIndex == index
+                                    ? Colors.blue
+                                    : Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color:
+                                  selectedDayIndex == index
+                                      ? Colors.blue
+                                      : Colors.grey.shade300,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                labelDay,
+                                style: TextStyle(
+                                  color:
+                                      selectedDayIndex == index
+                                          ? Colors.white
+                                          : Colors.black,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              Text(
+                                "${d.day} Okt",
+                                style: TextStyle(
+                                  color:
+                                      selectedDayIndex == index
+                                          ? Colors.white
+                                          : Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  "Waktu",
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child:
+                      times.isEmpty
+                          ? const Center(
+                            child: Text(
+                              "Tidak ada jadwal tersisa untuk hari ini",
+                            ),
+                          )
+                          : ListView.builder(
+                            itemCount: times.length,
+                            itemBuilder: (ctx, i) {
+                              return ListTile(
+                                title: Text(times[i]),
+                                trailing:
+                                    selectedTime == times[i]
+                                        ? const Icon(
+                                          Icons.check,
+                                          color: Colors.blue,
+                                        )
+                                        : null,
+                                onTap:
+                                    () => setStateSB(
+                                      () => selectedTime = times[i],
+                                    ),
+                              );
+                            },
+                          ),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed:
+                      selectedTime == null
+                          ? null
+                          : () {
+                            setState(() {
+                              selectedRegulerTime = selectedTime!;
+                            });
+                            Navigator.pop(context);
+                          },
+                  child: const Text("Pilih Waktu"),
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
           ),
-        ],
+        );
+      },
+    );
+  }
+
+  Widget _radioShipping({
+    required String title,
+    required String subtitle,
+    required String value,
+    required String groupValue,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return InkWell(
+      onTap: () => onChanged(value),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: groupValue == value ? Colors.blue : Colors.grey.shade300,
+            width: 1.4,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Radio<String>(
+              value: value,
+              groupValue: groupValue,
+              onChanged: onChanged,
+              activeColor: Colors.blue,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
+
+  Widget _optionButton({
+    required String label,
+    required IconData icon,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.blue[700] : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isActive ? Colors.blue : Colors.grey[300]!,
+            width: 1.4,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isActive ? Colors.white : Colors.blue),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive ? Colors.white : Colors.blue,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildPromoBanner() {
     return Padding(
@@ -749,7 +773,7 @@ Widget _optionButton({
                           ),
                         ),
                         const Text(
-                          'Rp7.900', // ⭐ Bisa diganti _formatPrice(7900)
+                          'Rp7.900',
                           style: TextStyle(
                             color: Colors.black,
                             fontSize: 8,
@@ -798,8 +822,6 @@ Widget _optionButton({
           },
         ),
         const SizedBox(height: 24),
-
-        // Promo Fair Section
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
@@ -928,7 +950,7 @@ Widget _optionButton({
                 Row(
                   children: [
                     Text(
-                      _formatPrice(item.price), // ⭐ Format harga
+                      _formatPrice(item.price),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -938,7 +960,7 @@ Widget _optionButton({
                     const SizedBox(width: 6),
                     if (item.originalPrice != null)
                       Text(
-                        _formatPrice(item.originalPrice!), // ⭐ Format harga
+                        _formatPrice(item.originalPrice!),
                         style: TextStyle(
                           fontSize: 12,
                           decoration: TextDecoration.lineThrough,

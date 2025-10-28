@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../services/product_service.dart';
 import '../services/favorite_service.dart';
-import '../utils/user_data_manager.dart'; // tambahkan import ini
+import '../utils/user_data_manager.dart';
+import '../utils/cart_manager.dart'; // ⭐ Tambahkan import ini
 import 'package:intl/intl.dart';
 
 class FavoritScreen extends StatefulWidget {
@@ -74,6 +75,49 @@ class _FavoritScreenState extends State<FavoritScreen> {
           backgroundColor: Colors.orange[700],
         ),
       );
+    }
+  }
+
+  // ⭐ Fungsi untuk menambahkan produk ke keranjang
+  Future<void> _addToCart(Product product) async {
+    final success = await CartManager.addToCart(
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      originalPrice: product.originalPrice,
+      discountPercentage: product.discountPercentage,
+      imageUrl: product.imageUrl,
+      quantity: 1,
+    );
+
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${product.name} ditambahkan ke keranjang'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.green[600],
+            action: SnackBarAction(
+              label: 'Lihat',
+              textColor: Colors.white,
+              onPressed: () {
+                // Navigasi ke halaman keranjang jika diperlukan
+                // Navigator.push(context, MaterialPageRoute(builder: (_) => CartScreen()));
+              },
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Gagal menambahkan ke keranjang. Silakan login terlebih dahulu.',
+            ),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.red[600],
+          ),
+        );
+      }
     }
   }
 
@@ -403,20 +447,12 @@ class _FavoritScreenState extends State<FavoritScreen> {
             ),
           ),
 
-          // 🔸 Tombol tambah (+)
+          // 🔸 Tombol tambah (+) - ⭐ UPDATED
           Positioned(
             top: 6,
             right: 36,
             child: GestureDetector(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${product.name} ditambahkan ke keranjang'),
-                    duration: const Duration(seconds: 1),
-                    backgroundColor: Colors.green[600],
-                  ),
-                );
-              },
+              onTap: () => _addToCart(product), // ⭐ Panggil fungsi _addToCart
               child: Container(
                 padding: const EdgeInsets.all(4),
                 decoration: const BoxDecoration(
