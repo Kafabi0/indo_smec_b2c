@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:indosemecb2b/screen/pembayaran_berhasil.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
 
@@ -334,17 +335,24 @@ class PaymentMethodScreen extends StatelessWidget {
           ),
         ),
         trailing: Icon(Icons.chevron_right, color: Colors.grey.shade400),
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          // Navigasi ke detail pembayaran
+          final selectedMethod = await Navigator.push(
             context,
             MaterialPageRoute(
               builder:
-                  (context) => PaymentDetailScreen(
+                  (_) => PaymentDetailScreen(
                     paymentType: paymentType,
                     totalPembayaran: totalPembayaran,
                   ),
             ),
           );
+
+          // ✅ Jika user klik "Saya Sudah Bayar", kembalikan metode ke CheckoutScreen
+          if (selectedMethod != null && context.mounted) {
+            // Pop kembali ke CheckoutScreen dengan membawa metode pembayaran
+            Navigator.pop(context, selectedMethod);
+          }
         },
       ),
     );
@@ -532,36 +540,42 @@ class _PaymentDetailScreenState extends State<PaymentDetailScreen> {
           const SizedBox(height: 100),
         ],
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.shade300,
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context);
-            Navigator.pop(context, widget.paymentType);
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.shade300,
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
           ),
-          child: const Text(
-            "Saya Sudah Bayar",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+          child: ElevatedButton(
+            onPressed: () {
+              print(
+                '💳 User clicked "Saya Sudah Bayar" for: ${widget.paymentType}',
+              );
+              // ✅ Pop dengan hasil metode pembayaran
+              // Ini akan kembali ke PaymentMethodScreen
+              Navigator.of(context).pop(widget.paymentType);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              "Saya Sudah Bayar",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
         ),

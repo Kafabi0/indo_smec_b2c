@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:indosemecb2b/screen/metode_pembayaran.dart';
+import 'package:indosemecb2b/screen/pembayaran_berhasil.dart';
 import 'package:indosemecb2b/screen/transaksi.dart';
 import 'package:indosemecb2b/utils/cart_manager.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
@@ -47,7 +48,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   double getTotal() =>
       _cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
 
-  Future<void> _processCheckout() async {
+  Future<void> _processCheckout(String paymentType) async {
     if (_isProcessing) return;
 
     setState(() {
@@ -58,161 +59,42 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       print('🔍 DEBUG CHECKOUT - Cart items: ${_cartItems.length}');
       print('🔍 DEBUG CHECKOUT - Delivery option: ${widget.deliveryOption}');
       print('🔍 DEBUG CHECKOUT - Alamat: ${widget.alamat}');
+      print('🔍 DEBUG CHECKOUT - Payment type: $paymentType');
 
-      // Buat transaksi
+      // Simpan transaksi
       final success = await TransactionManager.createTransaction(
         cartItems: _cartItems,
         deliveryOption: widget.deliveryOption,
         alamat: widget.alamat,
       );
 
-      print('🔍 DEBUG CHECKOUT - Transaction created: $success');
-
       if (success) {
-        // Verifikasi transaksi tersimpan
-        final transactions = await TransactionManager.getTransactions();
-        print(
-          '🔍 DEBUG CHECKOUT - Total transactions after save: ${transactions.length}',
-        );
+        print('✅ Transaction created successfully');
 
-        // Kosongkan keranjang setelah transaksi berhasil
-        await CartManager.clearCart();
-        print('🔍 DEBUG CHECKOUT - Cart cleared');
+        // ✅ HAPUS SEMUA ITEM DARI KERANJANG
+        final clearSuccess = await CartManager.clearCart();
+        print('🗑️ Cart cleared: $clearSuccess');
 
-        // Tunggu sebentar sebelum menampilkan dialog
-        await Future.delayed(const Duration(milliseconds: 300));
+        if (!clearSuccess) {
+          print('⚠️ Warning: Cart clearing failed, but transaction was saved');
+        }
 
-        // Tampilkan dialog sukses
         if (mounted) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder:
-                (context) => WillPopScope(
-                  onWillPop: () async => false,
-                  child: AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.green[50],
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.check_circle,
-                            color: Colors.green[600],
-                            size: 64,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        const Text(
-                          'Pembayaran Berhasil!',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Pesanan Anda sedang diproses',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              // ⭐ Tutup semua screen hingga ke root (MainNavigation)
-                              Navigator.of(context).pop();
-
-                              // 2. Tunggu sebentar untuk memastikan dialog tertutup
-                              Future.delayed(const Duration(milliseconds: 100), () {
-                                // 3. Pop CheckoutScreen dan CartScreen, lalu push TransaksiScreen
-                                Navigator.of(context).pushAndRemoveUntil(
-                                  MaterialPageRoute(
-                                    builder: (_) => const MainNavigation(),
-                                  ),
-                                  (route) =>
-                                      route
-                                          .isFirst, // Hapus semua route kecuali yang pertama
-                                );
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue[700],
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: const Text(
-                              'Kembali ke Beranda',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // SizedBox(
-                        //   width: double.infinity,
-                        //   child: OutlinedButton(
-                        //     onPressed: () {
-                        //       // ⭐ PERBAIKAN: Gunakan Navigator.of(context, rootNavigator: true)
-                        //       // untuk memastikan kita keluar dari dialog dan semua route
-
-                        //       // 1. Tutup dialog dulu
-                        //       Navigator.of(context).pop();
-
-                        //       // 2. Tunggu sebentar untuk memastikan dialog tertutup
-                        //       Future.delayed(const Duration(milliseconds: 100), () {
-                        //         // 3. Pop CheckoutScreen dan CartScreen, lalu push TransaksiScreen
-                        //         Navigator.of(context).pushAndRemoveUntil(
-                        //           MaterialPageRoute(
-                        //             builder: (_) => const MainNavigation(),
-                        //           ),
-                        //           (route) =>
-                        //               route
-                        //                   .isFirst, // Hapus semua route kecuali yang pertama
-                        //         );
-                        //       });
-                        //     },
-                        //     style: OutlinedButton.styleFrom(
-                        //       padding: const EdgeInsets.symmetric(vertical: 14),
-                        //       shape: RoundedRectangleBorder(
-                        //         borderRadius: BorderRadius.circular(8),
-                        //       ),
-                        //       side: BorderSide(color: Colors.blue[700]!),
-                        //     ),
-                        //     child: Text(
-                        //       'Lihat Transaksi',
-                        //       style: TextStyle(
-                        //         fontSize: 16,
-                        //         fontWeight: FontWeight.bold,
-                        //         color: Colors.blue[700],
-                        //       ),
-                        //     ),
-                        //   ),
-                        // ),
-                      ],
-                    ),
+          // ✅ Navigasi ke halaman sukses dan hapus semua route sebelumnya
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder:
+                  (_) => PaymentSuccessScreen(
+                    totalPembayaran: getTotal(),
+                    metodePembayaran: paymentType,
+                    tanggal: DateTime.now(),
                   ),
-                ),
+            ),
+            (route) => false, // Hapus semua route (termasuk CheckoutScreen)
           );
         }
       } else {
-        print('❌ DEBUG CHECKOUT - Failed to create transaction');
+        print('❌ Transaction creation failed');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -223,7 +105,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         }
       }
     } catch (e) {
-      print('❌ DEBUG CHECKOUT - Exception: $e');
+      print('❌ ERROR CHECKOUT: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -422,50 +304,64 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () async {
-                  // Hitung total
-                  double total = getTotal();
+                onPressed:
+                    _isProcessing
+                        ? null
+                        : () async {
+                          // Hitung total
+                          double total = getTotal();
 
-                  // Debug: cek nilai total
-                  print("DEBUG - Total pembayaran: $total");
-                  print("DEBUG - Cart items: ${_cartItems.length}");
+                          // Debug: cek nilai total
+                          print("💰 DEBUG - Total pembayaran: $total");
+                          print("🛒 DEBUG - Cart items: ${_cartItems.length}");
 
-                  // Validasi keranjang tidak kosong
-                  if (_cartItems.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Keranjang masih kosong!'),
-                        backgroundColor: Colors.orange,
-                      ),
-                    );
-                    return;
-                  }
+                          // Validasi keranjang tidak kosong
+                          if (_cartItems.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Keranjang masih kosong!'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                            return;
+                          }
 
-                  // Validasi total valid
-                  if (total <= 0 || total.isNaN || total.isInfinite) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Total pembayaran tidak valid: $total'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
+                          // Validasi total valid
+                          if (total <= 0 || total.isNaN || total.isInfinite) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Total pembayaran tidak valid: $total',
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
 
-                  final selectedPayment = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => PaymentMethodScreen(totalPembayaran: total,),
-                    ),
-                  );
+                          // ✅ Navigasi ke halaman pilih metode pembayaran
+                          print("🚀 Navigating to PaymentMethodScreen...");
+                          final selectedPayment = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => PaymentMethodScreen(
+                                    totalPembayaran: total,
+                                  ),
+                            ),
+                          );
 
-                  if (selectedPayment != null) {
-                    print("✅ Metode dipilih: $selectedPayment");
-                    _processCheckout();
-                  }
-                },
-
+                          // ✅ Jika user memilih metode pembayaran, proses checkout
+                          if (selectedPayment != null && mounted) {
+                            print("✅ Metode dipilih: $selectedPayment");
+                            print("🔄 Processing checkout...");
+                            await _processCheckout(selectedPayment);
+                          } else {
+                            print(
+                              "❌ Pembayaran dibatalkan atau tidak ada metode dipilih",
+                            );
+                          }
+                        },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue[700],
                   minimumSize: Size(double.infinity, 48),
