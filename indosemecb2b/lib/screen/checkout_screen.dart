@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:indosemecb2b/screen/metode_pembayaran.dart';
+import 'package:indosemecb2b/screen/notification_provider.dart';
 import 'package:indosemecb2b/screen/pembayaran_berhasil.dart';
 import 'package:indosemecb2b/screen/transaksi.dart';
+import 'package:indosemecb2b/services/notifikasi.dart';
 import 'package:indosemecb2b/utils/cart_manager.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:indosemecb2b/models/cart_item.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final Map<String, dynamic>? alamat;
@@ -71,7 +74,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (success) {
         print('✅ Transaction created successfully');
 
-        // ✅ HAPUS SEMUA ITEM DARI KERANJANG
+        // Hapus semua item dari keranjang
         final clearSuccess = await CartManager.clearCart();
         print('🗑️ Cart cleared: $clearSuccess');
 
@@ -79,8 +82,39 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           print('⚠️ Warning: Cart clearing failed, but transaction was saved');
         }
 
+        // ✅ TRIGGER NOTIFIKASI
         if (mounted) {
-          // ✅ Navigasi ke halaman sukses dan hapus semua route sebelumnya
+          // Generate order ID
+          final orderId = 'ORD${DateTime.now().millisecondsSinceEpoch}';
+
+          // Ambil gambar produk pertama (jika ada)
+          final firstProductImage =
+              _cartItems.isNotEmpty ? _cartItems.first.imageUrl : null;
+
+          // 1. Tampilkan Local Notification
+          await NotificationService().showPaymentSuccessNotification(
+            orderId: orderId,
+            paymentMethod: paymentType,
+            totalAmount: getTotal(),
+            productImage: firstProductImage,
+          );
+
+          // 2. Simpan ke NotificationProvider (untuk halaman notifikasi)
+          final notifProvider = Provider.of<NotificationProvider>(
+            context,
+            listen: false,
+          );
+
+          await notifProvider.addPaymentSuccessNotification(
+            orderId: orderId,
+            paymentMethod: paymentType,
+            total: getTotal(),
+            productImage: firstProductImage,
+          );
+
+          print('🔔 Notification sent successfully!');
+
+          // 3. Navigasi ke halaman sukses
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
               builder:
@@ -90,7 +124,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     tanggal: DateTime.now(),
                   ),
             ),
-            (route) => false, // Hapus semua route (termasuk CheckoutScreen)
+            (route) => false,
           );
         }
       } else {
