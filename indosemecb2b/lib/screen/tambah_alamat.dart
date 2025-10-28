@@ -266,19 +266,19 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
           children: [
             // Debug info
             if (_selectedLocation != null)
-              Container(
-                padding: const EdgeInsets.all(8),
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.green[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green[200]!),
-                ),
-                child: Text(
-                  '✅ Lokasi sudah dipilih: ${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)}',
-                  style: TextStyle(fontSize: 11, color: Colors.green[900]),
-                ),
-              ),
+              // Container(
+              //   padding: const EdgeInsets.all(8),
+              //   margin: const EdgeInsets.only(bottom: 16),
+              //   decoration: BoxDecoration(
+              //     color: Colors.green[50],
+              //     borderRadius: BorderRadius.circular(8),
+              //     border: Border.all(color: Colors.green[200]!),
+              //   ),
+              //   child: Text(
+              //     '✅ Lokasi sudah dipilih: ${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)}',
+              //     style: TextStyle(fontSize: 11, color: Colors.green[900]),
+              //   ),
+              // ),
 
             _buildTextField(
               label: 'Label Alamat',

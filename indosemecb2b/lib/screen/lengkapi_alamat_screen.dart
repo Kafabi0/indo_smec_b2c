@@ -186,16 +186,16 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
       body: Column(
         children: [
           // Info bar
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            color: Colors.blue[50],
-            child: Text(
-              '👤 Login sebagai: $_currentUserLogin',
-              style: const TextStyle(fontSize: 12),
-              textAlign: TextAlign.center,
-            ),
-          ),
+          // Container(
+          //   width: double.infinity,
+          //   padding: const EdgeInsets.all(12),
+          //   color: Colors.blue[50],
+          //   child: Text(
+          //     '👤 Login sebagai: $_currentUserLogin',
+          //     style: const TextStyle(fontSize: 12),
+          //     textAlign: TextAlign.center,
+          //   ),
+          // ),
           
           Expanded(
             child: _alamatList.isEmpty
