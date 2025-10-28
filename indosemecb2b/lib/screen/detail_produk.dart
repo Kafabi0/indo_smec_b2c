@@ -5,6 +5,7 @@ import '../services/favorite_service.dart';
 import '../services/product_service.dart';
 import '../utils/cart_manager.dart';
 import '../utils/user_data_manager.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
@@ -32,11 +33,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   void _loadSimilarProducts() {
     // Ambil produk dari kategori yang sama
-    final allProducts = _productService.getProductsByCategory(widget.product.category);
-    
+    final allProducts = _productService.getProductsByCategory(
+      widget.product.category,
+    );
+
     // Filter: hapus produk saat ini dari list
-    final filtered = allProducts.where((p) => p.id != widget.product.id).toList();
-    
+    final filtered =
+        allProducts.where((p) => p.id != widget.product.id).toList();
+
     // Ambil maksimal 8 produk
     setState(() {
       similarProducts = filtered.take(8).toList();
@@ -231,8 +235,20 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.share, color: Colors.black87),
-                  onPressed: () {
-                    // Implementasi share
+                  onPressed: () async {
+                    final product = widget.product;
+
+                    // ✅ Buat link produk (kamu bisa ganti sesuai format link sebenarnya)
+                    final productUrl =
+                        "https://indosemecb2b.com/product/${product.id}";
+                    final message =
+                        "Lihat produk ini di IndoSemec!\n\n"
+                        "${product.name}\n"
+                        "Harga: Rp${product.price.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}\n\n"
+                        "Link: $productUrl";
+
+                    // ✅ Gunakan Share.share() untuk membuka menu share
+                    await Share.share(message, subject: product.name);
                   },
                 ),
               ),
@@ -447,9 +463,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => ProductDetailPage(
-                                          product: product,
-                                        ),
+                                        builder:
+                                            (context) => ProductDetailPage(
+                                              product: product,
+                                            ),
                                       ),
                                     );
                                   },
@@ -457,61 +474,82 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                     width: 140,
                                     margin: const EdgeInsets.only(right: 12),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Expanded(
                                           child: Container(
                                             decoration: BoxDecoration(
                                               color: Colors.grey[100],
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                             ),
                                             child: Stack(
                                               children: [
                                                 ClipRRect(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                  child: product.imageUrl != null
-                                                      ? Image.network(
-                                                          product.imageUrl!,
-                                                          width: double.infinity,
-                                                          height: double.infinity,
-                                                          fit: BoxFit.cover,
-                                                          errorBuilder: (context, error, stackTrace) {
-                                                            return Center(
-                                                              child: Icon(
-                                                                Icons.image,
-                                                                size: 40,
-                                                                color: Colors.grey[400],
-                                                              ),
-                                                            );
-                                                          },
-                                                        )
-                                                      : Center(
-                                                          child: Icon(
-                                                            Icons.image,
-                                                            size: 40,
-                                                            color: Colors.grey[400],
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  child:
+                                                      product.imageUrl != null
+                                                          ? Image.network(
+                                                            product.imageUrl!,
+                                                            width:
+                                                                double.infinity,
+                                                            height:
+                                                                double.infinity,
+                                                            fit: BoxFit.cover,
+                                                            errorBuilder: (
+                                                              context,
+                                                              error,
+                                                              stackTrace,
+                                                            ) {
+                                                              return Center(
+                                                                child: Icon(
+                                                                  Icons.image,
+                                                                  size: 40,
+                                                                  color:
+                                                                      Colors
+                                                                          .grey[400],
+                                                                ),
+                                                              );
+                                                            },
+                                                          )
+                                                          : Center(
+                                                            child: Icon(
+                                                              Icons.image,
+                                                              size: 40,
+                                                              color:
+                                                                  Colors
+                                                                      .grey[400],
+                                                            ),
                                                           ),
-                                                        ),
                                                 ),
-                                                if (product.discountPercentage != null)
+                                                if (product
+                                                        .discountPercentage !=
+                                                    null)
                                                   Positioned(
                                                     top: 8,
                                                     left: 8,
                                                     child: Container(
-                                                      padding: const EdgeInsets.symmetric(
-                                                        horizontal: 6,
-                                                        vertical: 2,
-                                                      ),
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 6,
+                                                            vertical: 2,
+                                                          ),
                                                       decoration: BoxDecoration(
                                                         color: Colors.red,
-                                                        borderRadius: BorderRadius.circular(4),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              4,
+                                                            ),
                                                       ),
                                                       child: Text(
                                                         '${product.discountPercentage}%',
                                                         style: const TextStyle(
                                                           color: Colors.white,
                                                           fontSize: 10,
-                                                          fontWeight: FontWeight.bold,
+                                                          fontWeight:
+                                                              FontWeight.bold,
                                                         ),
                                                       ),
                                                     ),
@@ -543,7 +581,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                           Text(
                                             'Rp${product.originalPrice!.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
                                             style: const TextStyle(
-                                              decoration: TextDecoration.lineThrough,
+                                              decoration:
+                                                  TextDecoration.lineThrough,
                                               color: Colors.grey,
                                               fontSize: 10,
                                             ),
