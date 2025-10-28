@@ -1149,15 +1149,6 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                   child: Column(
                                     children: [
                                       Text(
-                                        'PT. INDOSMEC KOPERASI',
-                                        style: GoogleFonts.courierPrime(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                          height: 1.5,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      Text(
                                         'KOPERASI MERAH PUTIH ANTAPANI',
                                         style: GoogleFonts.courierPrime(
                                           fontSize: 13,
