@@ -2,6 +2,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:indosemecb2b/screen/detail_pembayaran.dart'; // ✅ Import detail screen
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -12,6 +14,14 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   bool _initialized = false;
+
+  // ✅ Global key untuk navigation
+  static GlobalKey<NavigatorState>? navigatorKey;
+
+  // ✅ Set navigator key dari main.dart
+  static void setNavigatorKey(GlobalKey<NavigatorState> key) {
+    navigatorKey = key;
+  }
 
   // Inisialisasi notifikasi
   Future<void> initialize() async {
@@ -66,18 +76,44 @@ class NotificationService {
     return androidGranted && iosGranted;
   }
 
-  // Handle ketika notifikasi di-tap
+  // ✅ Handle ketika notifikasi di-tap dengan navigation
   void _onNotificationTap(NotificationResponse response) {
-    debugPrint('Notification tapped: ${response.payload}');
-    // Anda bisa navigasi ke halaman tertentu di sini
+    debugPrint('🔔 Notification tapped: ${response.payload}');
+    
+    if (response.payload == null || response.payload!.isEmpty) {
+      debugPrint('❌ No payload data');
+      return;
+    }
+
+    try {
+      // Parse payload (berisi data transaksi dalam format JSON)
+      final Map<String, dynamic> payloadData = json.decode(response.payload!);
+      
+      debugPrint('📦 Payload data keys: ${payloadData.keys}');
+
+      // ✅ Navigate ke DetailPembayaranScreen
+      if (navigatorKey?.currentContext != null) {
+        Navigator.of(navigatorKey!.currentContext!).push(
+          MaterialPageRoute(
+            builder: (_) => DetailPembayaranScreen(transaksi: payloadData),
+          ),
+        );
+        debugPrint('✅ Navigating to detail screen');
+      } else {
+        debugPrint('❌ Navigator key context is null');
+      }
+    } catch (e) {
+      debugPrint('❌ Error parsing notification payload: $e');
+    }
   }
 
-  // Tampilkan notifikasi pembayaran berhasil
+  // ✅ Tampilkan notifikasi pembayaran berhasil dengan transaction data
   Future<void> showPaymentSuccessNotification({
     required String orderId,
     required String paymentMethod,
     required double totalAmount,
     String? productImage,
+    Map<String, dynamic>? transactionData, // ✅ Pass transaction data
   }) async {
     if (!_initialized) await initialize();
 
@@ -105,19 +141,32 @@ class NotificationService {
       iOS: iosDetails,
     );
 
+    // ✅ Encode transaction data sebagai payload untuk navigation
+    String payload;
+    if (transactionData != null) {
+      payload = json.encode(transactionData);
+      debugPrint('📦 Notification payload created with transaction data');
+    } else {
+      payload = json.encode({'no_transaksi': orderId});
+      debugPrint('⚠️ No transaction data, using orderId only');
+    }
+
     await _notifications.show(
       DateTime.now().millisecondsSinceEpoch ~/ 1000, // Unique ID
       '✅ Pembayaran Berhasil!',
       'Order #$orderId - $paymentMethod telah terkonfirmasi',
       details,
-      payload: orderId,
+      payload: payload, // ✅ Transaction data untuk navigation
     );
+    
+    debugPrint('🔔 Payment notification shown for order: $orderId');
   }
 
   // Tampilkan notifikasi pesanan sedang dikirim
   Future<void> showOrderShippedNotification({
     required String orderId,
     required String deliveryTime,
+    Map<String, dynamic>? transactionData, // ✅ Pass transaction data
   }) async {
     if (!_initialized) await initialize();
 
@@ -143,13 +192,23 @@ class NotificationService {
       iOS: iosDetails,
     );
 
+    // ✅ Encode transaction data sebagai payload
+    String payload;
+    if (transactionData != null) {
+      payload = json.encode(transactionData);
+    } else {
+      payload = json.encode({'no_transaksi': orderId});
+    }
+
     await _notifications.show(
       DateTime.now().millisecondsSinceEpoch ~/ 1000,
       '🚚 Pesanan Sedang Dikirim',
       'Order #$orderId akan tiba pada $deliveryTime',
       details,
-      payload: orderId,
+      payload: payload,
     );
+    
+    debugPrint('🔔 Shipping notification shown for order: $orderId');
   }
 
   // Cancel semua notifikasi

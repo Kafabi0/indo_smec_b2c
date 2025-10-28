@@ -10,17 +10,23 @@ void main() async {
 
   // Inisialisasi locale Indonesia
   await initializeDateFormatting('id_ID', null);
+  await NotificationService().initialize();
+  await NotificationService().requestPermission();
 
   // ✅ Inisialisasi NotificationService
   final notificationService = NotificationService();
   await notificationService.initialize();
   await notificationService.requestPermission();
 
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+  MyApp({Key? key}) : super(key: key) {
+    NotificationService.setNavigatorKey(navigatorKey);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +35,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: MaterialApp(
-        title: 'IndoSemec b2c',
+        title: 'IndoSmec b2c',
+        navigatorKey: navigatorKey,
         theme: ThemeData(
           primarySwatch: Colors.blue,
           scaffoldBackgroundColor: Colors.grey[100],

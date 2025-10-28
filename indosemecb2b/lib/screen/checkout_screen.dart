@@ -145,7 +145,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           print('📍 Nomor HP: $nomorHP');
           print('📍 Alamat: $alamatLengkap');
 
-          // ✅ Buat transaction data LENGKAP dengan tipe data yang benar
+          // ✅ Buat transaction data LENGKAP - SEMUA STRING/NUMBER (bukan Map!)
           final transactionData = {
             'no_transaksi': transactionId,
             'tanggal': DateTime.now().toIso8601String(),
@@ -163,8 +163,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       },
                     )
                     .toList(),
-            'penerima': penerimaName, // ✅ String, bukan Map
-            'alamat': alamatLengkap, // ✅ String, bukan Map
+            'penerima': penerimaName, // ✅ String
+            'nomor_hp': nomorHP, // ✅ String
+            'alamat': alamatLengkap, // ✅ String (BUKAN Map!)
             'metode_pengiriman':
                 widget.deliveryOption == 'xpress'
                     ? 'Xpress (Rp5.000)'
@@ -181,12 +182,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             print('  $key: ${value.runtimeType} = $value');
           });
 
-          // 1. Tampilkan Local Notification
+          // 1. Tampilkan Local Notification dengan transaction data
           await NotificationService().showPaymentSuccessNotification(
             orderId: transactionId,
             paymentMethod: paymentType,
             totalAmount: getTotal(),
             productImage: firstProductImage,
+            transactionData:
+                transactionData, // ✅ Pass transaction data untuk navigation
           );
 
           // 2. Simpan ke NotificationProvider dengan data lengkap
