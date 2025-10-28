@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/screen/detail_pembayaran.dart';
+import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:intl/intl.dart';
 import 'main_navigasi.dart';
 
@@ -73,11 +75,63 @@ class PaymentSuccessScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const MainNavigation()),
-                    (route) => false,
-                  );
+                onPressed: () async {
+                  final transactions =
+                      await TransactionManager.getTransactions();
+
+                  if (transactions.isNotEmpty) {
+                    final latestTransaction = transactions.first;
+
+                    // Konversi Transaction ke Map dengan property yang benar
+                    final transaksiMap = {
+                      'no_transaksi': latestTransaction.id,
+                      'tanggal': latestTransaction.date,
+                      'status': latestTransaction.status,
+                      'metode_pembayaran':
+                          metodePembayaran, // dari parameter class
+                      'items':
+                          latestTransaction.items
+                              .map(
+                                (item) => {
+                                  'nama': item.name,
+                                  'name': item.name,
+                                  'quantity': item.quantity,
+                                  'harga': item.price,
+                                  'image': item.imageUrl,
+                                },
+                              )
+                              .toList(),
+                      'penerima':
+                          latestTransaction.alamat?['nama_penerima'] ??
+                          latestTransaction.alamat?['nama'] ??
+                          'N/A',
+                      'alamat':
+                          latestTransaction.alamat?['alamat_lengkap'] ??
+                          latestTransaction.alamat?['alamat'] ??
+                          'N/A',
+                      'metode_pengiriman':
+                          latestTransaction.deliveryOption == 'xpress'
+                              ? 'Xpress (Rp5.000)'
+                              : 'Reguler (Rp5.000)',
+                      'jadwal_pengiriman':
+                          'Dikirim : ${DateFormat('EEEE, d MMM yyyy, HH:mm').format(latestTransaction.date)}',
+                      'biaya_pengiriman': 5000.0,
+                      'biaya_admin': 0.0,
+                    };
+
+                    // Cek apakah context masih valid sebelum navigation
+                    if (context.mounted) {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder:
+                              (_) => DetailPembayaranScreen(
+                                transaksi: transaksiMap,
+                              ),
+                        ),
+                        (route) => false,
+                      );
+                    }
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1976D2),
@@ -87,7 +141,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                   ),
                 ),
                 child: const Text(
-                  "Lihat Detail Transaksi",
+                  "Lihat Detail Pembayaran",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 15,
