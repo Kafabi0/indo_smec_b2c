@@ -25,7 +25,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String formatRupiah(double value) {
     final format = NumberFormat.currency(
       locale: 'id_ID',
-      symbol: 'Rp.',
+      symbol: 'Rp',
       decimalDigits: 0,
     );
     return format.format(value);

@@ -1768,7 +1768,7 @@ Widget _buildLoggedInLocationModal() {
       counter++;
     }
 
-    return 'Rp.$result';
+    return 'Rp$result';
   }
 
   Widget _buildPromoBanner() {

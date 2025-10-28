@@ -27,7 +27,7 @@ class TransactionDetailScreen extends StatelessWidget {
   String formatRupiah(double number) {
     final formatCurrency = NumberFormat.currency(
       locale: 'id_ID',
-      symbol: 'Rp.',
+      symbol: 'Rp',
       decimalDigits: 0,
     );
     return formatCurrency.format(number);
