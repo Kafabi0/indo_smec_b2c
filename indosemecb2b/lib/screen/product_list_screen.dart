@@ -233,18 +233,18 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   ),
                 ),
                 SizedBox(width: 8),
-                TextButton.icon(
-                  onPressed: () {
-                    // TODO: Implement filter
-                  },
-                  icon: Icon(Icons.filter_list, size: 18),
-                  label: Text('Filter'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.grey[700],
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                  ),
-                ),
-                SizedBox(width: 8),
+                // TextButton.icon(
+                //   onPressed: () {
+                //     // TODO: Implement filter
+                //   },
+                //   icon: Icon(Icons.filter_list, size: 18),
+                //   label: Text('Filter'),
+                //   style: TextButton.styleFrom(
+                //     foregroundColor: Colors.grey[700],
+                //     padding: EdgeInsets.symmetric(horizontal: 8),
+                //   ),
+                // ),
+                // SizedBox(width: 8),
                 // View toggle buttons
                 Container(
                   decoration: BoxDecoration(
@@ -577,7 +577,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
                   SizedBox(height: 6),
                   Text(
-                    'Rp${product.price.toStringAsFixed(0)}',
+                    formatRupiah(product.price),
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -589,7 +589,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     Row(
                       children: [
                         Text(
-                          'Rp${product.originalPrice!.toStringAsFixed(0)}',
+                          formatRupiah(product.originalPrice!),
                           style: TextStyle(
                             fontSize: 11,
                             decoration: TextDecoration.lineThrough,
