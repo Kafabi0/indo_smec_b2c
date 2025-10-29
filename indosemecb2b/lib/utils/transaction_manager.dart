@@ -53,7 +53,7 @@ class TransactionManager {
       final total = cartItems.fold<double>(
         0.0,
         (sum, item) => sum + item.totalPrice,
-      );
+      ) + 5000.0; 
 
       print('💰 Total price: $total');
 

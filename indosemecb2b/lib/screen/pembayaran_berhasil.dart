@@ -225,6 +225,8 @@ class PaymentSuccessScreen extends StatelessWidget {
           _buildDetailRow("Tanggal", DateFormat("d MMM yyyy").format(tanggal)),
           _buildDetailRow("Waktu", DateFormat("HH:mm").format(tanggal)),
           _buildDetailRow("Metode Pemesanan", "Reguler"),
+          _buildDetailRow("Subtotal Produk", formatRupiah(totalPembayaran - 5000)), // ✅ TAMBAHKAN
+          _buildDetailRow("Biaya Pengiriman", "Rp5.000"), // ✅ TAMBAHKAN
           _buildDetailRow("Metode Pembayaran", metodePembayaran),
           _buildDetailRow(
             "Total Pembayaran",

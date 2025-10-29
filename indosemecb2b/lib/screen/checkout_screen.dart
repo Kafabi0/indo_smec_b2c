@@ -57,8 +57,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
   }
 
-  double getTotal() =>
-      _cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
+  double getSubtotal() =>
+    _cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
+
+  double getBiayaPengiriman() => 5000.0;
+
+  double getTotal() => getSubtotal() + getBiayaPengiriman();
+
+  // double getTotal() =>
+  //     _cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
 
   Future<void> _processCheckout(String paymentType) async {
     if (_isProcessing) return;
@@ -466,6 +473,103 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               ),
                             );
                           }),
+                          const SizedBox(height: 20),
+                          const Text(
+                            "Rincian Pembayaran",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "Subtotal Produk",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey[700],
+                                      ),
+                                    ),
+                                    Text(
+                                      formatRupiah(getSubtotal()),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.local_shipping_outlined,
+                                          size: 18,
+                                          color: Colors.blue[700],
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          "Biaya Pengiriman",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      formatRupiah(getBiayaPengiriman()),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  child: Divider(
+                                    color: Colors.grey[300],
+                                    thickness: 1,
+                                  ),
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      "Total Pembayaran",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      formatRupiah(getTotal()),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue[700],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
