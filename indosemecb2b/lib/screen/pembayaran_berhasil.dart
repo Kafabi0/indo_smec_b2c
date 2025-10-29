@@ -34,6 +34,16 @@ class PaymentSuccessScreen extends StatelessWidget {
         elevation: 0.5,
         automaticallyImplyLeading: false,
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.cancel, color: Colors.grey),
+          onPressed: () {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const MainNavigation()),
+              (route) => false,
+            );
+          },
+      ),
+
         title: const Text(
           "Pembayaran Berhasil",
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
@@ -152,37 +162,37 @@ class PaymentSuccessScreen extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
+            // SizedBox(height: 12),
+            // SizedBox(
+            //   width: double.infinity,
 
-              child: ElevatedButton(
-                onPressed:
-                    () => Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const MainNavigation(),
-                      ),
-                      (route) => false,
-                    ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1976D2),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
+            //   child: ElevatedButton(
+            //     onPressed:
+            //         () => Navigator.pushAndRemoveUntil(
+            //           context,
+            //           MaterialPageRoute(
+            //             builder: (context) => const MainNavigation(),
+            //           ),
+            //           (route) => false,
+            //         ),
+            //     style: ElevatedButton.styleFrom(
+            //       backgroundColor: const Color(0xFF1976D2),
+            //       padding: const EdgeInsets.symmetric(vertical: 14),
+            //       shape: RoundedRectangleBorder(
+            //         borderRadius: BorderRadius.circular(8),
+            //       ),
+            //     ),
 
-                child: const Text(
-                  "Kembali Ke Beranda",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
+            //     child: const Text(
+            //       "Kembali Ke Beranda",
+            //       style: TextStyle(
+            //         color: Colors.white,
+            //         fontSize: 15,
+            //         fontWeight: FontWeight.w600,
+            //       ),
+            //     ),
+            //   ),
+            // ),
 
             const SizedBox(height: 24),
           ],
