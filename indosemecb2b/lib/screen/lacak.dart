@@ -283,31 +283,94 @@ class _TrackingScreenState extends State<TrackingScreen>
                             initialZoom: 16,
                           ),
                           children: [
+                            // --- Peta dasar ---
                             TileLayer(
                               urlTemplate:
                                   'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                               subdomains: const ['a', 'b', 'c'],
                             ),
+
+                            // --- Garis rute kurir ---
                             PolylineLayer(
                               polylines: [
                                 Polyline(
                                   points: _rute,
                                   strokeWidth: 4,
-                                  color: Colors.blue,
+                                  color: Colors.green,
                                 ),
                               ],
                             ),
+
+                            // --- Titik penjemputan & tujuan ---
+                            if (_rute.isNotEmpty)
+                              MarkerLayer(
+                                markers: [
+                                  // Titik penjemputan
+                                  Marker(
+                                    point: _rute.first,
+                                    width: 50,
+                                    height: 50,
+                                    child: Column(
+                                      children: const [
+                                        Icon(
+                                          Icons.location_pin,
+                                          color: Colors.red,
+                                          size: 32,
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            "Jemput",
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Titik tujuan
+                                  Marker(
+                                    point: _rute.last,
+                                    width: 50,
+                                    height: 50,
+                                    child: Column(
+                                      children: const [
+                                        Icon(
+                                          Icons.location_pin,
+                                          color: Colors.red,
+                                          size: 32,
+                                        ),
+                                        Text(
+                                          "Tujuan",
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                            // --- Posisi kurir yang bergerak ---
                             if (_posisiKurir != null)
                               MarkerLayer(
                                 markers: [
                                   Marker(
                                     point: _posisiKurir!,
-                                    width: 60,
-                                    height: 60,
-                                    child: const Icon(
-                                      Icons.motorcycle,
-                                      size: 40,
-                                      color: Colors.green,
+                                    width: 50,
+                                    height: 50,
+                                    child: ClipOval(
+                                      child: Image.asset(
+                                        'assets/motor.png',
+                                         width: 50,
+                                        height: 50,
+                                        fit: BoxFit.contain,
+                                      ),
                                     ),
                                   ),
                                 ],
