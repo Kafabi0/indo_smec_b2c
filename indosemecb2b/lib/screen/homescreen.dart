@@ -14,6 +14,8 @@ import 'login.dart';
 import '../services/favorite_service.dart';
 import 'favorit.dart';
 import 'package:indosemecb2b/screen/lengkapi_alamat_screen.dart';
+import 'package:indosemecb2b/utils/transaction_manager.dart';
+import 'package:indosemecb2b/models/transaction.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -48,6 +50,8 @@ class HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _savedAlamat;
   List<Map<String, dynamic>> _listAlamat = [];
   int _selectedAlamatIndex = 0;
+  int _totalPoinUMKM = 0;
+  int _totalPoinCash = 0;
 
   final List<Map<String, dynamic>> categories = [
     {'name': 'Semua', 'icon': Icons.apps},
@@ -65,6 +69,7 @@ class HomeScreenState extends State<HomeScreen> {
     super.initState();
     _checkLoginStatus();
     _loadData();
+    _loadPoinFromTransactions();
   }
 
   Future<void> _loadAlamat() async {
@@ -77,29 +82,32 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final currentUser = await UserDataManager.getCurrentUserLogin();
-
+  final prefs = await SharedPreferences.getInstance();
+  final currentUser = await UserDataManager.getCurrentUserLogin();
+  
+  setState(() {
+    isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    userEmail = currentUser ?? ''; 
+  });
+  
+  print('🔐 [HOME] Login status check:');
+  print('   isLoggedIn: $isLoggedIn');
+  print('   userEmail: $userEmail');
+  
+  if (isLoggedIn && userEmail.isNotEmpty) {
+    _loadFavoriteStatus();
+    await _loadAlamatData();
+    // ⭐ TAMBAHKAN INI JIKA BELUM ADA
+    await _loadPoinFromTransactions();
+  } else {
     setState(() {
-      isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-      userEmail = currentUser ?? '';
+      favoriteStatus = {};
+      _savedAlamat = null;
+      _totalPoinUMKM = 0; // ⬅️ TAMBAHKAN
+      _totalPoinCash = 0; // ⬅️ TAMBAHKAN
     });
-
-    print('🔐 [HOME] Login status check:');
-    print('   isLoggedIn: $isLoggedIn');
-    print('   userEmail: $userEmail');
-
-    if (isLoggedIn && userEmail.isNotEmpty) {
-      _loadFavoriteStatus();
-      await _loadAlamatData();
-    } else {
-      setState(() {
-        favoriteStatus = {};
-        _savedAlamat = null;
-      });
-    }
   }
+}
 
   Future<void> _loadAlamatData() async {
     print('🔍 [HOME] _loadAlamatData() dipanggil');
@@ -145,6 +153,81 @@ class HomeScreenState extends State<HomeScreen> {
     } else {
       print('⚠️ [HOME] userEmail kosong, tidak bisa load alamat');
     }
+  }
+
+  Future<void> _loadPoinFromTransactions() async {
+    print('🔍 [HOME] _loadPoinFromTransactions dipanggil');
+    print('📧 [HOME] isLoggedIn: $isLoggedIn');
+    print('📧 [HOME] userEmail: $userEmail');
+    
+    if (!isLoggedIn || userEmail.isEmpty) {
+      print('⚠️ [HOME] User belum login, set poin = 0');
+      setState(() {
+        _totalPoinUMKM = 0;
+        _totalPoinCash = 0;
+      });
+      return;
+    }
+
+    print('⏳ [HOME] Mengambil transaksi...');
+    final transactions = await TransactionManager.getFilteredTransactions(
+      status: 'Selesai',
+      dateFilter: 'Semua Tanggal',
+      category: 'Semua',
+    );
+
+    print('📦 [HOME] Total transaksi ditemukan: ${transactions.length}');
+
+    int poinUMKM = 0;
+    int poinCash = 0;
+
+    for (var transaction in transactions) {
+      print('💰 [HOME] Transaksi: ${transaction.id} - Total: ${transaction.totalPrice}');
+      
+      // Poin UMKM: Rp 1.000 = 1 Poin
+      int poinDariTransaksi = (transaction.totalPrice ~/ 1000);
+      poinUMKM += poinDariTransaksi;
+      
+      print('   ➕ Dapat ${poinDariTransaksi} poin');
+      
+      // Poin Cash: 10% dari total
+      int cashDariTransaksi = (transaction.totalPrice * 0.10).toInt();
+      poinCash += cashDariTransaksi;
+      
+      print('   💵 Dapat Rp ${cashDariTransaksi} poin cash');
+    }
+
+    // Bonus welcome 1000 poin (hanya sekali)
+    final prefs = await SharedPreferences.getInstance();
+    final isFirstTime = prefs.getBool('poin_welcome_given') ?? false;
+    
+    print('🎁 [HOME] Sudah dapat bonus welcome? ${!isFirstTime}');
+    
+    if (!isFirstTime) {
+      poinUMKM += 1000;
+      await prefs.setBool('poin_welcome_given', true);
+      print('🎉 [HOME] Bonus 1000 poin diberikan!');
+    }
+
+    print('✅ [HOME] Total Poin UMKM: $poinUMKM');
+    print('✅ [HOME] Total Poin Cash: $poinCash');
+
+    if (mounted) {
+      setState(() {
+        _totalPoinUMKM = poinUMKM;
+        _totalPoinCash = poinCash;
+      });
+      print('🔄 [HOME] setState selesai, UI harusnya update');
+    }
+  }
+
+  String _formatPoinNumber(int number) {
+    if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}M';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(1)}K';
+    }
+    return number.toString();
   }
 
   Future<void> _loadFavoriteStatus() async {
@@ -196,6 +279,7 @@ class HomeScreenState extends State<HomeScreen> {
   void refreshLoginStatus() {
     _checkLoginStatus();
     _loadData();
+    _loadPoinFromTransactions();
   }
 
   void _loadData() {
@@ -1486,140 +1570,140 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildLoyaltyPoints() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 10,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildPointCard(
-                    Icons.emoji_events_rounded,
-                    'Poin UMKM',
-                    '0',
-                    Colors.orange,
-                  ),
-                  Container(width: 1, height: 30, color: Colors.grey[200]),
-                  _buildPointCard(
-                    Icons.account_balance_wallet_rounded,
-                    'Poin Cash',
-                    '0',
-                    Colors.amber,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue[600]!, Colors.blue[700]!],
-              ),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.blue.withOpacity(0.3),
+                  color: Colors.black.withOpacity(0.06),
                   blurRadius: 10,
                   offset: Offset(0, 3),
                 ),
               ],
             ),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Container(
-                  padding: EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'i',
-                    style: TextStyle(
-                      color: Colors.blue[700],
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                _buildPointCard(
+                  Icons.stars_rounded,
+                  'Poin UMKM',
+                  _formatPoinNumber(_totalPoinUMKM), // ⬅️ DINAMIS
+                  Colors.blue[700]!,
                 ),
-                const SizedBox(width: 8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'i.saku',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 10,
-                      ),
-                    ),
-                    Text(
-                      'Hubungkan',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                Container(width: 1, height: 30, color: Colors.grey[200]),
+                _buildPointCard(
+                  Icons.account_balance_wallet_rounded,
+                  'Poin Cash',
+                  _formatPoinNumber(_totalPoinCash), // ⬅️ DINAMIS
+                  Colors.green[700]!,
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPointCard(
-    IconData icon,
-    String label,
-    String value,
-    Color color,
-  ) {
-    return Row(
-      children: [
-        Container(
-          padding: EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: color, size: 10),
         ),
-        const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 9)),
-            Text(
-              value,
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
+        const SizedBox(width: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue[600]!, Colors.blue[700]!],
             ),
-          ],
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.withOpacity(0.3),
+                blurRadius: 10,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'i',
+                  style: TextStyle(
+                    color: Colors.blue[700],
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'i.saku',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 10,
+                    ),
+                  ),
+                  Text(
+                    'Hubungkan',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
-    );
-  }
+    ),
+  );
+}
+
+  Widget _buildPointCard(
+  IconData icon,
+  String label,
+  String value,
+  Color color,
+) {
+  return Row(
+    children: [
+      Container(
+        padding: EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: color, size: 20),
+      ),
+      const SizedBox(width: 8),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 9)),
+          Text(
+            value,
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
+}
 
   Widget _buildFlashSaleSection() {
     return Container(
