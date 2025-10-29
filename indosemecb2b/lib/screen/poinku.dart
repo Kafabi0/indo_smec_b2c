@@ -1086,151 +1086,255 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
   }
 
   Widget _buildStrukItem(Transaction transaction) {
-    final points = _calculatePoints(transaction.totalPrice);
-    final deliveryIcon =
-        transaction.deliveryOption == 'xpress'
-            ? Icons.flash_on
-            : Icons.inventory_2_outlined;
-    final deliveryColor =
-        transaction.deliveryOption == 'xpress'
-            ? Colors.orange[700]!
-            : Colors.green[700]!;
+  final points = _calculatePoints(transaction.totalPrice);
+  final deliveryIcon =
+      transaction.deliveryOption == 'xpress'
+          ? Icons.flash_on
+          : Icons.inventory_2_outlined;
+  final deliveryColor =
+      transaction.deliveryOption == 'xpress'
+          ? Colors.orange[700]!
+          : Colors.green[700]!;
 
-    return InkWell(
-      onTap: () => _showStrukDetail(transaction),
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
+  // ✅ AMBIL GAMBAR PRODUK PERTAMA
+  final firstProductImage =
+      transaction.items.isNotEmpty && transaction.items.first.imageUrl != null
+          ? transaction.items.first.imageUrl!
+          : '';
+
+  return InkWell(
+    onTap: () => _showStrukDetail(transaction),
+    borderRadius: BorderRadius.circular(16),
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ✅ HEADER DENGAN STATUS
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: deliveryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: deliveryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
+                    Icon(deliveryIcon, color: deliveryColor, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      transaction.deliveryOption == 'xpress'
+                          ? 'Xpress'
+                          : 'Xtra',
+                      style: TextStyle(
+                        color: deliveryColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
                       ),
-                      child: Icon(deliveryIcon, color: deliveryColor, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          transaction.id,
-                          style: GoogleFonts.robotoMono(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          transaction.deliveryOption == 'xpress'
-                              ? 'Belanja Xpress'
-                              : 'Belanja Xtra',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(
-                      transaction.status,
-                    ).withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(
                     transaction.status,
-                    style: TextStyle(
-                      color: _getStatusColor(transaction.status),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
-                    ),
+                  ).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  transaction.status,
+                  style: TextStyle(
+                    color: _getStatusColor(transaction.status),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Divider(color: Colors.grey[200], height: 1),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+          Divider(color: Colors.grey[200], height: 1),
+          const SizedBox(height: 12),
+
+          // ✅ GAMBAR PRODUK + INFO
+          Row(
+            children: [
+              // Gambar Produk
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: 70,
+                  height: 70,
+                  color: Colors.grey[200],
+                  child:
+                      firstProductImage.isNotEmpty
+                          ? Image.network(
+                            firstProductImage,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.image,
+                                color: Colors.grey[400],
+                                size: 30,
+                              );
+                            },
+                          )
+                          : Icon(
+                            Icons.shopping_bag,
+                            color: Colors.grey[400],
+                            size: 30,
+                          ),
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Info Transaksi
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Total Belanja',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                      transaction.id,
+                      style: GoogleFonts.robotoMono(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                        color: Colors.black87,
+                      ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 4),
                     Text(
-                      formatCurrency(transaction.totalPrice.toInt()),
+                      transaction.items.isNotEmpty
+                          ? transaction.items.first.name
+                          : 'Produk',
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (transaction.items.length > 1) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '+${transaction.items.length - 1} produk lainnya',
+                        style: TextStyle(
+                          color: Colors.blue[700],
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+          Divider(color: Colors.grey[200], height: 1),
+          const SizedBox(height: 12),
+
+          // ✅ TOTAL & POIN
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Total Belanja',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    formatCurrency(transaction.totalPrice.toInt()),
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.green[600]!, Colors.green[800]!],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.green.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.stars, color: Colors.white, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      '+$points Poin',
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: Colors.black87,
+                        fontSize: 13,
+                        color: Colors.white,
                       ),
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green[700]!.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '+ $points Poin',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                      color: Colors.green[700],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _formatDate(transaction.date),
-              style: TextStyle(color: Colors.grey[500], fontSize: 11),
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // ✅ TANGGAL
+          Row(
+            children: [
+              Icon(Icons.access_time, size: 12, color: Colors.grey[500]),
+              const SizedBox(width: 4),
+              Text(
+                _formatDate(transaction.date),
+                style: TextStyle(color: Colors.grey[500], fontSize: 11),
+              ),
+            ],
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Color _getStatusColor(String status) {
     switch (status) {
@@ -1246,431 +1350,370 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
   }
 
   void _showStrukDetail(Transaction transaction) {
-    final points = _calculatePoints(transaction.totalPrice);
-    final ppn = transaction.totalPrice * 0.11;
-    final subtotal = transaction.totalPrice - ppn;
-    int pointsEarned = _calculatePoints(transaction.totalPrice);
-    int cashPointsEarned = pointsEarned * 10;
+  final points = _calculatePoints(transaction.totalPrice);
+  int pointsEarned = _calculatePoints(transaction.totalPrice);
+  int cashPointsEarned = pointsEarned * 10;
 
-    // Hitung ongkir berdasarkan metode pengiriman
-    final ongkir = transaction.deliveryOption == 'xpress' ? 15000.0 : 5000.0;
-    final totalBelanjaSebelumOngkir = transaction.totalPrice - ongkir;
+  // Hitung ongkir berdasarkan metode pengiriman
+  final ongkir = 5000.0; // Flat rate Rp5.000
+  final subtotal = transaction.totalPrice - ongkir;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.95,
-          minChildSize: 0.5,
-          maxChildSize: 0.98,
-          expand: false,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: Column(
-                children: [
-                  // ========== HEADER DRAGGABLE ==========
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(24),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.95,
+        minChildSize: 0.5,
+        maxChildSize: 0.98,
+        expand: false,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                // ========== HEADER ==========
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(24),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[50],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.receipt_long,
+                                  color: Colors.blue[700],
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Struk Belanja',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: Icon(
+                              Icons.close_rounded,
+                              color: Colors.grey[600],
+                            ),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.grey[100],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ========== CONTENT STRUK ==========
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
-                        // Drag Handle
+                        // ========== KERTAS STRUK ==========
                         Container(
-                          width: 50,
-                          height: 5,
+                          width: double.infinity,
                           decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(10),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.grey[300]!,
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 20,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Title & Close Button
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue[50],
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Icon(
-                                    Icons.receipt_long,
-                                    color: Colors.blue[700],
-                                    size: 24,
-                                  ),
+                          child: Column(
+                            children: [
+                              // ========== HEADER BRAND ==========
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 24,
+                                  horizontal: 20,
                                 ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  'Struk Belanja',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            IconButton(
-                              onPressed: () => Navigator.pop(context),
-                              icon: Icon(
-                                Icons.close_rounded,
-                                color: Colors.grey[600],
-                              ),
-                              style: IconButton.styleFrom(
-                                backgroundColor: Colors.grey[100],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // ========== CONTENT STRUK ==========
-                  Expanded(
-                    child: SingleChildScrollView(
-                      controller: scrollController,
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          // ========== KERTAS STRUK ==========
-                          Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Colors.grey[300]!,
-                                width: 1,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              children: [
-                                // ========== HEADER BRAND ==========
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 24,
-                                    horizontal: 20,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.blue[700]!,
-                                        Colors.blue[900]!,
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(16),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      // Logo
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 24,
-                                          vertical: 12,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(
-                                                0.2,
-                                              ),
-                                              blurRadius: 10,
-                                              offset: const Offset(0, 4),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Text(
-                                          'INDOSMEC',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w900,
-                                            color: Colors.blue[800],
-                                            letterSpacing: 3,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        'BELANJA LEBIH MUDAH',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white,
-                                          letterSpacing: 1.5,
-                                        ),
-                                      ),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.blue[700]!,
+                                      Colors.blue[900]!,
                                     ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(16),
                                   ),
                                 ),
-
-                                // ========== ISI STRUK ==========
-                                Padding(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Info Toko
-                                      Center(
-                                        child: Column(
-                                          children: [
-                                            Text(
-                                              'KOPERASI MERAH PUTIH ANTAPANI',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.bold,
-                                                height: 1.6,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            Text(
-                                              'Jl. AH. Nasution No.928 Blok E',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 11,
-                                                height: 1.5,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            Text(
-                                              'Antapani Wetan, Kec. Antapani',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 11,
-                                                height: 1.5,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            Text(
-                                              'Kota Bandung, Jawa Barat 40291',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 11,
-                                                height: 1.5,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              'NPWP: 001.337.994.6-092.000',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 10,
-                                                height: 1.5,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            Text(
-                                              'Telp: 0811.1500.280',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 10,
-                                                height: 1.5,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ],
-                                        ),
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 12,
                                       ),
-
-                                      _buildDivider(),
-
-                                      // Info Transaksi
-                                      _buildInfoRow(
-                                        'NO. TRANSAKSI',
-                                        transaction.id,
-                                        isBold: true,
-                                      ),
-                                      _buildInfoRow(
-                                        'TANGGAL',
-                                        _formatDateStruk(transaction.date),
-                                      ),
-                                      _buildInfoRow(
-                                        'KASIR',
-                                        transaction.deliveryOption == 'xpress'
-                                            ? 'ONLINE XPRESS'
-                                            : 'ONLINE XTRA',
-                                      ),
-
-                                      _buildDivider(),
-
-                                      // Alamat Pengiriman
-                                      Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.all(14),
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue[50],
-                                          borderRadius: BorderRadius.circular(
-                                            10,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.2),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 4),
                                           ),
-                                          border: Border.all(
-                                            color: Colors.blue[200]!,
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.location_on,
-                                                  size: 16,
-                                                  color: Colors.blue[700],
-                                                ),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                  'ALAMAT PENGIRIMAN',
-                                                  style: GoogleFonts.robotoMono(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.blue[900],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              transaction
-                                                      .alamat?['nama_penerima'] ??
-                                                  _currentUserName,
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              transaction
-                                                      .alamat?['no_telepon'] ??
-                                                  _currentUserPhone,
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 10,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 6),
-                                            Text(
-                                              transaction
-                                                      .alamat?['alamat_lengkap'] ??
-                                                  'Alamat tidak tersedia',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 10,
-                                                height: 1.5,
-                                                color: Colors.grey[800],
-                                              ),
-                                            ),
-                                          ],
+                                        ],
+                                      ),
+                                      child: Text(
+                                        'INDOSMEC',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.blue[800],
+                                          letterSpacing: 3,
                                         ),
                                       ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      'BELANJA LEBIH MUDAH',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                        letterSpacing: 1.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
 
-                                      _buildDivider(),
-
-                                      // Daftar Barang
-                                      Row(
+                              // ========== ISI STRUK ==========
+                              Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Info Toko
+                                    Center(
+                                      child: Column(
                                         children: [
-                                          Icon(
-                                            Icons.shopping_cart,
-                                            size: 16,
-                                            color: Colors.grey[700],
-                                          ),
-                                          const SizedBox(width: 6),
                                           Text(
-                                            'DAFTAR BELANJA',
+                                            'KOPERASI MERAH PUTIH ANTAPANI',
+                                            style: GoogleFonts.robotoMono(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              height: 1.6,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          Text(
+                                            'Jl. AH. Nasution No.928 Blok E',
+                                            style: GoogleFonts.robotoMono(
+                                              fontSize: 11,
+                                              height: 1.5,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          Text(
+                                            'Antapani Wetan, Kec. Antapani',
+                                            style: GoogleFonts.robotoMono(
+                                              fontSize: 11,
+                                              height: 1.5,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          Text(
+                                            'Kota Bandung, Jawa Barat 40291',
+                                            style: GoogleFonts.robotoMono(
+                                              fontSize: 11,
+                                              height: 1.5,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'NPWP: 001.337.994.6-092.000',
+                                            style: GoogleFonts.robotoMono(
+                                              fontSize: 10,
+                                              height: 1.5,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          Text(
+                                            'Telp: 0811.1500.280',
+                                            style: GoogleFonts.robotoMono(
+                                              fontSize: 10,
+                                              height: 1.5,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    _buildDivider(),
+
+                                    // Info Transaksi
+                                    _buildInfoRow(
+                                      'NO. TRANSAKSI',
+                                      transaction.id,
+                                      isBold: true,
+                                    ),
+                                    _buildInfoRow(
+                                      'TANGGAL',
+                                      _formatDateStruk(transaction.date),
+                                    ),
+                                    _buildInfoRow(
+                                      'KASIR',
+                                      transaction.deliveryOption == 'xpress'
+                                          ? 'ONLINE XPRESS'
+                                          : 'ONLINE REGULER',
+                                    ),
+
+                                    _buildDivider(),
+
+                                    // Alamat Pengiriman
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(14),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue[50],
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: Colors.blue[200]!,
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.location_on,
+                                                size: 16,
+                                                color: Colors.blue[700],
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                'ALAMAT PENGIRIMAN',
+                                                style: GoogleFonts.robotoMono(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.blue[900],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            transaction.alamat?[
+                                                    'nama_penerima'] ??
+                                                _currentUserName,
                                             style: GoogleFonts.robotoMono(
                                               fontSize: 11,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 12),
-
-                                      // Header tabel
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            flex: 3,
-                                            child: Text(
-                                              'BARANG',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.grey[600],
-                                              ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            transaction.alamat?['nomor_hp'] ??
+                                                _currentUserPhone,
+                                            style: GoogleFonts.robotoMono(
+                                              fontSize: 10,
                                             ),
                                           ),
-                                          SizedBox(
-                                            width: 40,
-                                            child: Text(
-                                              'QTY',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.grey[600],
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: 80,
-                                            child: Text(
-                                              'HARGA',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.grey[600],
-                                              ),
-                                              textAlign: TextAlign.right,
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            transaction
+                                                    .alamat?['alamat_lengkap'] ??
+                                                'Alamat tidak tersedia',
+                                            style: GoogleFonts.robotoMono(
+                                              fontSize: 10,
+                                              height: 1.5,
+                                              color: Colors.grey[800],
                                             ),
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 8),
-                                      Divider(
-                                        color: Colors.grey[300],
-                                        height: 1,
-                                      ),
-                                      const SizedBox(height: 8),
+                                    ),
 
-                                      // Items
-                                      ...transaction.items.asMap().entries.map((
-                                        entry,
-                                      ) {
+                                    _buildDivider(),
+
+                                    // Daftar Barang Header
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.shopping_cart,
+                                          size: 16,
+                                          color: Colors.grey[700],
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'DAFTAR BELANJA',
+                                          style: GoogleFonts.robotoMono(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+
+                                    // ✅ DAFTAR ITEM SIMPLE (TANPA GAMBAR)
+                                    ...transaction.items.asMap().entries.map(
+                                      (entry) {
                                         final index = entry.key;
                                         final item = entry.value;
                                         final hargaSatuan =
@@ -1678,13 +1721,13 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
 
                                         return Padding(
                                           padding: const EdgeInsets.only(
-                                            bottom: 12,
+                                            bottom: 10,
                                           ),
                                           child: Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              // Nama barang dengan nomor
+                                              // Nama barang
                                               Text(
                                                 '${index + 1}. ${item.name.toUpperCase()}',
                                                 style: GoogleFonts.robotoMono(
@@ -1696,474 +1739,374 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                               const SizedBox(height: 4),
                                               // Detail harga
                                               Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
                                                 children: [
-                                                  Expanded(
-                                                    flex: 3,
-                                                    child: Text(
-                                                      '@ ${formatCurrency(hargaSatuan.toInt())}',
-                                                      style:
-                                                          GoogleFonts.robotoMono(
-                                                            fontSize: 10,
-                                                            color:
-                                                                Colors
-                                                                    .grey[600],
-                                                          ),
+                                                  Text(
+                                                    '${item.quantity}x @ ${formatCurrency(hargaSatuan.toInt())}',
+                                                    style:
+                                                        GoogleFonts.robotoMono(
+                                                      fontSize: 10,
+                                                      color: Colors.grey[600],
                                                     ),
                                                   ),
-                                                  SizedBox(
-                                                    width: 40,
-                                                    child: Text(
-                                                      '${item.quantity}x',
-                                                      style:
-                                                          GoogleFonts.robotoMono(
-                                                            fontSize: 11,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
-                                                      textAlign:
-                                                          TextAlign.center,
+                                                  Text(
+                                                    formatCurrency(
+                                                      item.totalPrice.toInt(),
                                                     ),
-                                                  ),
-                                                  SizedBox(
-                                                    width: 80,
-                                                    child: Text(
-                                                      formatCurrency(
-                                                        item.totalPrice.toInt(),
-                                                      ),
-                                                      style:
-                                                          GoogleFonts.robotoMono(
-                                                            fontSize: 11,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
-                                                      textAlign:
-                                                          TextAlign.right,
+                                                    style:
+                                                        GoogleFonts.robotoMono(
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ],
                                               ),
+                                              if (index < transaction.items.length - 1)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        top: 8,
+                                                      ),
+                                                  child: Divider(
+                                                    color: Colors.grey[200],
+                                                    height: 1,
+                                                  ),
+                                                ),
                                             ],
                                           ),
                                         );
-                                      }).toList(),
+                                      },
+                                    ).toList(),
 
-                                      _buildDivider(),
+                                    _buildDivider(),
 
-                                      // Ringkasan Biaya
-                                      _buildTotalRow(
-                                        'Subtotal',
-                                        formatCurrency(
-                                          totalBelanjaSebelumOngkir.toInt(),
+                                    // Ringkasan Biaya (TANPA PPN)
+                                    _buildTotalRow(
+                                      'Subtotal Produk',
+                                      formatCurrency(subtotal.toInt()),
+                                    ),
+                                    _buildTotalRow(
+                                      'Ongkos Kirim',
+                                      formatCurrency(ongkir.toInt()),
+                                    ),
+
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green[50],
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.green[200]!,
+                                          width: 1,
                                         ),
                                       ),
-                                      _buildTotalRow(
-                                        'Ongkos Kirim',
-                                        formatCurrency(ongkir.toInt()),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            'TOTAL BAYAR',
+                                            style: GoogleFonts.robotoMono(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.green[900],
+                                            ),
+                                          ),
+                                          Text(
+                                            formatCurrency(
+                                              transaction.totalPrice.toInt(),
+                                            ),
+                                            style: GoogleFonts.robotoMono(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.green[900],
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      _buildTotalRow(
-                                        'PPN 11%',
-                                        formatCurrency(ppn.toInt()),
-                                      ),
+                                    ),
 
-                                      const SizedBox(height: 8),
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: Colors.green[50],
-                                          borderRadius: BorderRadius.circular(
-                                            8,
+                                    _buildDivider(),
+
+                                    // Metode Pembayaran
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.payment,
+                                            size: 18,
+                                            color: Colors.grey[700],
                                           ),
-                                          border: Border.all(
-                                            color: Colors.green[200]!,
-                                            width: 1,
+                                          const SizedBox(width: 8),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'METODE PEMBAYARAN',
+                                                style: GoogleFonts.robotoMono(
+                                                  fontSize: 10,
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                'TRANSFER BANK',
+                                                style: GoogleFonts.robotoMono(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              'TOTAL BAYAR',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w900,
-                                                color: Colors.green[900],
-                                              ),
-                                            ),
-                                            Text(
-                                              formatCurrency(
-                                                transaction.totalPrice.toInt(),
-                                              ),
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w900,
-                                                color: Colors.green[900],
-                                              ),
-                                            ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    _buildDivider(thick: true),
+
+                                    // Poin Reward
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.amber[100]!,
+                                            Colors.orange[100]!,
                                           ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: Colors.orange[300]!,
+                                          width: 2,
                                         ),
                                       ),
-
-                                      _buildDivider(),
-
-                                      // Metode Pembayaran
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[100],
-                                          borderRadius: BorderRadius.circular(
-                                            8,
+                                      child: Column(
+                                        children: [
+                                          Icon(
+                                            Icons.stars,
+                                            color: Colors.orange[800],
+                                            size: 36,
                                           ),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.payment,
-                                              size: 18,
-                                              color: Colors.grey[700],
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'POIN REWARD ANDA',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.orange[900],
                                             ),
-                                            const SizedBox(width: 8),
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '+ $pointsEarned POIN UMKM',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.orange[900],
+                                            ),
+                                          ),
+                                          Text(
+                                            '+ ${formatCurrency(cashPointsEarned)} POIN CASH',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.green[700],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Selamat! Poin akan masuk ke akun Anda',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 10,
+                                              color: Colors.orange[800],
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    _buildDivider(thick: true),
+
+                                    // Footer Info
+                                    Center(
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            'TERIMA KASIH TELAH BERBELANJA',
+                                            style: GoogleFonts.robotoMono(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'CEK STATUS PESANAN DI',
+                                            style: GoogleFonts.robotoMono(
+                                              fontSize: 10,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          Text(
+                                            'www.indosmec.com',
+                                            style: GoogleFonts.robotoMono(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.blue[700],
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 8,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[100],
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Column(
                                               children: [
                                                 Text(
-                                                  'METODE PEMBAYARAN',
+                                                  'LAYANAN KONSUMEN 24/7',
                                                   style: GoogleFonts.robotoMono(
-                                                    fontSize: 10,
-                                                    color: Colors.grey[600],
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 2),
-                                                Text(
-                                                  'MANDIRI VIRTUAL ACCOUNT',
-                                                  style: GoogleFonts.robotoMono(
-                                                    fontSize: 11,
+                                                    fontSize: 9,
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                                 ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  'WA: 0811.1500.280 | Email: kontak@indosmec.co.id',
+                                                  style: GoogleFonts.robotoMono(
+                                                    fontSize: 9,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                ),
                                               ],
                                             ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      const SizedBox(height: 16),
-
-                                      // Info Customer
-                                      Text(
-                                        'INFORMASI PELANGGAN',
-                                        style: GoogleFonts.robotoMono(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      _buildInfoRow(
-                                        'Nama',
-                                        transaction.alamat?['nama_penerima'] ??
-                                            _currentUserName,
-                                      ),
-                                      _buildInfoRow(
-                                        'No. Telp',
-                                        transaction.alamat?['no_telepon'] ??
-                                            _currentUserPhone,
-                                      ),
-                                      _buildInfoRow(
-                                        'Metode',
-                                        transaction.deliveryOption == 'xpress'
-                                            ? 'Xpress (1 Jam)'
-                                            : 'Xtra (Reguler)',
-                                      ),
-
-                                      const SizedBox(height: 16),
-
-                                      // ID Poinku
-                                      // FutureBuilder<String>(
-                                      //   future: _getUserPoinId(),
-                                      //   builder: (context, snapshot) {
-                                      //     final poinId = snapshot.data ?? 'Loading...';
-                                      //     return Container(
-                                      //       padding: const EdgeInsets.all(12),
-                                      //       decoration: BoxDecoration(
-                                      //         color: Colors.orange[50],
-                                      //         borderRadius: BorderRadius.circular(8),
-                                      //         border: Border.all(color: Colors.orange[200]!, width: 1),
-                                      //       ),
-                                      //       child: Row(
-                                      //         children: [
-                                      //           Icon(Icons.card_membership, size: 18, color: Colors.orange[700]),
-                                      //           const SizedBox(width: 8),
-                                      //           Column(
-                                      //             crossAxisAlignment: CrossAxisAlignment.start,
-                                      //             children: [
-                                      //               Text(
-                                      //                 'ID MEMBER POINKU',
-                                      //                 style: GoogleFonts.robotoMono(
-                                      //                   fontSize: 10,
-                                      //                   color: Colors.orange[800],
-                                      //                 ),
-                                      //               ),
-                                      //               const SizedBox(height: 2),
-                                      //               Text(
-                                      //                 poinId,
-                                      //                 style: GoogleFonts.robotoMono(
-                                      //                   fontSize: 12,
-                                      //                   fontWeight: FontWeight.bold,
-                                      //                   color: Colors.orange[900],
-                                      //                 ),
-                                      //               ),
-                                      //             ],
-                                      //           ),
-                                      //         ],
-                                      //       ),
-                                      //     );
-                                      //   },
-                                      // ),
-                                      _buildDivider(thick: true),
-
-                                      // Poin Reward
-                                      // Poin Reward
-                                      Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              Colors.amber[100]!,
-                                              Colors.orange[100]!,
-                                            ],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
                                           ),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            '© 2025 INDOSMEC - All Rights Reserved',
+                                            style: GoogleFonts.robotoMono(
+                                              fontSize: 8,
+                                              color: Colors.grey[500],
+                                            ),
                                           ),
-                                          border: Border.all(
-                                            color: Colors.orange[300]!,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          children: [
-                                            Icon(
-                                              Icons.stars,
-                                              color: Colors.orange[800],
-                                              size: 36,
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              'POIN REWARD ANDA',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.orange[900],
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            // ⭐ Tampilkan kedua jenis poin
-                                            Text(
-                                              '+ $pointsEarned POIN UMKM',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.w900,
-                                                color: Colors.orange[900],
-                                              ),
-                                            ),
-                                            Text(
-                                              '+ ${formatCurrency(cashPointsEarned)} POIN CASH',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w700,
-                                                color: Colors.green[700],
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              'Selamat! Poin akan masuk ke akun Anda',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 10,
-                                                color: Colors.orange[800],
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ],
-                                        ),
+                                        ],
                                       ),
-
-                                      _buildDivider(thick: true),
-
-                                      // Footer Info
-                                      Center(
-                                        child: Column(
-                                          children: [
-                                            Text(
-                                              'TERIMA KASIH TELAH BERBELANJA',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              'CEK STATUS PESANAN DI',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 10,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            Text(
-                                              'www.indosmec.com',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.blue[700],
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            const SizedBox(height: 12),
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 16,
-                                                    vertical: 8,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey[100],
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                              child: Column(
-                                                children: [
-                                                  Text(
-                                                    'LAYANAN KONSUMEN 24/7',
-                                                    style:
-                                                        GoogleFonts.robotoMono(
-                                                          fontSize: 9,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    'WA: 0811.1500.280 | Email: kontak@indosmec.co.id',
-                                                    style:
-                                                        GoogleFonts.robotoMono(
-                                                          fontSize: 9,
-                                                        ),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(height: 12),
-                                            Text(
-                                              '© 2025 INDOSMEC - All Rights Reserved',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 8,
-                                                color: Colors.grey[500],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // ========== ACTION BUTTONS ==========
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    // TODO: Share functionality
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Fitur share akan segera hadir',
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.share, size: 20),
-                                  label: Text(
-                                    'BAGIKAN',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
                                     ),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.blue[700],
-                                    side: BorderSide(
-                                      color: Colors.blue[700]!,
-                                      width: 2,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                flex: 2,
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    // TODO: Download functionality
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Fitur download akan segera hadir',
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.download, size: 20),
-                                  label: Text(
-                                    'DOWNLOAD STRUK',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue[700],
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // ========== ACTION BUTTONS ==========
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Fitur share akan segera hadir',
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.share, size: 20),
+                                label: Text(
+                                  'BAGIKAN',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.blue[700],
+                                  side: BorderSide(
+                                    color: Colors.blue[700]!,
+                                    width: 2,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 2,
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Fitur download PDF akan segera hadir',
+                                      ),
+                                      backgroundColor: Colors.orange,
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.download, size: 20),
+                                label: Text(
+                                  'DOWNLOAD PDF',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue[700],
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
 
   // Helper Widgets
   Widget _buildDivider({bool thick = false}) {
