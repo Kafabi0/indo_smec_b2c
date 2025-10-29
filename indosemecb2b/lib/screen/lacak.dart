@@ -4,9 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/tracking.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../utils/transaction_manager.dart'; // Tambahkan import ini
+import '../services/tracking_service.dart';
 
 class TrackingScreen extends StatefulWidget {
   final OrderTrackingModel trackingData;
@@ -17,202 +15,147 @@ class TrackingScreen extends StatefulWidget {
   State<TrackingScreen> createState() => _TrackingScreenState();
 }
 
-class _TrackingScreenState extends State<TrackingScreen>
-    with SingleTickerProviderStateMixin {
+class _TrackingScreenState extends State<TrackingScreen> {
   final MapController _mapController = MapController();
+  final TrackingServiceManager _trackingService = TrackingServiceManager();
 
-  final List<LatLng> _rute = [];
   bool _isUserInteracting = false;
   Timer? _userInactivityTimer;
 
+  // ⭐ Listener untuk di-dispose
+  VoidCallback? _positionListener;
+  VoidCallback? _statusListener;
+
+  List<LatLng> _rute = [];
+  LatLng? _posisiKurir;
   String _statusPesanan = "Menyiapkan pesanan";
   String _statusDesc = "Kurir sedang menunggu konfirmasi toko";
-  final List<Map<String, String>> _semuaStatus = [
-    {
-      "title": "Menyiapkan pesanan",
-      "desc": "Kurir sedang menunggu konfirmasi toko",
-    },
-    {
-      "title": "Sedang dikirim",
-      "desc": "Kurir sedang dalam perjalanan mengambil rute utama",
-    },
-    {
-      "title": "Hampir sampai",
-      "desc": "Kurir sebentar lagi tiba di lokasi tujuan",
-    },
-    {
-      "title": "Pesanan telah sampai",
-      "desc": "Pesanan berhasil diantarkan ke alamat tujuan",
-    },
-    {
-      "title": "Pesanan selesai",
-      "desc": "Kurir telah menyelesaikan pengantaran",
-    },
-  ];
-
-  int _index = 0;
-  LatLng? _posisiKurir;
-  Timer? _timer;
-
-  late AnimationController _animController;
-  Animation<double>? _animasi;
-  final ValueNotifier<String> _statusNotifier = ValueNotifier<String>("Menyiapkan pesanan");
+  List<Map<String, String>> _statusList = [];
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    );
-    _loadRoute();
+    _initTracking();
   }
 
-  final List<Map<String, String>> _statusList = [
-    {
-      "title": "Menyiapkan pesanan",
-      "desc": "Kurir sedang menunggu konfirmasi toko",
-      "time": DateFormat("dd MMM yyyy | HH:mm", "id_ID").format(DateTime.now()),
-    },
-  ];
-
-  Future<List<LatLng>> getRouteFromOSRM(LatLng start, LatLng end) async {
-    final url = Uri.parse(
-      'https://router.project-osrm.org/route/v1/driving/'
-      '${start.longitude},${start.latitude};${end.longitude},${end.latitude}'
-      '?overview=full&geometries=geojson',
-    );
-
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final coords = data['routes'][0]['geometry']['coordinates'] as List;
-      return coords.map((c) => LatLng(c[1], c[0])).toList();
-    } else {
-      throw Exception('Gagal memuat rute');
+  Future<void> _initTracking() async {
+    final transactionId = widget.trackingData.transactionId;
+    if (transactionId == null) {
+      print('❌ Transaction ID is null');
+      return;
     }
-  }
 
-  Future<void> _loadRoute() async {
-    try {
-      final start = LatLng(-6.9379454, 107.661099);
-      final end = LatLng(-6.9254643, 107.6604138);
-      final route = await getRouteFromOSRM(start, end);
+    print('🔍 Initializing tracking for: $transactionId');
+
+    if (!_trackingService.hasTracking(transactionId)) {
+      print('📦 Starting new tracking...');
+      await _trackingService.startTracking(transactionId);
+    } else {
+      print('✅ Tracking already exists');
+    }
+
+    final tracking = _trackingService.getTracking(transactionId);
+    if (tracking == null) {
+      print('❌ Failed to get tracking data');
+      return;
+    }
+
+    print('✅ Got tracking data - Status: ${tracking.status}');
+    print('📊 Route length: ${tracking.route.length}');
+    print('📍 Current index: ${tracking.currentIndex}');
+
+    if (!mounted) return;
+
+    setState(() {
+      _rute = tracking.route;
+      _posisiKurir = tracking.currentPosition;
+      _statusPesanan = tracking.status;
+      _statusDesc = tracking.statusDesc;
+      _statusList = _trackingService.getStatusHistory(transactionId);
+    });
+
+    print('✅ Initial state set - Status: $_statusPesanan');
+
+    // ⭐ Listen to position updates
+    _positionListener = () {
+      if (!mounted) return;
+
+      final tracking = _trackingService.getTracking(transactionId);
+      if (tracking == null) return;
+
+      print('🔄 Position update - Status: ${tracking.status}');
 
       setState(() {
-        _rute.clear();
-        _rute.addAll(route);
-        _posisiKurir = _rute.first;
+        _posisiKurir = tracking.currentPosition;
+        _statusList = _trackingService.getStatusHistory(transactionId);
       });
 
-      _mulaiSimulasi();
-    } catch (e) {
-      print('Error memuat rute: $e');
-    }
-  }
-
-  void _updateStatus() {
-    String newStatus;
-    String newDesc;
-    
-    if (_index < _rute.length / 3) {
-      newStatus = _semuaStatus[1]["title"]!;
-      newDesc = _semuaStatus[1]["desc"]!;
-    } else if (_index < _rute.length * 2 / 3) {
-      newStatus = _semuaStatus[2]["title"]!;
-      newDesc = _semuaStatus[2]["desc"]!;
-    } else {
-      newStatus = _semuaStatus[3]["title"]!;
-      newDesc = _semuaStatus[3]["desc"]!;
-    }
-    
-    // Update status notifier
-    _statusNotifier.value = newStatus;
-    
-    setState(() {
-      _statusPesanan = newStatus;
-      _statusDesc = newDesc;
-    });
-    
-    // Update status di TransactionManager
-    if (widget.trackingData.transactionId != null) {
-      TransactionManager.updateTransactionStatus(
-        widget.trackingData.transactionId!, 
-        newStatus
-      );
-    }
-    
-    // Tambahkan status ke list jika belum ada
-    final sudahAda = _statusList.any((s) => s["title"] == newStatus);
-    if (!sudahAda) {
-      _statusList.add({
-        "title": newStatus,
-        "desc": newDesc,
-        "time": formatDate(DateTime.now()),
-      });
-    }
-  }
-
-  void _mulaiSimulasi() {
-    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      if (_index < _rute.length - 1) {
-        final start = _rute[_index];
-        final end = _rute[_index + 1];
-        _animController.reset();
-
-        _animasi = Tween<double>(begin: 0, end: 1).animate(
-          CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
-        )..addListener(() {
-          final lat =
-              start.latitude +
-              (_animasi!.value * (end.latitude - start.latitude));
-          final lng =
-              start.longitude +
-              (_animasi!.value * (end.longitude - start.longitude));
-          setState(() => _posisiKurir = LatLng(lat, lng));
-
-          // Hanya pindahkan kamera jika user tidak sedang menggeser
-          if (!_isUserInteracting) {
-            _mapController.move(_posisiKurir!, 16);
-          }
-        });
-
-        _animController.forward();
-        _index++;
-
-        setState(() => _updateStatus());
-      } else {
-        setState(() {
-          _statusPesanan = "Pesanan selesai";
-          _statusDesc = "Kurir telah menyelesaikan pengantaran";
-        });
-        
-        // Update final status
-        _statusNotifier.value = "Pesanan selesai";
-        if (widget.trackingData.transactionId != null) {
-          TransactionManager.updateTransactionStatus(
-            widget.trackingData.transactionId!, 
-            "Pesanan selesai"
-          );
-        }
-        
-        timer.cancel();
+      // Auto move camera if not interacting
+      if (!_isUserInteracting && _posisiKurir != null) {
+        _mapController.move(_posisiKurir!, 16);
       }
-    });
+    };
+    tracking.notifier.addListener(_positionListener!);
+
+    // ⭐ Listen to status updates (PENTING!)
+    _statusListener = () {
+      if (!mounted) return;
+
+      final tracking = _trackingService.getTracking(transactionId);
+      if (tracking == null) return;
+
+      print('🔄 Status update - New status: ${tracking.status}');
+
+      setState(() {
+        _statusPesanan = tracking.status;
+        _statusDesc = tracking.statusDesc;
+        _statusList = _trackingService.getStatusHistory(transactionId);
+      });
+    };
+    tracking.statusNotifier.addListener(_statusListener!);
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    _animController.dispose();
     _userInactivityTimer?.cancel();
-    _statusNotifier.dispose();
+
+    // ⭐ Remove listeners sebelum dispose
+    final transactionId = widget.trackingData.transactionId;
+    if (transactionId != null) {
+      final tracking = _trackingService.getTracking(transactionId);
+      if (tracking != null) {
+        if (_positionListener != null) {
+          tracking.notifier.removeListener(_positionListener!);
+        }
+        if (_statusListener != null) {
+          tracking.statusNotifier.removeListener(_statusListener!);
+        }
+      }
+    }
+
     super.dispose();
   }
 
   String formatDate(DateTime? date) {
     if (date == null) return "-";
     return DateFormat("dd MMMM yyyy | HH:mm", "id_ID").format(date);
+  }
+
+  IconData _getStatusIcon(String statusTitle) {
+    switch (statusTitle) {
+      case "Menyiapkan pesanan":
+        return Icons.receipt_long;
+      case "Sedang dikirim":
+        return Icons.local_shipping;
+      case "Hampir sampai":
+        return Icons.location_on;
+      case "Pesanan telah sampai":
+        return Icons.check_circle;
+      case "Pesanan selesai":
+        return Icons.done_all;
+      default:
+        return Icons.info_outline;
+    }
   }
 
   @override
@@ -273,7 +216,9 @@ class _TrackingScreenState extends State<TrackingScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          widget.trackingData.orderId ?? "-",
+                          widget.trackingData.orderId ??
+                              widget.trackingData.transactionId ??
+                              "-",
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -319,24 +264,20 @@ class _TrackingScreenState extends State<TrackingScreen>
                         : FlutterMap(
                           mapController: _mapController,
                           options: MapOptions(
-                            initialCenter: _rute.first,
+                            initialCenter: _posisiKurir ?? _rute.first,
                             initialZoom: 16,
                             onMapEvent: (event) {
-                              // Ketika user mulai menggeser peta
                               if (event is MapEventMoveStart) {
                                 _isUserInteracting = true;
-                                _userInactivityTimer
-                                    ?.cancel(); // hentikan timer lama
+                                _userInactivityTimer?.cancel();
                               }
 
-                              // Setiap kali user menggerakkan peta (move / pan / zoom)
                               if (event is MapEventMove ||
                                   event is MapEventMoveEnd) {
-                                _userInactivityTimer?.cancel(); // reset timer
+                                _userInactivityTimer?.cancel();
                                 _userInactivityTimer = Timer(
                                   const Duration(seconds: 4),
                                   () {
-                                    // Setelah 4 detik tidak ada interaksi
                                     if (mounted) {
                                       setState(() {
                                         _isUserInteracting = false;
@@ -351,14 +292,11 @@ class _TrackingScreenState extends State<TrackingScreen>
                             },
                           ),
                           children: [
-                            // --- Peta dasar ---
                             TileLayer(
                               urlTemplate:
                                   'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                               subdomains: const ['a', 'b', 'c'],
                             ),
-
-                            // --- Garis rute kurir ---
                             PolylineLayer(
                               polylines: [
                                 Polyline(
@@ -368,12 +306,9 @@ class _TrackingScreenState extends State<TrackingScreen>
                                 ),
                               ],
                             ),
-
-                            // --- Titik penjemputan & tujuan ---
                             if (_rute.isNotEmpty)
                               MarkerLayer(
                                 markers: [
-                                  // Titik penjemputan
                                   Marker(
                                     point: _rute.first,
                                     width: 50,
@@ -398,7 +333,6 @@ class _TrackingScreenState extends State<TrackingScreen>
                                       ],
                                     ),
                                   ),
-                                  // Titik tujuan
                                   Marker(
                                     point: _rute.last,
                                     width: 50,
@@ -423,8 +357,6 @@ class _TrackingScreenState extends State<TrackingScreen>
                                   ),
                                 ],
                               ),
-
-                            // --- Posisi kurir yang bergerak ---
                             if (_posisiKurir != null)
                               MarkerLayer(
                                 markers: [
@@ -497,104 +429,115 @@ class _TrackingScreenState extends State<TrackingScreen>
             const SizedBox(height: 20),
 
             // ================= STATUS =================
-            ValueListenableBuilder<String>(
-              valueListenable: _statusNotifier,
-              builder: (context, currentStatus, child) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Status Pesanan",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Status Pesanan",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                // Debug info badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _statusPesanan,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 10),
-                    Column(
-                      children:
-                          _statusList.map((status) {
-                            final isLast = status["title"] == currentStatus;
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black12,
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                                border: Border.all(
-                                  color: isLast ? Colors.blue : Colors.grey.shade300,
-                                  width: isLast ? 2 : 1,
-                                ),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Column(
-                                    children: [
-                                      Container(
-                                        width: 12,
-                                        height: 12,
-                                        decoration: BoxDecoration(
-                                          color: isLast ? Colors.blue : Colors.grey,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      if (!isLast)
-                                        Container(
-                                          width: 2,
-                                          height: 40,
-                                          color: Colors.grey.shade300,
-                                        ),
-                                    ],
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          status["title"]!,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight:
-                                                isLast
-                                                    ? FontWeight.bold
-                                                    : FontWeight.w500,
-                                            color: isLast ? Colors.blue : Colors.black,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          status["desc"]!,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          status["time"]!,
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Timeline Cards - Multiple cards bertambah seiring progress
+            ..._statusList.map((status) {
+              final isLatest = status["title"] == _statusPesanan;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
                     ),
                   ],
-                );
-              },
-            ),
+                  border: Border.all(
+                    color: isLatest ? Colors.blue : Colors.grey.shade300,
+                    width: isLatest ? 2 : 1,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: isLatest ? Colors.blue : Colors.grey,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        if (!isLatest)
+                          Container(
+                            width: 2,
+                            height: 40,
+                            color: Colors.grey.shade300,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            status["title"]!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight:
+                                  isLatest ? FontWeight.bold : FontWeight.w500,
+                              color: isLatest ? Colors.blue : Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            status["desc"]!,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            status["time"]!,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
           ],
         ),
       ),

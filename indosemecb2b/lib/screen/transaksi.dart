@@ -35,9 +35,9 @@ class _TransaksiScreenState extends State<TransaksiScreen>
   bool _isLoading = true;
   List<Transaction> _transactions = [];
   List<Transaction> _allTransactions = [];
-  
-  // Tambahkan stream subscription untuk mendengarkan perubahan status
-  StreamSubscription? _statusSubscription;
+
+  // ⭐ TIDAK LAGI LISTEN KE STREAM - Biar tidak reload semua
+  // StreamSubscription? _statusSubscription;
 
   final List<String> kategoriList = [
     'Semua',
@@ -53,17 +53,17 @@ class _TransaksiScreenState extends State<TransaksiScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadTransactions();
-    
-    // Dengarkan perubahan status
-    _statusSubscription = TransactionManager.statusStream.listen((_) {
-      _loadTransactions();
-    });
+
+    // ⭐ HAPUS LISTENER INI
+    // _statusSubscription = TransactionManager.statusStream.listen((_) {
+    //   _loadTransactions();
+    // });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _statusSubscription?.cancel(); // Batalkan subscription saat dispose
+    // _statusSubscription?.cancel();
     super.dispose();
   }
 
@@ -99,19 +99,16 @@ class _TransaksiScreenState extends State<TransaksiScreen>
     final userLogin = await UserDataManager.getCurrentUserLogin();
     print('🔍 DEBUG TRANSAKSI - Current user login: $userLogin');
 
-    // Ambil semua transaksi (status sudah dirandomize saat create)
     final allTransactions = await TransactionManager.getTransactions();
 
     print('🔍 DEBUG TRANSAKSI - Raw transactions: ${allTransactions.length}');
 
-    // ⭐ Debug: Tampilkan status asli
     for (var t in allTransactions) {
       print('  - ${t.id}: ${t.status}');
     }
 
     if (!mounted) return;
 
-    // Update state dengan data baru
     setState(() {
       _allTransactions = List.from(allTransactions);
       _isLoading = false;
@@ -121,26 +118,22 @@ class _TransaksiScreenState extends State<TransaksiScreen>
       '🔍 DEBUG TRANSAKSI - _allTransactions set to: ${_allTransactions.length}',
     );
 
-    // Apply filter setelah state di-update
     _applyFilters();
 
     print('✅ Transactions loaded successfully');
   }
 
-  // Method khusus untuk apply filter tanpa reload dari storage
   void _applyFilters() {
     print('🔍 Applying filters...');
     print('📊 All transactions count: ${_allTransactions.length}');
 
     List<Transaction> filtered = List.from(_allTransactions);
 
-    // Filter by status
     if (selectedStatus != 'Semua Status') {
       filtered = filtered.where((t) => t.status == selectedStatus).toList();
       print('📊 After status filter ($selectedStatus): ${filtered.length}');
     }
 
-    // Filter by date
     if (selectedTanggal != 'Semua Tanggal') {
       final now = DateTime.now();
       DateTime startDate;
@@ -157,7 +150,6 @@ class _TransaksiScreenState extends State<TransaksiScreen>
       print('📊 After date filter ($selectedTanggal): ${filtered.length}');
     }
 
-    // Filter by category
     if (selectedKategori != 'Semua') {
       String? deliveryOption;
       if (selectedKategori == 'Xpress') {
@@ -274,13 +266,21 @@ class _TransaksiScreenState extends State<TransaksiScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Dropdown filter
                 Row(
                   children: [
                     Expanded(
                       child: _buildDropdown(
                         selectedStatus,
-                        ['Semua Status', 'Selesai', 'Dibatalkan', 'Diproses', 'Sedang dikirim', 'Hampir sampai', 'Pesanan telah sampai', 'Pesanan selesai'],
+                        [
+                          'Semua Status',
+                          'Selesai',
+                          'Dibatalkan',
+                          'Diproses',
+                          'Sedang dikirim',
+                          'Hampir sampai',
+                          'Pesanan telah sampai',
+                          'Pesanan selesai',
+                        ],
                         (value) {
                           if (value != null && value != selectedStatus) {
                             print(
@@ -316,7 +316,6 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                 ),
                 const SizedBox(height: 14),
 
-                // Tab kategori
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -333,7 +332,6 @@ class _TransaksiScreenState extends State<TransaksiScreen>
 
                 const SizedBox(height: 16),
 
-                // Info box
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -390,7 +388,6 @@ class _TransaksiScreenState extends State<TransaksiScreen>
 
                 const SizedBox(height: 20),
 
-                // Info hasil filter
                 if (!_isLoading && _allTransactions.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
@@ -405,7 +402,6 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                   ),
                 ],
 
-                // Content: Loading, Empty, or Transaction List
                 _isLoading
                     ? const Center(
                       child: Padding(
@@ -524,204 +520,260 @@ class _TransaksiScreenState extends State<TransaksiScreen>
     );
   }
 
+  // ⭐ OPTIMIZED: Card individual yang listen ke TransactionManager
   Widget _buildTransactionCard(Transaction transaction) {
-    return ValueListenableBuilder<String>(
-      valueListenable: TransactionManager.statusNotifier,
-      builder: (context, currentStatus, child) {
-        // Cek apakah status transaksi ini berubah
-        final status = transaction.status;
-        
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => TransactionDetailScreen(transaction: transaction),
-              ),
-            );
-          },
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(status).withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        status,
-                        style: TextStyle(
-                          color: _getStatusColor(status),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+    return FutureBuilder<List<Transaction>>(
+      // Rebuild card ini ketika ada perubahan
+      future: Future.value([transaction]), // Dummy future untuk trigger rebuild
+      builder: (context, snapshot) {
+        return ValueListenableBuilder<String>(
+          valueListenable: TransactionManager.statusNotifier,
+          builder: (context, triggerValue, child) {
+            // ⭐ Re-fetch status terbaru dari storage untuk transaksi ini
+            return FutureBuilder<Transaction?>(
+              future: _getUpdatedTransaction(transaction.id),
+              builder: (context, txSnapshot) {
+                // Gunakan transaksi terupdate jika ada, kalau tidak pakai yang lama
+                final currentTransaction = txSnapshot.data ?? transaction;
 
-                const SizedBox(height: 6),
-                Text(
-                  _formatDate(transaction.date),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-
-                const SizedBox(height: 14),
-
-                Text(
-                  transaction.deliveryOption == 'xpress'
-                      ? 'Belanja Xpress'
-                      : 'Belanja Xtra',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'No. Transaksi - ${transaction.id}',
-                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                ),
-
-                const SizedBox(height: 14),
-
-                ...transaction.items.take(1).map((item) {
-                  return Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          item.imageUrl ?? '',
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                          errorBuilder:
-                              (_, __, ___) => Container(
-                                width: 50,
-                                height: 50,
-                                color: Colors.grey[200],
-                                child: Icon(Icons.image, color: Colors.grey[400]),
-                              ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (_) => TransactionDetailScreen(
+                              transaction: currentTransaction,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'x${item.quantity}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
+                      ),
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _getStatusColor(
+                                  currentTransaction.status,
+                                ).withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                currentTransaction.status,
+                                style: TextStyle(
+                                  color: _getStatusColor(
+                                    currentTransaction.status,
+                                  ),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  );
-                }),
 
-                if (transaction.items.length > 1)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      '+${transaction.items.length - 1} produk lainnya',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.blue[700],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _formatDate(currentTransaction.date),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
 
-                const SizedBox(height: 14),
+                        const SizedBox(height: 14),
 
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    OutlinedButton(
-                      onPressed: () {
-                        if (transaction.status == "Selesai" || transaction.status == "Pesanan selesai") {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => MainNavigation()),
+                        Text(
+                          currentTransaction.deliveryOption == 'xpress'
+                              ? 'Belanja Xpress'
+                              : 'Belanja Xtra',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'No. Transaksi - ${currentTransaction.id}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        ...currentTransaction.items.take(1).map((item) {
+                          return Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  item.imageUrl ?? '',
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (_, __, ___) => Container(
+                                        width: 50,
+                                        height: 50,
+                                        color: Colors.grey[200],
+                                        child: Icon(
+                                          Icons.image,
+                                          color: Colors.grey[400],
+                                        ),
+                                      ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'x${item.quantity}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           );
-                        } else {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (_) => TrackingScreen(
-                                trackingData: OrderTrackingModel(
-                                  transactionId: transaction.id, // Kirim transaction ID
-                                  courierName: "Tryan Gumilar",
-                                  courierId: "D 4563 ADP",
-                                  statusMessage: transaction.status,
-                                  statusDesc: "Pesananmu sedang diproses",
-                                  updatedAt: transaction.date ?? DateTime.now(),
+                        }),
+
+                        if (currentTransaction.items.length > 1)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              '+${currentTransaction.items.length - 1} produk lainnya',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue[700],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+
+                        const SizedBox(height: 14),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            OutlinedButton(
+                              onPressed: () {
+                                if (currentTransaction.status == "Selesai" ||
+                                    currentTransaction.status ==
+                                        "Pesanan selesai") {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => MainNavigation(),
+                                    ),
+                                  );
+                                } else {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => TrackingScreen(
+                                            trackingData: OrderTrackingModel(
+                                              transactionId:
+                                                  currentTransaction.id,
+                                              courierName: "Tryan Gumilar",
+                                              courierId: "D 4563 ADP",
+                                              statusMessage:
+                                                  currentTransaction.status,
+                                              statusDesc:
+                                                  "Pesananmu sedang diproses",
+                                              updatedAt:
+                                                  currentTransaction.date ??
+                                                  DateTime.now(),
+                                            ),
+                                          ),
+                                    ),
+                                  );
+                                }
+                              },
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: Colors.blue[700]!),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                              child: Text(
+                                (currentTransaction.status == "Selesai" ||
+                                        currentTransaction.status ==
+                                            "Pesanan selesai")
+                                    ? "Beli Lagi"
+                                    : "Lacak",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.blue[700],
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                          );
-                        }
-                      },
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.blue[700]!),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      child: Text(
-                        (transaction.status == "Selesai" || transaction.status == "Pesanan selesai") 
-                            ? "Beli Lagi" 
-                            : "Lacak",
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.blue[700],
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
 
-                    Text(
-                      'Total ${formatRupiah(transaction.totalPrice)}',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
+                            Text(
+                              'Total ${formatRupiah(currentTransaction.totalPrice)}',
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+                  ),
+                );
+              },
+            );
+          },
         );
       },
     );
+  }
+
+  // ⭐ Helper untuk fetch status terbaru dari storage
+  Future<Transaction?> _getUpdatedTransaction(String transactionId) async {
+    try {
+      final allTransactions = await TransactionManager.getTransactions();
+      return allTransactions.firstWhere(
+        (t) => t.id == transactionId,
+        orElse: () => _transactions.firstWhere((t) => t.id == transactionId),
+      );
+    } catch (e) {
+      return null;
+    }
   }
 
   Widget _buildDropdown(
