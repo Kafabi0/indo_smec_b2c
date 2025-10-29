@@ -10,6 +10,7 @@ class TransactionManager {
     required List<CartItem> cartItems,
     required String deliveryOption,
     Map<String, dynamic>? alamat,
+    String? initialStatus, // ⭐ Tambahkan parameter untuk status awal
   }) async {
     try {
       print('📦 Creating transaction...');
@@ -48,11 +49,15 @@ class TransactionManager {
 
       print('💰 Total price: $total');
 
+      // ⭐ Gunakan status yang diberikan atau default 'Diproses'
+      final status = initialStatus ?? 'Diproses';
+      print('📊 Transaction status: $status');
+
       // Buat objek transaksi
       final transaction = Transaction(
         id: transactionId,
         date: DateTime.now(),
-        status: 'Selesai',
+        status: status, // ⭐ Status dinamis
         deliveryOption: deliveryOption,
         alamat: alamat,
         items: items,
@@ -109,9 +114,23 @@ class TransactionManager {
       final data = await UserDataManager.getTransactions(userLogin);
       print('📊 Raw data count: ${data.length}');
 
+      // ⭐ Debug: Print sample data
+      if (data.isNotEmpty) {
+        print('📊 Sample transaction data: ${data.first}');
+      } else {
+        print('⚠️ No transaction data found for user: $userLogin');
+      }
+
       final transactions =
           data.map((item) => Transaction.fromMap(item)).toList();
       print('✅ Parsed transactions: ${transactions.length}');
+
+      // ⭐ Debug: Print parsed transactions
+      if (transactions.isNotEmpty) {
+        print('✅ First transaction ID: ${transactions.first.id}');
+        print('✅ First transaction status: ${transactions.first.status}');
+        print('✅ First transaction items: ${transactions.first.items.length}');
+      }
 
       return transactions;
     } catch (e) {
