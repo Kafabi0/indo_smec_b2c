@@ -1734,7 +1734,7 @@ class HomeScreenState extends State<HomeScreen> {
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          // borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.08),
@@ -1749,10 +1749,10 @@ class HomeScreenState extends State<HomeScreen> {
             Container(
               height: 100, // Dikurangi dari 110
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                // borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                // borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 child: Image.network(
                   product.imageUrl ?? '',
                   width: double.infinity,
@@ -2858,7 +2858,7 @@ class HomeScreenState extends State<HomeScreen> {
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              // borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.08),
