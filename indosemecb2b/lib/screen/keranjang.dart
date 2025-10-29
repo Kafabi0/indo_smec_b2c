@@ -433,10 +433,10 @@ class CartScreenState extends State<CartScreen> with RouteAware {
                             const SizedBox(height: 4),
                             Text(
                               _formatPrice(_calculateTotal()),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                color: Colors.blue[800], // PERUBAHAN DI SINI
                               ),
                             ),
                           ],
@@ -471,108 +471,6 @@ class CartScreenState extends State<CartScreen> with RouteAware {
               : null,
     );
   }
-
-  // Widget _buildDeliveryOptionsSheet() {
-  //   return StatefulBuilder(
-  //     builder: (context, setState) {
-  //       return Container(
-  //         decoration: const BoxDecoration(
-  //           color: Colors.white,
-  //           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-  //         ),
-  //         child: Padding(
-  //           padding: const EdgeInsets.all(20),
-  //           child: Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               const Text(
-  //                 "Tipe Pemesanan",
-  //                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  //               ),
-  //               const SizedBox(height: 16),
-  //               Row(
-  //                 children: [
-  //                   Expanded(
-  //                     child: _optionButton(
-  //                       label: "Pesan Antar",
-  //                       icon: Icons.delivery_dining,
-  //                       isActive: selectedDeliveryType == "antar",
-  //                       onTap:
-  //                           () =>
-  //                               setState(() => selectedDeliveryType = "antar"),
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //               const SizedBox(height: 24),
-  //               const Text(
-  //                 "Pilih salah satu tipe pengiriman",
-  //                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-  //               ),
-  //               const SizedBox(height: 12),
-  //               _radioShipping(
-  //                 title: "Reguler - Pilih Waktu (Rp5.000)",
-  //                 subtitle: selectedRegulerTime ?? "Pilih jadwal pengiriman",
-  //                 value: "reguler",
-  //                 groupValue: selectedShipping,
-  //                 onChanged: (v) {
-  //                   setState(() => selectedShipping = v!);
-  //                   _openTimePickerSheet();
-  //                 },
-  //               ),
-  //               const SizedBox(height: 24),
-  //               Row(
-  //                 children: [
-  //                   Expanded(
-  //                     child: OutlinedButton(
-  //                       onPressed: () => Navigator.pop(context),
-  //                       child: const Text("Batal"),
-  //                     ),
-  //                   ),
-  //                   const SizedBox(width: 10),
-  //                   Expanded(
-  //                     child: ElevatedButton(
-  //                       onPressed: () {
-  //                         if (selectedShipping == "reguler" &&
-  //                             selectedRegulerTime == null) {
-  //                           ScaffoldMessenger.of(context).showSnackBar(
-  //                             const SnackBar(
-  //                               content: Text(
-  //                                 "Silakan pilih waktu pengiriman dulu",
-  //                               ),
-  //                               backgroundColor: Colors.red,
-  //                             ),
-  //                           );
-  //                           return;
-  //                         }
-
-  //                         Navigator.pop(context);
-  //                         Navigator.push(
-  //                           context,
-  //                           MaterialPageRoute(
-  //                             builder:
-  //                                 (_) => CheckoutScreen(
-  //                                   alamat: _savedAlamat,
-  //                                   deliveryOption:
-  //                                       "$selectedShipping - $selectedRegulerTime",
-  //                                 ),
-  //                           ),
-  //                         );
-  //                       },
-  //                       child: const Text("Konfirmasi"),
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //               const SizedBox(height: 16),
-  //             ],
-  //           ),
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
 
   void _openTimePickerSheet() {
     showModalBottomSheet(
@@ -995,10 +893,10 @@ class CartScreenState extends State<CartScreen> with RouteAware {
                             fontSize: 8,
                           ),
                         ),
-                        const Text(
+                        Text(
                           'Rp7.900',
                           style: TextStyle(
-                            color: Colors.black,
+                            color: Colors.blue[800], // PERUBAHAN DI SINI
                             fontSize: 8,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1174,10 +1072,10 @@ class CartScreenState extends State<CartScreen> with RouteAware {
                   children: [
                     Text(
                       _formatPrice(item.price),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: Colors.blue[800], // PERUBAHAN DI SINI
                       ),
                     ),
                     const SizedBox(width: 6),
