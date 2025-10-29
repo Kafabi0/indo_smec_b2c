@@ -91,7 +91,10 @@ class UserDataManager {
   }
   // utils/user_data_manager.dart
 
-   static Future<bool> setSelectedAlamatIndex(String userEmail, int index) async {
+  static Future<bool> setSelectedAlamatIndex(
+    String userEmail,
+    int index,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     final key = 'selected_alamat_index_$userEmail';
     final success = await prefs.setInt(key, index);
@@ -109,34 +112,36 @@ class UserDataManager {
   }
 
   /// Ambil alamat yang sedang dipilih (berdasarkan index tersimpan)
-  static Future<Map<String, dynamic>?> getSelectedAlamat(String userEmail) async {
+  static Future<Map<String, dynamic>?> getSelectedAlamat(
+    String userEmail,
+  ) async {
     try {
       final alamatList = await getAlamatList(userEmail);
-      
+
       if (alamatList.isEmpty) {
         print('❌ [UserDataManager] No alamat for $userEmail');
         return null;
       }
-      
+
       final selectedIndex = await getSelectedAlamatIndex(userEmail);
-      
+
       // Validasi index
       if (selectedIndex >= 0 && selectedIndex < alamatList.length) {
-        print('✅ [UserDataManager] Selected: ${alamatList[selectedIndex]['label']} (index: $selectedIndex)');
+        print(
+          '✅ [UserDataManager] Selected: ${alamatList[selectedIndex]['label']} (index: $selectedIndex)',
+        );
         return alamatList[selectedIndex];
       }
-      
+
       // Fallback ke index 0 jika tidak valid
       print('⚠️ [UserDataManager] Invalid index $selectedIndex, using 0');
       await setSelectedAlamatIndex(userEmail, 0);
       return alamatList[0];
-      
     } catch (e) {
       print('❌ [UserDataManager] Error getting selected alamat: $e');
       return null;
     }
   }
-
 
   // ==================== PROFILE ====================
   static Future<bool> saveUserProfile(
@@ -245,5 +250,44 @@ class UserDataManager {
       print(key);
     }
     print('======================');
+  }
+
+  static Future<bool> saveNotifications(
+    String loginValue,
+    List<Map<String, dynamic>> notifications,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = _getUserKey(loginValue, 'notifications');
+      print('💾 [UserDataManager] Saving notifications for $loginValue');
+      return await prefs.setString(key, jsonEncode(notifications));
+    } catch (e) {
+      print('❌ Error saving notifications: $e');
+      return false;
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getNotifications(
+    String loginValue,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = _getUserKey(loginValue, 'notifications');
+      final jsonString = prefs.getString(key);
+
+      print('📂 [UserDataManager] Loading notifications for $loginValue');
+
+      if (jsonString == null) {
+        print('📭 No notifications found');
+        return [];
+      }
+
+      final List decoded = jsonDecode(jsonString);
+      print('✅ Loaded ${decoded.length} notifications');
+      return decoded.map((e) => e as Map<String, dynamic>).toList();
+    } catch (e) {
+      print('❌ Error getting notifications: $e');
+      return [];
+    }
   }
 }

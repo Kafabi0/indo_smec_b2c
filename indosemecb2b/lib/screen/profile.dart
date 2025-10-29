@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/daftar_alamat.dart';
 import 'package:indosemecb2b/screen/edit_profile_screen.dart';
+import 'package:indosemecb2b/screen/notification_provider.dart';
 import 'package:indosemecb2b/screen/ubah_pw.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:indosemecb2b/screen/login.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart'; // Import helper
@@ -42,120 +44,122 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _logout() async {
-  final confirmed = await showDialog<bool>(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) {
-      return Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 8),
-              const Text(
-                "Keluar dari Indosmec",
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                "Apakah kamu ingin keluar dari Indosmec?",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Tombol "Keluar" (atas)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1976D2),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    "Keluar",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 2),
-              // Tombol "Batalkan" (bawah)
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF1976D2)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    "Batalkan",
-                    style: TextStyle(
-                      color: Color(0xFF1976D2),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-        ),
-      );
-    },
-  );
-
-  if (confirmed != true) return;
-
-  // Lanjut proses logout
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setBool('isLoggedIn', false);
-  await prefs.remove('userEmail');
-  await prefs.remove('userName');
-  await UserDataManager.clearCurrentUser();
-
-  setState(() {
-    isLoggedIn = false;
-    userEmail = null;
-  });
-
-  widget.onLogout?.call();
-
-  if (mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Berhasil logout'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                const Text(
+                  "Keluar dari Indosmec",
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  "Apakah kamu ingin keluar dari Indosmec?",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Colors.black87),
+                ),
+                const SizedBox(height: 24),
+                // Tombol "Keluar" (atas)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1976D2),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      "Keluar",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                // Tombol "Batalkan" (bawah)
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFF1976D2)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      "Batalkan",
+                      style: TextStyle(
+                        color: Color(0xFF1976D2),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
     );
 
-    Navigator.pushReplacementNamed(context, '/login');
-  }
-}
+    if (confirmed != true) return;
 
+    // Lanjut proses logout
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false);
+    if (context.mounted) {
+      final notifProvider = Provider.of<NotificationProvider>(
+        context,
+        listen: false,
+      );
+      await notifProvider.clearForLogout();
+
+      print('🚪 Logout success, notifications cleared');
+    }
+    await prefs.remove('userEmail');
+    await prefs.remove('userName');
+    await UserDataManager.clearCurrentUser();
+
+    setState(() {
+      isLoggedIn = false;
+      userEmail = null;
+    });
+
+    widget.onLogout?.call();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Berhasil logout'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      Navigator.pushReplacementNamed(context, '/login');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -531,17 +535,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ); // Refresh setelah kembali
                   },
                 ),
-                _menuItem('Daftar Alamat', 'Pengaturan alamat tujuan',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DaftarAlamatScreen(),
-                        ),
-                      ).then(
-                        (_) => _loadLoginStatus(),
-                      ); // Refresh setelah kembali
-                }),
+                _menuItem(
+                  'Daftar Alamat',
+                  'Pengaturan alamat tujuan',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DaftarAlamatScreen(),
+                      ),
+                    ).then(
+                      (_) => _loadLoginStatus(),
+                    ); // Refresh setelah kembali
+                  },
+                ),
                 _menuItem(
                   'Rekening Bank',
                   'Tarik Saldo Klik ke rekening tujuan',

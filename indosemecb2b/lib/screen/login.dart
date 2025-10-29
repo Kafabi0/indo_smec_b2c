@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/screen/notification_provider.dart';
 import 'package:indosemecb2b/screen/register.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart'; // Import helper
@@ -279,6 +281,15 @@ class _LoginPageState extends State<LoginPage> {
 
     // ✅ Simpan status login dengan UserDataManager
     await UserDataManager.setCurrentUser(emailOrPhone);
+    if (context.mounted) {
+      final notifProvider = Provider.of<NotificationProvider>(
+        context,
+        listen: false,
+      );
+      await notifProvider.reloadForCurrentUser();
+
+      print('✅ Login success, notifications reloaded for: $emailOrPhone');
+    }
     await prefs.setBool('isLoggedIn', true);
     await prefs.setString('userName', user['name']);
     await prefs.setString('userLogin', emailOrPhone); // <-- Tambahkan baris ini

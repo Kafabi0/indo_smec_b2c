@@ -5,7 +5,14 @@ import '../models/notification_model.dart';
 import 'package:intl/intl.dart';
 import 'detail_pembayaran.dart';
 
-class NotificationScreen extends StatelessWidget {
+class NotificationScreen extends StatefulWidget {
+  const NotificationScreen({Key? key}) : super(key: key);
+
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen> {
   final currency = NumberFormat.currency(
     locale: 'id_ID',
     symbol: 'Rp ',
@@ -13,7 +20,18 @@ class NotificationScreen extends StatelessWidget {
   );
   final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
 
-  NotificationScreen({Key? key}) : super(key: key);
+  @override
+  void initState() {
+    super.initState();
+    // ⭐ Reload notifikasi ketika screen dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<NotificationProvider>(
+        context,
+        listen: false,
+      );
+      provider.reloadForCurrentUser();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

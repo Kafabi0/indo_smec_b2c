@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/notification_model.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import '../utils/user_data_manager.dart';
 
 class NotificationProvider with ChangeNotifier {
   List<AppNotification> _notifications = [];
+  String? _currentUser;
 
   List<AppNotification> get notifications => _notifications;
 
@@ -19,47 +19,88 @@ class NotificationProvider with ChangeNotifier {
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
   NotificationProvider() {
-    _loadNotifications();
+    _initializeForCurrentUser();
   }
 
-  // Load notifikasi dari SharedPreferences
+  // ⭐ Initialize untuk user yang sedang login
+  Future<void> _initializeForCurrentUser() async {
+    final user = await UserDataManager.getCurrentUserLogin();
+    print('🔔 [NotifProvider] Initialize for user: $user');
+
+    if (user != null) {
+      _currentUser = user;
+      await _loadNotifications();
+    } else {
+      print('⚠️ [NotifProvider] No user logged in');
+      _notifications = [];
+      _currentUser = null;
+    }
+    notifyListeners();
+  }
+
+  // ⭐ Load notifikasi untuk user tertentu
   Future<void> _loadNotifications() async {
+    if (_currentUser == null) {
+      print('❌ [NotifProvider] Cannot load: no current user');
+      return;
+    }
+
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? notifJson = prefs.getString('notifications');
+      final notifList = await UserDataManager.getNotifications(_currentUser!);
+      _notifications =
+          notifList.map((json) => AppNotification.fromJson(json)).toList();
 
-      if (notifJson != null) {
-        final List<dynamic> decoded = json.decode(notifJson);
-        _notifications =
-            decoded.map((item) => AppNotification.fromJson(item)).toList();
+      // Sort by date (newest first)
+      _notifications.sort((a, b) => b.date.compareTo(a.date));
 
-        // Sort by date (terbaru di atas)
-        _notifications.sort((a, b) => b.date.compareTo(a.date));
-        notifyListeners();
-      }
+      print('✅ [NotifProvider] Loaded ${_notifications.length} notifications');
+      notifyListeners();
     } catch (e) {
-      debugPrint('Error loading notifications: $e');
+      print('❌ Error loading notifications: $e');
     }
   }
 
-  // Simpan notifikasi ke SharedPreferences
+  // ⭐ Simpan notifikasi untuk user tertentu
   Future<void> _saveNotifications() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final String encoded = json.encode(
-        _notifications.map((n) => n.toJson()).toList(),
-      );
-      await prefs.setString('notifications', encoded);
-    } catch (e) {
-      debugPrint('Error saving notifications: $e');
+    if (_currentUser == null) {
+      print('❌ [NotifProvider] Cannot save: no current user');
+      return;
     }
+
+    try {
+      final notifJsonList = _notifications.map((n) => n.toJson()).toList();
+      await UserDataManager.saveNotifications(_currentUser!, notifJsonList);
+      print('💾 [NotifProvider] Saved ${_notifications.length} notifications');
+    } catch (e) {
+      print('❌ Error saving notifications: $e');
+    }
+  }
+
+  // ⭐ PENTING: Reload ketika user login/logout
+  Future<void> reloadForCurrentUser() async {
+    print('🔄 [NotifProvider] Reloading for current user...');
+    await _initializeForCurrentUser();
+  }
+
+  // ⭐ Clear ketika logout
+  Future<void> clearForLogout() async {
+    print('🚪 [NotifProvider] Clearing notifications on logout');
+    _notifications = [];
+    _currentUser = null;
+    notifyListeners();
   }
 
   // Tambah notifikasi baru
   Future<void> addNotification(AppNotification notification) async {
+    if (_currentUser == null) {
+      print('❌ Cannot add notification: no user logged in');
+      return;
+    }
+
     _notifications.insert(0, notification); // Add di awal list
     await _saveNotifications();
     notifyListeners();
+    print('✅ Notification added for user: $_currentUser');
   }
 
   // Tambah notifikasi pembayaran berhasil
@@ -68,7 +109,7 @@ class NotificationProvider with ChangeNotifier {
     required String paymentMethod,
     required double total,
     String? productImage,
-    Map<String, dynamic>? transactionData, // ✅ TAMBAHAN untuk data transaksi
+    Map<String, dynamic>? transactionData,
   }) async {
     final notification = AppNotification(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -81,8 +122,8 @@ class NotificationProvider with ChangeNotifier {
       image: productImage,
       total: total,
       detailButtonText: 'Lihat Detail',
-      orderId: orderId, // ✅ Simpan orderId
-      transactionData: transactionData, // ✅ Simpan data transaksi lengkap
+      orderId: orderId,
+      transactionData: transactionData,
     );
 
     await addNotification(notification);
