@@ -2,11 +2,12 @@
 class Transaction {
   final String id;
   final DateTime date;
-   String status; // 'Selesai', 'Dibatalkan', 'Diproses'
+  String status; // 'Selesai', 'Dibatalkan', 'Diproses'
   final String deliveryOption; // 'xpress' atau 'xtra'
   final Map<String, dynamic>? alamat;
   final List<TransactionItem> items;
   final double totalPrice;
+  final String? catatanPengiriman; // ✅ TAMBAHKAN FIELD
 
   Transaction({
     required this.id,
@@ -16,6 +17,7 @@ class Transaction {
     this.alamat,
     required this.items,
     required this.totalPrice,
+    this.catatanPengiriman, // ✅ TAMBAHKAN FIELD
   });
 
   Map<String, dynamic> toMap() {
@@ -27,6 +29,7 @@ class Transaction {
       'alamat': alamat,
       'items': items.map((item) => item.toMap()).toList(),
       'totalPrice': totalPrice,
+      'catatanPengiriman': catatanPengiriman, // ✅ SIMPAN KE MAP
     };
   }
 
@@ -37,10 +40,12 @@ class Transaction {
       status: map['status'] ?? 'Diproses',
       deliveryOption: map['deliveryOption'] ?? 'xpress',
       alamat: map['alamat'],
-      items: (map['items'] as List)
-          .map((item) => TransactionItem.fromMap(item))
-          .toList(),
+      items:
+          (map['items'] as List)
+              .map((item) => TransactionItem.fromMap(item))
+              .toList(),
       totalPrice: (map['totalPrice'] ?? 0).toDouble(),
+      catatanPengiriman: map['catatanPengiriman'], // ✅ LOAD DARI MAP
     );
   }
 }

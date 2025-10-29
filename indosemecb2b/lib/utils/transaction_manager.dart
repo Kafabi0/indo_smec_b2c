@@ -11,6 +11,7 @@ class TransactionManager {
     required String deliveryOption,
     Map<String, dynamic>? alamat,
     String? initialStatus, // ⭐ Tambahkan parameter untuk status awal
+    String? catatanPengiriman, // ✅ TAMBAHKAN PARAMETER
   }) async {
     try {
       print('📦 Creating transaction...');
@@ -62,9 +63,13 @@ class TransactionManager {
         alamat: alamat,
         items: items,
         totalPrice: total,
+        catatanPengiriman: catatanPengiriman, // ✅ SIMPAN CATATAN
       );
 
       print('✅ Transaction object created');
+      if (catatanPengiriman != null && catatanPengiriman.isNotEmpty) {
+        print('📝 Catatan pengiriman: $catatanPengiriman');
+      }
 
       // Ambil daftar transaksi yang sudah ada
       final transactions = await getTransactions();

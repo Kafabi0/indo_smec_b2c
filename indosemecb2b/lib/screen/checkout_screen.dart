@@ -14,8 +14,13 @@ import 'package:provider/provider.dart';
 class CheckoutScreen extends StatefulWidget {
   final Map<String, dynamic>? alamat;
   final String deliveryOption;
+  final String? catatanPengiriman; // ✅ TAMBAHKAN PARAMETER
 
-  CheckoutScreen({required this.alamat, required this.deliveryOption});
+  CheckoutScreen({
+    required this.alamat,
+    required this.deliveryOption,
+    required this.catatanPengiriman,
+  });
 
   @override
   _CheckoutScreenState createState() => _CheckoutScreenState();
@@ -69,11 +74,104 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final transactionId = 'TRX${DateTime.now().millisecondsSinceEpoch}';
       print('✅ Generated Transaction ID: $transactionId');
 
-      // Simpan transaksi
+      // ✅ Extract alamat dengan aman (SEMUA jadi String!) - PINDAHKAN KE ATAS
+      String penerimaName = 'N/A';
+      String alamatLengkap = 'Alamat tidak tersedia';
+      String nomorHP = 'N/A';
+
+      if (widget.alamat != null) {
+        // Ambil nama penerima
+        penerimaName =
+            widget.alamat!['nama_penerima']?.toString() ??
+            widget.alamat!['nama']?.toString() ??
+            'N/A';
+
+        // Ambil nomor HP
+        nomorHP = widget.alamat!['nomor_hp']?.toString() ?? 'N/A';
+
+        // ✅ Format alamat lengkap dari field-field yang ada
+        final List<String> alamatParts = [];
+
+        if (widget.alamat!['alamat_lengkap'] != null &&
+            widget.alamat!['alamat_lengkap'].toString().isNotEmpty) {
+          alamatParts.add(widget.alamat!['alamat_lengkap'].toString());
+        }
+
+        if (widget.alamat!['kelurahan'] != null) {
+          alamatParts.add('Kel. ${widget.alamat!['kelurahan']}');
+        }
+
+        if (widget.alamat!['kecamatan'] != null) {
+          alamatParts.add('Kec. ${widget.alamat!['kecamatan']}');
+        }
+
+        if (widget.alamat!['kota'] != null) {
+          alamatParts.add(widget.alamat!['kota'].toString());
+        }
+
+        if (widget.alamat!['provinsi'] != null) {
+          alamatParts.add(widget.alamat!['provinsi'].toString());
+        }
+
+        if (widget.alamat!['kodepos'] != null) {
+          alamatParts.add(widget.alamat!['kodepos'].toString());
+        }
+
+        if (alamatParts.isNotEmpty) {
+          alamatLengkap = alamatParts.join(', ');
+        }
+      }
+
+      print('📍 Penerima: $penerimaName');
+      print('📍 Nomor HP: $nomorHP');
+      print('📍 Alamat: $alamatLengkap');
+
+      // ✅ Buat transaction data dengan catatan pengiriman
+      final transactionData = {
+        'no_transaksi': transactionId,
+        'tanggal': DateTime.now().toIso8601String(),
+        'status': 'Pembayaran Lunas',
+        'metode_pembayaran': paymentType,
+        'items':
+            _cartItems
+                .map(
+                  (item) => {
+                    'nama': item.name,
+                    'name': item.name,
+                    'quantity': item.quantity,
+                    'harga': item.price,
+                    'image': item.imageUrl ?? '',
+                  },
+                )
+                .toList(),
+        'penerima': penerimaName, // ✅ String
+        'nomor_hp': nomorHP, // ✅ String
+        'alamat': alamatLengkap, // ✅ String (BUKAN Map!)
+        'metode_pengiriman':
+            widget.deliveryOption.contains('xpress')
+                ? 'Xpress (Rp5.000)'
+                : 'Reguler (Rp5.000)',
+        'jadwal_pengiriman':
+            'Dikirim : ${DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID').format(DateTime.now())}',
+        'biaya_pengiriman': 5000.0,
+        'biaya_admin': 0.0,
+        'delivery_option': widget.deliveryOption,
+        'catatan_pengiriman':
+            widget.catatanPengiriman ?? '', // ✅ TAMBAHKAN CATATAN
+      };
+
+      print('📦 Transaction data prepared:');
+      transactionData.forEach((key, value) {
+        print('  $key: ${value.runtimeType} = $value');
+      });
+
+      // Simpan transaksi dengan catatan
       final success = await TransactionManager.createTransaction(
         cartItems: _cartItems,
         deliveryOption: widget.deliveryOption,
         alamat: widget.alamat,
+        catatanPengiriman:
+            widget.catatanPengiriman, // ✅ PASS KE TRANSACTION MANAGER
       );
 
       if (success) {
@@ -92,95 +190,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           // Ambil gambar produk pertama (jika ada)
           final firstProductImage =
               _cartItems.isNotEmpty ? _cartItems.first.imageUrl : null;
-
-          // ✅ Extract alamat dengan aman (SEMUA jadi String!)
-          String penerimaName = 'N/A';
-          String alamatLengkap = 'Alamat tidak tersedia';
-          String nomorHP = 'N/A';
-
-          if (widget.alamat != null) {
-            // Ambil nama penerima
-            penerimaName =
-                widget.alamat!['nama_penerima']?.toString() ??
-                widget.alamat!['nama']?.toString() ??
-                'N/A';
-
-            // Ambil nomor HP
-            nomorHP = widget.alamat!['nomor_hp']?.toString() ?? 'N/A';
-
-            // ✅ Format alamat lengkap dari field-field yang ada
-            final List<String> alamatParts = [];
-
-            if (widget.alamat!['alamat_lengkap'] != null &&
-                widget.alamat!['alamat_lengkap'].toString().isNotEmpty) {
-              alamatParts.add(widget.alamat!['alamat_lengkap'].toString());
-            }
-
-            if (widget.alamat!['kelurahan'] != null) {
-              alamatParts.add('Kel. ${widget.alamat!['kelurahan']}');
-            }
-
-            if (widget.alamat!['kecamatan'] != null) {
-              alamatParts.add('Kec. ${widget.alamat!['kecamatan']}');
-            }
-
-            if (widget.alamat!['kota'] != null) {
-              alamatParts.add(widget.alamat!['kota'].toString());
-            }
-
-            if (widget.alamat!['provinsi'] != null) {
-              alamatParts.add(widget.alamat!['provinsi'].toString());
-            }
-
-            if (widget.alamat!['kodepos'] != null) {
-              alamatParts.add(widget.alamat!['kodepos'].toString());
-            }
-
-            if (alamatParts.isNotEmpty) {
-              alamatLengkap = alamatParts.join(', ');
-            }
-          }
-
-          print('📍 Penerima: $penerimaName');
-          print('📍 Nomor HP: $nomorHP');
-          print('📍 Alamat: $alamatLengkap');
-
-          // ✅ Buat transaction data LENGKAP - SEMUA STRING/NUMBER (bukan Map!)
-          final transactionData = {
-            'no_transaksi': transactionId,
-            'tanggal': DateTime.now().toIso8601String(),
-            'status': 'Pembayaran Lunas',
-            'metode_pembayaran': paymentType,
-            'items':
-                _cartItems
-                    .map(
-                      (item) => {
-                        'nama': item.name,
-                        'name': item.name,
-                        'quantity': item.quantity,
-                        'harga': item.price,
-                        'image': item.imageUrl ?? '',
-                      },
-                    )
-                    .toList(),
-            'penerima': penerimaName, // ✅ String
-            'nomor_hp': nomorHP, // ✅ String
-            'alamat': alamatLengkap, // ✅ String (BUKAN Map!)
-            'metode_pengiriman':
-                widget.deliveryOption == 'xpress'
-                    ? 'Xpress (Rp5.000)'
-                    : 'Reguler (Rp5.000)',
-            'jadwal_pengiriman':
-                'Dikirim : ${DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID').format(DateTime.now())}',
-            'biaya_pengiriman': 5000.0,
-            'biaya_admin': 0.0,
-            'delivery_option': widget.deliveryOption,
-          };
-
-          print('📦 Transaction data prepared:');
-          transactionData.forEach((key, value) {
-            print('  $key: ${value.runtimeType} = $value');
-          });
 
           // 1. Tampilkan Local Notification dengan transaction data
           await NotificationService().showPaymentSuccessNotification(
@@ -310,6 +319,53 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               ],
                             ),
                           ),
+                          if (widget.catatanPengiriman != null &&
+                              widget.catatanPengiriman!.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.blue[200]!),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.edit_note,
+                                    color: Colors.blue[700],
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Catatan Pengiriman',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.blue[900],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          widget.catatanPengiriman!,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 20),
                           const Text(
                             "Daftar Produk",

@@ -169,13 +169,56 @@ class TransactionDetailScreen extends StatelessWidget {
             const SizedBox(height: 10),
             _buildDetailRow(
               "Penerima",
-              "${alamat['nama_penerima'] ?? alamat['nama'] ?? 'N/A'}" ,
+              "${alamat['nama_penerima'] ?? alamat['nama'] ?? 'N/A'}",
             ),
             const SizedBox(height: 10),
             _buildDetailRow(
               "Alamat",
               alamat['alamat_lengkap'] ?? alamat['alamat'] ?? "-",
             ),
+            if (transaction.catatanPengiriman != null &&
+                transaction.catatanPengiriman!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.edit_note, color: Colors.blue[700], size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Catatan Pengiriman',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue[900],
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            transaction.catatanPengiriman!,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[700],
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             const SizedBox(height: 18),
 
