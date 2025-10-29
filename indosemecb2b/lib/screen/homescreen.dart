@@ -68,70 +68,84 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadAlamat() async {
-  if (isLoggedIn && userEmail.isNotEmpty) {
-    final alamatList = await UserDataManager.getAlamatList(userEmail);
-    setState(() {
-      _savedAlamat = alamatList.isNotEmpty ? alamatList[0] : null;
-    });
+    if (isLoggedIn && userEmail.isNotEmpty) {
+      final alamatList = await UserDataManager.getAlamatList(userEmail);
+      setState(() {
+        _savedAlamat = alamatList.isNotEmpty ? alamatList[0] : null;
+      });
+    }
   }
-}
 
   Future<void> _checkLoginStatus() async {
-  final prefs = await SharedPreferences.getInstance();
-  
-  final currentUser = await UserDataManager.getCurrentUserLogin();
-  
-  setState(() {
-    isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-    userEmail = currentUser ?? ''; 
-  });
-  
-  print('🔐 [HOME] Login status check:');
-  print('   isLoggedIn: $isLoggedIn');
-  print('   userEmail: $userEmail');
-  
-  if (isLoggedIn && userEmail.isNotEmpty) {
-    _loadFavoriteStatus();
-    await _loadAlamatData();
-  } else {
+    final prefs = await SharedPreferences.getInstance();
+
+    final currentUser = await UserDataManager.getCurrentUserLogin();
+
     setState(() {
-      favoriteStatus = {};
-      _savedAlamat = null;
+      isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+      userEmail = currentUser ?? '';
     });
+
+    print('🔐 [HOME] Login status check:');
+    print('   isLoggedIn: $isLoggedIn');
+    print('   userEmail: $userEmail');
+
+    if (isLoggedIn && userEmail.isNotEmpty) {
+      _loadFavoriteStatus();
+      await _loadAlamatData();
+    } else {
+      setState(() {
+        favoriteStatus = {};
+        _savedAlamat = null;
+      });
+    }
   }
-}
 
   Future<void> _loadAlamatData() async {
-  print('🔍 [HOME] _loadAlamatData() dipanggil');
-  print('📧 [HOME] userEmail: $userEmail');
-  print('🔐 [HOME] isLoggedIn: $isLoggedIn');
-  
-  if (userEmail.isNotEmpty) {
-    print('⏳ [HOME] Mengambil alamat dari UserDataManager...');
-    final alamatList = await UserDataManager.getAlamatList(userEmail);
-    
-    print('📦 [HOME] Alamat list length: ${alamatList.length}');
-    if (alamatList.isNotEmpty) {
-      print('✅ [HOME] Alamat ditemukan: ${alamatList[0]['label']}');
-      print('📍 [HOME] Detail alamat: ${alamatList[0]}');
+    print('🔍 [HOME] _loadAlamatData() dipanggil');
+    print('📧 [HOME] userEmail: $userEmail');
+    print('🔐 [HOME] isLoggedIn: $isLoggedIn');
+
+    if (userEmail.isNotEmpty) {
+      print('⏳ [HOME] Mengambil alamat dari UserDataManager...');
+      final alamatList = await UserDataManager.getAlamatList(userEmail);
+      final selectedIndex = await UserDataManager.getSelectedAlamatIndex(
+        userEmail,
+      );
+
+      print('📦 [HOME] Alamat list length: ${alamatList.length}');
+      print('🎯 [HOME] Selected index: $selectedIndex');
+
+      if (alamatList.isNotEmpty) {
+        // Pastikan selected index valid
+        final validIndex =
+            selectedIndex < alamatList.length ? selectedIndex : 0;
+        print('✅ [HOME] Alamat terpilih: ${alamatList[validIndex]['label']}');
+
+        if (mounted) {
+          setState(() {
+            _listAlamat = alamatList;
+            _selectedAlamatIndex = validIndex;
+            _savedAlamat = alamatList[validIndex];
+          });
+          print(
+            '🔄 [HOME] setState() selesai, _savedAlamat: ${_savedAlamat!['label']}',
+          );
+        }
+      } else {
+        print('❌ [HOME] Tidak ada alamat tersimpan');
+        if (mounted) {
+          setState(() {
+            _listAlamat = [];
+            _selectedAlamatIndex = 0;
+            _savedAlamat = null;
+          });
+        }
+      }
     } else {
-      print('❌ [HOME] Tidak ada alamat tersimpan');
+      print('⚠️ [HOME] userEmail kosong, tidak bisa load alamat');
     }
-    
-    if (mounted) {
-      setState(() {
-        // ⭐ UBAH BAGIAN INI:
-        _listAlamat = alamatList; // Set semua alamat ke list
-        _savedAlamat = alamatList.isNotEmpty ? alamatList[0] : null;
-        _selectedAlamatIndex = 0; // Set index pertama sebagai default
-      });
-      print('🔄 [HOME] setState() selesai, _savedAlamat: ${_savedAlamat != null ? "ADA" : "NULL"}');
-      print('📋 [HOME] Total alamat di _listAlamat: ${_listAlamat.length}');
-    }
-  } else {
-    print('⚠️ [HOME] userEmail kosong, tidak bisa load alamat');
   }
-}
 
   Future<void> _loadFavoriteStatus() async {
     final favoriteIds = await _favoriteService.getAllFavoriteIds();
@@ -918,255 +932,288 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   void _showLocationModal() {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.white,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    isScrollControlled: true,
-    builder: (context) {
-      // ⭐ HAPUS Container wrapper, langsung return modal
-      return isLoggedIn
-          ? _buildLoggedInLocationModal()
-          : _buildGuestLocationModal();
-    },
-  );
-}
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (context) {
+        // ⭐ HAPUS Container wrapper, langsung return modal
+        return isLoggedIn
+            ? _buildLoggedInLocationModal()
+            : _buildGuestLocationModal();
+      },
+    );
+  }
 
-Widget _buildLoggedInLocationModal() {
-  print('🏗️ [HOME] _buildLoggedInLocationModal() building...');
-  print('📍 [HOME] _savedAlamat saat build: ${_savedAlamat != null ? "ADA" : "NULL"}');
+  Widget _buildLoggedInLocationModal() {
+    print('🏗️ [HOME] _buildLoggedInLocationModal() building...');
+    print(
+      '📍 [HOME] _savedAlamat saat build: ${_savedAlamat != null ? "ADA" : "NULL"}',
+    );
 
-  // ⭐ PAKAI StatefulBuilder supaya modal bisa rebuild
-  return StatefulBuilder(
-    builder: (BuildContext context, StateSetter setModalState) {
-      return Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        padding: EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header - Compact
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Tipe Pemesanan',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: Icon(Icons.close, color: Colors.grey[600], size: 20),
-                  padding: EdgeInsets.zero,
-                  constraints: BoxConstraints(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Tipe Pemesanan - Simplified
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue[700]!, width: 1.5),
-              ),
-              child: Row(
+    // ⭐ PAKAI StatefulBuilder supaya modal bisa rebuild
+    return StatefulBuilder(
+      builder: (BuildContext context, StateSetter setModalState) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header - Compact
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.delivery_dining, color: Colors.blue[700], size: 20),
-                  const SizedBox(width: 8),
                   Text(
-                    'Pesan Antar',
+                    'Tipe Pemesanan',
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.blue[700],
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close, color: Colors.grey[600], size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 12),
 
-            const SizedBox(height: 16),
-            Divider(height: 1, color: Colors.grey[200]),
-            const SizedBox(height: 16),
-
-            // Header Pilih Alamat
-            Text(
-              'Pilih Alamat',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // List Alamat - Bisa lebih dari satu
-            if (_listAlamat.isNotEmpty) ...[
-              ...(_listAlamat.asMap().entries.map((entry) {
-                final index = entry.key;
-                final alamat = entry.value;
-                final isSelected = _selectedAlamatIndex == index;
-                
-                return Padding(
-                  padding: EdgeInsets.only(bottom: 8),
-                  child: InkWell(
-                    onTap: () {
-                      // ⭐ PAKAI setModalState + setState BIAR KEDUANYA UPDATE
-                      setModalState(() {
-                        _selectedAlamatIndex = index;
-                        _savedAlamat = alamat;
-                      });
-                      setState(() {
-                        _selectedAlamatIndex = index;
-                        _savedAlamat = alamat;
-                      });
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(
-                          color: isSelected ? Colors.blue[700]! : Colors.grey[300]!,
-                          width: isSelected ? 1.5 : 1,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.location_on,
-                            color: isSelected ? Colors.blue[700] : Colors.grey[600],
-                            size: 20,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  alamat['label'] ?? 'rumah',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${alamat['nama_penerima'] ?? ''} (${alamat['nomor_hp'] ?? ''})',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey[600],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  alamat['is_manual'] == true
-                                      ? '${alamat['alamat_lengkap'] ?? ''}, ${alamat['kelurahan'] ?? ''}'
-                                      : 'Jl. ${alamat['jalan'] ?? alamat['alamat_lengkap'] ?? ''}, ${alamat['kelurahan'] ?? ''}',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey[600],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (isSelected)
-                            Icon(Icons.check_circle, color: Colors.blue[700], size: 20)
-                          else
-                            Icon(Icons.circle_outlined, color: Colors.grey[400], size: 20),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }).toList()),
-            ],
-
-            // Tombol Tambah Alamat - Simplified
-            InkWell(
-              onTap: () async {
-                print('➕ [HOME] Tombol Tambah Alamat ditekan');
-                Navigator.pop(context);
-
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LengkapiAlamatScreen(
-                      existingAddress: null,
-                    ),
-                  ),
-                );
-
-                if (result != null && result is Map<String, dynamic>) {
-                  setState(() {
-                    _listAlamat.add(result);
-                    _selectedAlamatIndex = _listAlamat.length - 1;
-                    _savedAlamat = result;
-                  });
-                  
-                  final saved = await UserDataManager.saveAlamat(userEmail, result);
-                  if (saved && mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Alamat berhasil disimpan'),
-                        backgroundColor: Colors.green,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  }
-                }
-              },
-              child: Container(
-                padding: EdgeInsets.all(12),
+              // Tipe Pemesanan - Simplified
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.grey[300]!, width: 1),
+                  color: Colors.blue[50],
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[700]!, width: 1.5),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.add_circle_outline, color: Colors.blue[700], size: 20),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _listAlamat.isEmpty ? 'Tambah Alamat' : 'Tambah Alamat Lain',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.blue[700],
-                        ),
+                    Icon(
+                      Icons.delivery_dining,
+                      color: Colors.blue[700],
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Pesan Antar',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue[700],
                       ),
                     ),
-                    Icon(Icons.chevron_right, color: Colors.grey[400], size: 18),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
-      );
-    },
-  );
-}
+
+              const SizedBox(height: 16),
+              Divider(height: 1, color: Colors.grey[200]),
+              const SizedBox(height: 16),
+
+              // Header Pilih Alamat
+              Text(
+                'Pilih Alamat',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // List Alamat - Bisa lebih dari satu
+              if (_listAlamat.isNotEmpty) ...[
+                ...(_listAlamat.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final alamat = entry.value;
+                  final isSelected = _selectedAlamatIndex == index;
+
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: 8),
+                    child: InkWell(
+                      onTap: () {
+                        // ⭐ PAKAI setModalState + setState BIAR KEDUANYA UPDATE
+                        setModalState(() {
+                          _selectedAlamatIndex = index;
+                          _savedAlamat = alamat;
+                        });
+                        setState(() {
+                          _selectedAlamatIndex = index;
+                          _savedAlamat = alamat;
+                        });
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(
+                            color:
+                                isSelected
+                                    ? Colors.blue[700]!
+                                    : Colors.grey[300]!,
+                            width: isSelected ? 1.5 : 1,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              color:
+                                  isSelected
+                                      ? Colors.blue[700]
+                                      : Colors.grey[600],
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    alamat['label'] ?? 'rumah',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${alamat['nama_penerima'] ?? ''} (${alamat['nomor_hp'] ?? ''})',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[600],
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    alamat['is_manual'] == true
+                                        ? '${alamat['alamat_lengkap'] ?? ''}, ${alamat['kelurahan'] ?? ''}'
+                                        : 'Jl. ${alamat['jalan'] ?? alamat['alamat_lengkap'] ?? ''}, ${alamat['kelurahan'] ?? ''}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[600],
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (isSelected)
+                              Icon(
+                                Icons.check_circle,
+                                color: Colors.blue[700],
+                                size: 20,
+                              )
+                            else
+                              Icon(
+                                Icons.circle_outlined,
+                                color: Colors.grey[400],
+                                size: 20,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList()),
+              ],
+
+              // Tombol Tambah Alamat - Simplified
+              InkWell(
+                onTap: () async {
+                  print('➕ [HOME] Tombol Tambah Alamat ditekan');
+                  Navigator.pop(context);
+
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) =>
+                              LengkapiAlamatScreen(existingAddress: null),
+                    ),
+                  );
+
+                  if (result != null && result is Map<String, dynamic>) {
+                    setState(() {
+                      _listAlamat.add(result);
+                      _selectedAlamatIndex = _listAlamat.length - 1;
+                      _savedAlamat = result;
+                    });
+
+                    final saved = await UserDataManager.saveAlamat(
+                      userEmail,
+                      result,
+                    );
+                    if (saved && mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Alamat berhasil disimpan'),
+                          backgroundColor: Colors.green,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.grey[300]!, width: 1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.add_circle_outline,
+                        color: Colors.blue[700],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _listAlamat.isEmpty
+                              ? 'Tambah Alamat'
+                              : 'Tambah Alamat Lain',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blue[700],
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        color: Colors.grey[400],
+                        size: 18,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildGuestLocationModal() {
     return Column(
@@ -1348,8 +1395,6 @@ Widget _buildLoggedInLocationModal() {
       ),
     );
   }
-
-
 
   Widget _buildDeliveryOption({
     required bool isSelected,

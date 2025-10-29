@@ -89,6 +89,54 @@ class UserDataManager {
       return [];
     }
   }
+  // utils/user_data_manager.dart
+
+   static Future<bool> setSelectedAlamatIndex(String userEmail, int index) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'selected_alamat_index_$userEmail';
+    final success = await prefs.setInt(key, index);
+    print('💾 [UserDataManager] Set index $index for $userEmail: $success');
+    return success;
+  }
+
+  /// Ambil index alamat yang dipilih user (default: 0)
+  static Future<int> getSelectedAlamatIndex(String userEmail) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'selected_alamat_index_$userEmail';
+    final index = prefs.getInt(key) ?? 0;
+    print('📖 [UserDataManager] Get index for $userEmail: $index');
+    return index;
+  }
+
+  /// Ambil alamat yang sedang dipilih (berdasarkan index tersimpan)
+  static Future<Map<String, dynamic>?> getSelectedAlamat(String userEmail) async {
+    try {
+      final alamatList = await getAlamatList(userEmail);
+      
+      if (alamatList.isEmpty) {
+        print('❌ [UserDataManager] No alamat for $userEmail');
+        return null;
+      }
+      
+      final selectedIndex = await getSelectedAlamatIndex(userEmail);
+      
+      // Validasi index
+      if (selectedIndex >= 0 && selectedIndex < alamatList.length) {
+        print('✅ [UserDataManager] Selected: ${alamatList[selectedIndex]['label']} (index: $selectedIndex)');
+        return alamatList[selectedIndex];
+      }
+      
+      // Fallback ke index 0 jika tidak valid
+      print('⚠️ [UserDataManager] Invalid index $selectedIndex, using 0');
+      await setSelectedAlamatIndex(userEmail, 0);
+      return alamatList[0];
+      
+    } catch (e) {
+      print('❌ [UserDataManager] Error getting selected alamat: $e');
+      return null;
+    }
+  }
+
 
   // ==================== PROFILE ====================
   static Future<bool> saveUserProfile(

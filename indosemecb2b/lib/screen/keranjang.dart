@@ -54,20 +54,26 @@ class CartScreenState extends State<CartScreen> with RouteAware {
   }
 
   Future<void> _loadUserData() async {
+    print('🔄 [CART] _loadUserData() called');
     final userLogin = await UserDataManager.getCurrentUserLogin();
+    print('👤 [CART] Current user: $userLogin');
 
     if (userLogin != null) {
-      final alamatList = await UserDataManager.getAlamatList(userLogin);
-      final alamat = alamatList.isNotEmpty ? alamatList[0] : null;
+      // ⭐ GUNAKAN getSelectedAlamat untuk mendapatkan alamat terpilih
+      final selectedAlamat = await UserDataManager.getSelectedAlamat(userLogin);
       final cartItems = await CartManager.getCartItems();
 
       setState(() {
         _currentUserLogin = userLogin;
-        _savedAlamat = alamat;
+        _savedAlamat = selectedAlamat;
         _cartItems = cartItems;
         _isLoading = false;
       });
+
+      print('✅ [CART] Alamat loaded: ${selectedAlamat?['label']}');
+      print('📦 [CART] Cart items: ${cartItems.length}');
     } else {
+      print('❌ [CART] No user logged in');
       setState(() {
         _isLoading = false;
       });

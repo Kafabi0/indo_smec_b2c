@@ -10,11 +10,8 @@ class LengkapiAlamatScreen extends StatefulWidget {
   final Map<String, dynamic>? existingAddress;
   final int? editIndex;
 
-  const LengkapiAlamatScreen({
-    Key? key,
-    this.existingAddress,
-    this.editIndex,
-  }) : super(key: key);
+  const LengkapiAlamatScreen({Key? key, this.existingAddress, this.editIndex})
+    : super(key: key);
 
   @override
   State<LengkapiAlamatScreen> createState() => _LengkapiAlamatScreenState();
@@ -43,7 +40,9 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
       final loadedList = await UserDataManager.getAlamatList(currentUser);
       print('✅ Loaded ${loadedList.length} alamat');
       for (int i = 0; i < loadedList.length; i++) {
-        print('  [$i] ${loadedList[i]['label']} - ${loadedList[i]['nama_penerima']}');
+        print(
+          '  [$i] ${loadedList[i]['label']} - ${loadedList[i]['nama_penerima']}',
+        );
       }
 
       setState(() {
@@ -54,13 +53,15 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
     } else {
       print('❌ No user logged in!');
       setState(() => _isLoading = false);
-      
+
       // Tampilkan alert jika user belum login
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('⚠️ Anda belum login. Silakan login terlebih dahulu.'),
+              content: Text(
+                '⚠️ Anda belum login. Silakan login terlebih dahulu.',
+              ),
               backgroundColor: Colors.orange,
               duration: Duration(seconds: 3),
             ),
@@ -72,14 +73,19 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
 
   Future<void> _saveAlamatList() async {
     print('💾 Saving ${_alamatList.length} alamat...');
-    
+
     if (_currentUserLogin != null) {
-      final success = await UserDataManager.saveAlamatList(_currentUserLogin!, _alamatList);
+      final success = await UserDataManager.saveAlamatList(
+        _currentUserLogin!,
+        _alamatList,
+      );
       print('💾 Save result: $success');
-      
+
       if (success) {
         // Verify save dengan reload
-        final verifyList = await UserDataManager.getAlamatList(_currentUserLogin!);
+        final verifyList = await UserDataManager.getAlamatList(
+          _currentUserLogin!,
+        );
         print('✔️ Verify: Saved ${verifyList.length} alamat');
       }
     } else {
@@ -108,7 +114,10 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
     if (_currentUserLogin == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Pilih Alamat', style: TextStyle(color: Colors.black)),
+          title: const Text(
+            'Pilih Alamat',
+            style: TextStyle(color: Colors.black),
+          ),
           backgroundColor: Colors.white,
           elevation: 1,
           iconTheme: const IconThemeData(color: Colors.black),
@@ -162,20 +171,21 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
               if (mounted) {
                 showDialog(
                   context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Debug Info'),
-                    content: Text(
-                      'User: $user\n'
-                      'Alamat count: ${_alamatList.length}\n'
-                      'Check console for all keys',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('OK'),
+                  builder:
+                      (context) => AlertDialog(
+                        title: const Text('Debug Info'),
+                        content: Text(
+                          'User: $user\n'
+                          'Alamat count: ${_alamatList.length}\n'
+                          'Check console for all keys',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('OK'),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
                 );
               }
             },
@@ -196,13 +206,13 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
           //     textAlign: TextAlign.center,
           //   ),
           // ),
-          
           Expanded(
-            child: _alamatList.isEmpty
-                ? _buildBelumAdaAlamat()
-                : _buildDaftarAlamat(),
+            child:
+                _alamatList.isEmpty
+                    ? _buildBelumAdaAlamat()
+                    : _buildDaftarAlamat(),
           ),
-          
+
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -252,17 +262,29 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.location_off_outlined, size: 100, color: Colors.grey[300]),
+            Icon(
+              Icons.location_off_outlined,
+              size: 100,
+              color: Colors.grey[300],
+            ),
             const SizedBox(height: 24),
             const Text(
               'Belum ada alamat tersimpan',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Tambahkan alamat pengiriman untuk memudahkan proses belanja Anda',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                height: 1.5,
+              ),
             ),
           ],
         ),
@@ -305,7 +327,10 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
                   ),
                   if (isSelected)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.blue[700],
                         borderRadius: BorderRadius.circular(4),
@@ -376,7 +401,10 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                     ),
                     child: Icon(Icons.edit, size: 20, color: Colors.grey[700]),
                   ),
@@ -388,7 +416,10 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                     ),
                     child: Icon(Icons.delete, size: 20, color: Colors.red[400]),
                   ),
@@ -401,8 +432,15 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
     );
   }
 
-  void _pilihAlamat(int index) {
-    print('✅ Alamat dipilih: ${_alamatList[index]['label']}');
+  void _pilihAlamat(int index) async {
+    print('✅ Alamat dipilih: ${_alamatList[index]['label']}, index: $index');
+
+    // ⭐ SIMPAN INDEX YANG DIPILIH
+    if (_currentUserLogin != null) {
+      await UserDataManager.setSelectedAlamatIndex(_currentUserLogin!, index);
+      print('💾 Selected index saved: $index');
+    }
+
     Navigator.pop(context, _alamatList[index]);
   }
 
@@ -411,12 +449,17 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => TambahAlamatScreen(
-          existingAddress: _alamatList[index],
-          selectedLocation: _alamatList[index]['latitude'] != null
-              ? LatLng(_alamatList[index]['latitude'], _alamatList[index]['longitude'])
-              : null,
-        ),
+        builder:
+            (context) => TambahAlamatScreen(
+              existingAddress: _alamatList[index],
+              selectedLocation:
+                  _alamatList[index]['latitude'] != null
+                      ? LatLng(
+                        _alamatList[index]['latitude'],
+                        _alamatList[index]['longitude'],
+                      )
+                      : null,
+            ),
       ),
     );
 
@@ -442,21 +485,24 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
   Future<void> _hapusAlamat(int index) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hapus Alamat'),
-        content: const Text('Apakah Anda yakin ingin menghapus alamat ini?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Hapus Alamat'),
+            content: const Text(
+              'Apakah Anda yakin ingin menghapus alamat ini?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Hapus'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true) {
@@ -556,12 +602,19 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
+                      Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: Colors.grey[600],
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Anda bisa mengirim ke alamat orang lain dengan input manual',
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ),
                     ],
@@ -585,9 +638,7 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
 
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const TandaiLokasiScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const TandaiLokasiScreen()),
     );
 
     print('🔙 Returned from TandaiLokasiScreen');
@@ -610,9 +661,7 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
 
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const TambahAlamatManualScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const TambahAlamatManualScreen()),
     );
 
     print('🔙 Returned from TambahAlamatManualScreen');
@@ -629,37 +678,40 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
   Future<void> _handleTambahAlamatDariPeta(Map<String, dynamic> result) async {
     print('🗺️ Handling address from map');
     print('🗺️ Result from TandaiLokasiScreen: $result');
-    
+
     // ⭐ PERBAIKAN: Langsung navigasi ke TambahAlamatScreen
     // Navigator.push akan membuka screen baru dan menunggu hasilnya
     final alamatResult = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => TambahAlamatScreen(
-          selectedLocation: result['location'] as LatLng,
-          placemark: result['placemark'],
-        ),
+        builder:
+            (context) => TambahAlamatScreen(
+              selectedLocation: result['location'] as LatLng,
+              placemark: result['placemark'],
+            ),
       ),
     );
 
     print('🔍 Checking alamatResult: $alamatResult');
-    
+
     if (alamatResult != null && alamatResult is Map<String, dynamic>) {
       print('✅ Alamat dari peta received: ${alamatResult['label']}');
       print('📦 Full data: $alamatResult');
-      
+
       setState(() {
         _alamatList.add(alamatResult);
         print('📝 List size now: ${_alamatList.length}');
       });
-      
+
       await _saveAlamatList();
       await _loadAlamatList(); // Reload untuk verify
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ Alamat "${alamatResult['label']}" berhasil ditambahkan!'),
+            content: Text(
+              '✅ Alamat "${alamatResult['label']}" berhasil ditambahkan!',
+            ),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
@@ -678,7 +730,7 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
       _alamatList.add(result);
       print('📝 List size now: ${_alamatList.length}');
     });
-    
+
     await _saveAlamatList();
     await _loadAlamatList(); // Reload untuk verify
 
