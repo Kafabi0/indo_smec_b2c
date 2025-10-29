@@ -21,6 +21,8 @@ class _TrackingScreenState extends State<TrackingScreen>
   final MapController _mapController = MapController();
 
   final List<LatLng> _rute = [];
+  bool _isUserInteracting = false;
+  Timer? _userInactivityTimer;
 
   String _statusPesanan = "Menyiapkan pesanan";
   String _statusDesc = "Kurir sedang menunggu konfirmasi toko";
@@ -91,8 +93,8 @@ class _TrackingScreenState extends State<TrackingScreen>
 
   Future<void> _loadRoute() async {
     try {
-      final start = LatLng(-6.200000, 106.816666);
-      final end = LatLng(-6.205000, 106.824000);
+      final start = LatLng(-6.9379454, 107.661099);
+      final end = LatLng(-6.9254643, 107.6604138);
       final route = await getRouteFromOSRM(start, end);
 
       setState(() {
@@ -146,7 +148,12 @@ class _TrackingScreenState extends State<TrackingScreen>
               start.longitude +
               (_animasi!.value * (end.longitude - start.longitude));
           setState(() => _posisiKurir = LatLng(lat, lng));
-          _mapController.move(_posisiKurir!, 16);
+
+          // Hanya pindahkan kamera jika user tidak sedang menggeser
+          if (!_isUserInteracting) {
+            _mapController.move(_posisiKurir!, 16);
+          }
+          // _mapController.move(_posisiKurir!, 16);
         });
 
         _animController.forward();
@@ -167,6 +174,7 @@ class _TrackingScreenState extends State<TrackingScreen>
   void dispose() {
     _timer?.cancel();
     _animController.dispose();
+    _userInactivityTimer?.cancel();
     super.dispose();
   }
 
@@ -281,6 +289,34 @@ class _TrackingScreenState extends State<TrackingScreen>
                           options: MapOptions(
                             initialCenter: _rute.first,
                             initialZoom: 16,
+                            onMapEvent: (event) {
+                              // Ketika user mulai menggeser peta
+                              if (event is MapEventMoveStart) {
+                                _isUserInteracting = true;
+                                _userInactivityTimer
+                                    ?.cancel(); // hentikan timer lama
+                              }
+
+                              // Setiap kali user menggerakkan peta (move / pan / zoom)
+                              if (event is MapEventMove ||
+                                  event is MapEventMoveEnd) {
+                                _userInactivityTimer?.cancel(); // reset timer
+                                _userInactivityTimer = Timer(
+                                  const Duration(seconds: 4),
+                                  () {
+                                    // Setelah 4 detik tidak ada interaksi
+                                    if (mounted) {
+                                      setState(() {
+                                        _isUserInteracting = false;
+                                      });
+                                      if (_posisiKurir != null) {
+                                        _mapController.move(_posisiKurir!, 16);
+                                      }
+                                    }
+                                  },
+                                );
+                              }
+                            },
                           ),
                           children: [
                             // --- Peta dasar ---
@@ -367,7 +403,7 @@ class _TrackingScreenState extends State<TrackingScreen>
                                     child: ClipOval(
                                       child: Image.asset(
                                         'assets/motor.png',
-                                         width: 50,
+                                        width: 50,
                                         height: 50,
                                         fit: BoxFit.contain,
                                       ),
