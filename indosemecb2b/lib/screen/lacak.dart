@@ -1,11 +1,174 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 import '../models/tracking.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-class TrackingScreen extends StatelessWidget {
+class TrackingScreen extends StatefulWidget {
   final OrderTrackingModel trackingData;
 
   const TrackingScreen({super.key, required this.trackingData});
+
+  @override
+  State<TrackingScreen> createState() => _TrackingScreenState();
+}
+
+class _TrackingScreenState extends State<TrackingScreen>
+    with SingleTickerProviderStateMixin {
+  final MapController _mapController = MapController();
+
+  final List<LatLng> _rute = [];
+
+  String _statusPesanan = "Menyiapkan pesanan";
+  String _statusDesc = "Kurir sedang menunggu konfirmasi toko";
+  final List<Map<String, String>> _semuaStatus = [
+    {
+      "title": "Menyiapkan pesanan",
+      "desc": "Kurir sedang menunggu konfirmasi toko",
+    },
+    {
+      "title": "Sedang dikirim",
+      "desc": "Kurir sedang dalam perjalanan mengambil rute utama",
+    },
+    {
+      "title": "Hampir sampai",
+      "desc": "Kurir sebentar lagi tiba di lokasi tujuan",
+    },
+    {
+      "title": "Pesanan telah sampai",
+      "desc": "Pesanan berhasil diantarkan ke alamat tujuan",
+    },
+    {
+      "title": "Pesanan selesai",
+      "desc": "Kurir telah menyelesaikan pengantaran",
+    },
+  ];
+
+  int _index = 0;
+  LatLng? _posisiKurir;
+  Timer? _timer;
+
+  late AnimationController _animController;
+  Animation<double>? _animasi;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+    _loadRoute();
+  }
+
+  final List<Map<String, String>> _statusList = [
+    {
+      "title": "Menyiapkan pesanan",
+      "desc": "Kurir sedang menunggu konfirmasi toko",
+      "time": DateFormat("dd MMM yyyy | HH:mm", "id_ID").format(DateTime.now()),
+    },
+  ];
+
+  Future<List<LatLng>> getRouteFromOSRM(LatLng start, LatLng end) async {
+    final url = Uri.parse(
+      'https://router.project-osrm.org/route/v1/driving/'
+      '${start.longitude},${start.latitude};${end.longitude},${end.latitude}'
+      '?overview=full&geometries=geojson',
+    );
+
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final coords = data['routes'][0]['geometry']['coordinates'] as List;
+      return coords.map((c) => LatLng(c[1], c[0])).toList();
+    } else {
+      throw Exception('Gagal memuat rute');
+    }
+  }
+
+  Future<void> _loadRoute() async {
+    try {
+      final start = LatLng(-6.200000, 106.816666);
+      final end = LatLng(-6.205000, 106.824000);
+      final route = await getRouteFromOSRM(start, end);
+
+      setState(() {
+        _rute.clear();
+        _rute.addAll(route);
+        _posisiKurir = _rute.first;
+      });
+
+      _mulaiSimulasi();
+    } catch (e) {
+      print('Error memuat rute: $e');
+    }
+  }
+
+  void _updateStatus() {
+    if (_index < _rute.length / 3) {
+      _statusPesanan = _semuaStatus[1]["title"]!;
+      _statusDesc = _semuaStatus[1]["desc"]!;
+    } else if (_index < _rute.length * 2 / 3) {
+      _statusPesanan = _semuaStatus[2]["title"]!;
+      _statusDesc = _semuaStatus[2]["desc"]!;
+    } else {
+      _statusPesanan = _semuaStatus[3]["title"]!;
+      _statusDesc = _semuaStatus[3]["desc"]!;
+    }
+    // Tambahkan status ke list jika belum ada
+    final sudahAda = _statusList.any((s) => s["title"] == _statusPesanan);
+    if (!sudahAda) {
+      _statusList.add({
+        "title": _statusPesanan,
+        "desc": _statusDesc,
+        "time": formatDate(DateTime.now()),
+      });
+    }
+  }
+
+  void _mulaiSimulasi() {
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_index < _rute.length - 1) {
+        final start = _rute[_index];
+        final end = _rute[_index + 1];
+        _animController.reset();
+
+        _animasi = Tween<double>(begin: 0, end: 1).animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
+        )..addListener(() {
+          final lat =
+              start.latitude +
+              (_animasi!.value * (end.latitude - start.latitude));
+          final lng =
+              start.longitude +
+              (_animasi!.value * (end.longitude - start.longitude));
+          setState(() => _posisiKurir = LatLng(lat, lng));
+          _mapController.move(_posisiKurir!, 16);
+        });
+
+        _animController.forward();
+        _index++;
+
+        setState(() => _updateStatus());
+      } else {
+        setState(() {
+          _statusPesanan = "Pesanan selesai";
+          _statusDesc = "Kurir telah menyelesaikan pengantaran";
+        });
+        timer.cancel();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _animController.dispose();
+    super.dispose();
+  }
 
   String formatDate(DateTime? date) {
     if (date == null) return "-";
@@ -18,14 +181,13 @@ class TrackingScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Lacak Pesanan"),
         backgroundColor: Colors.white,
-        centerTitle: false,
         elevation: 1,
+        iconTheme: const IconThemeData(color: Colors.black),
         titleTextStyle: const TextStyle(
           color: Colors.black,
           fontSize: 18,
           fontWeight: FontWeight.bold,
         ),
-        iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -71,7 +233,7 @@ class TrackingScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          trackingData.orderId ?? "-",
+                          widget.trackingData.orderId ?? "-",
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -81,6 +243,77 @@ class TrackingScreen extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ================= MAP =================
+            const Text(
+              "Lokasi Kurir",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              height: 250,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child:
+                    _rute.isEmpty
+                        ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(40),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                        : FlutterMap(
+                          mapController: _mapController,
+                          options: MapOptions(
+                            initialCenter: _rute.first,
+                            initialZoom: 16,
+                          ),
+                          children: [
+                            TileLayer(
+                              urlTemplate:
+                                  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              subdomains: const ['a', 'b', 'c'],
+                            ),
+                            PolylineLayer(
+                              polylines: [
+                                Polyline(
+                                  points: _rute,
+                                  strokeWidth: 4,
+                                  color: Colors.blue,
+                                ),
+                              ],
+                            ),
+                            if (_posisiKurir != null)
+                              MarkerLayer(
+                                markers: [
+                                  Marker(
+                                    point: _posisiKurir!,
+                                    width: 60,
+                                    height: 60,
+                                    child: const Icon(
+                                      Icons.motorcycle,
+                                      size: 40,
+                                      color: Colors.green,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
               ),
             ),
 
@@ -110,22 +343,18 @@ class TrackingScreen extends StatelessWidget {
                   CircleAvatar(
                     radius: 26,
                     backgroundColor: Colors.blue[700],
-                    child: const Icon(
-                      Icons.person,
-                      color: Colors.white,
-                      size: 30,
-                    ),
+                    child: const Icon(Icons.person, color: Colors.white),
                   ),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        trackingData.courierName ?? "Delivery Man",
+                        widget.trackingData.courierName ?? "Delivery Man",
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        trackingData.courierId ?? "ID-000",
+                        widget.trackingData.courierId ?? "ID-000",
                         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
@@ -136,66 +365,94 @@ class TrackingScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // ================= STATUS PESANAN =================
+            // ================= STATUS =================
             const Text(
               "Status Pesanan",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
-                          color: Colors.blue,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          trackingData.statusMessage ??
-                              "Delivery Man akan segera mengambil pesanan",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
+            Column(
+              children:
+                  _statusList.map((status) {
+                    final isLast = status == _statusList.last;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
                           ),
+                        ],
+                        border: Border.all(
+                          color: isLast ? Colors.blue : Colors.grey.shade300,
+                          width: isLast ? 2 : 1,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    formatDate(trackingData.updatedAt),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    trackingData.statusDesc ??
-                        "Delivery Man sedang menuju ke toko",
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ],
-              ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Column(
+                            children: [
+                              Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: isLast ? Colors.blue : Colors.grey,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              if (!isLast)
+                                Container(
+                                  width: 2,
+                                  height: 40,
+                                  color: Colors.grey.shade300,
+                                ),
+                            ],
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  status["title"]!,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight:
+                                        isLast
+                                            ? FontWeight.bold
+                                            : FontWeight.w500,
+                                    color: isLast ? Colors.blue : Colors.black,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  status["desc"]!,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  status["time"]!,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
             ),
           ],
         ),
