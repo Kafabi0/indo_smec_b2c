@@ -74,6 +74,7 @@ class PaymentSuccessScreen extends StatelessWidget {
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
+
               child: ElevatedButton(
                 onPressed: () async {
                   final transactions =
@@ -140,6 +141,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
+
                 child: const Text(
                   "Lihat Detail Pembayaran",
                   style: TextStyle(
@@ -150,6 +152,38 @@ class PaymentSuccessScreen extends StatelessWidget {
                 ),
               ),
             ),
+            SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+
+              child: ElevatedButton(
+                onPressed:
+                    () => Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MainNavigation(),
+                      ),
+                      (route) => false,
+                    ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1976D2),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+
+                child: const Text(
+                  "Kembali Ke Beranda",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+
             const SizedBox(height: 24),
           ],
         ),
