@@ -14,7 +14,7 @@ import 'package:provider/provider.dart';
 class CheckoutScreen extends StatefulWidget {
   final Map<String, dynamic>? alamat;
   final String deliveryOption;
-  final String? catatanPengiriman; // ✅ TAMBAHKAN PARAMETER
+  final String? catatanPengiriman;
 
   CheckoutScreen({
     required this.alamat,
@@ -44,6 +44,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void initState() {
     super.initState();
     loadData();
+
+    // ✅ DEBUG: Verifikasi catatan diterima
+    print('📝 [CHECKOUT INIT] Catatan diterima: "${widget.catatanPengiriman}"');
   }
 
   Future<void> loadData() async {
@@ -67,29 +70,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     try {
       print('🔍 DEBUG CHECKOUT - Cart items: ${_cartItems.length}');
       print('🔍 DEBUG CHECKOUT - Delivery option: ${widget.deliveryOption}');
+      print(
+        '🔍 DEBUG CHECKOUT - Catatan: "${widget.catatanPengiriman}"',
+      ); // ✅ DEBUG
       print('🔍 DEBUG CHECKOUT - Alamat: ${widget.alamat}');
       print('🔍 DEBUG CHECKOUT - Payment type: $paymentType');
 
-      // ✅ Generate transaction ID
       final transactionId = 'TRX${DateTime.now().millisecondsSinceEpoch}';
       print('✅ Generated Transaction ID: $transactionId');
 
-      // ✅ Extract alamat dengan aman (SEMUA jadi String!) - PINDAHKAN KE ATAS
+      // Extract alamat
       String penerimaName = 'N/A';
       String alamatLengkap = 'Alamat tidak tersedia';
       String nomorHP = 'N/A';
 
       if (widget.alamat != null) {
-        // Ambil nama penerima
         penerimaName =
             widget.alamat!['nama_penerima']?.toString() ??
             widget.alamat!['nama']?.toString() ??
             'N/A';
 
-        // Ambil nomor HP
         nomorHP = widget.alamat!['nomor_hp']?.toString() ?? 'N/A';
 
-        // ✅ Format alamat lengkap dari field-field yang ada
         final List<String> alamatParts = [];
 
         if (widget.alamat!['alamat_lengkap'] != null &&
@@ -126,7 +128,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       print('📍 Nomor HP: $nomorHP');
       print('📍 Alamat: $alamatLengkap');
 
-      // ✅ Buat transaction data dengan catatan pengiriman
+      // ✅ PERBAIKAN: Buat transaction data dengan SEMUA format key catatan
       final transactionData = {
         'no_transaksi': transactionId,
         'tanggal': DateTime.now().toIso8601String(),
@@ -144,9 +146,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   },
                 )
                 .toList(),
-        'penerima': penerimaName, // ✅ String
-        'nomor_hp': nomorHP, // ✅ String
-        'alamat': alamatLengkap, // ✅ String (BUKAN Map!)
+        'penerima': penerimaName,
+        'nomor_hp': nomorHP,
+        'alamat': alamatLengkap,
         'metode_pengiriman':
             widget.deliveryOption.contains('xpress')
                 ? 'Xpress (Rp5.000)'
@@ -156,26 +158,43 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'biaya_pengiriman': 5000.0,
         'biaya_admin': 0.0,
         'delivery_option': widget.deliveryOption,
-        'catatan_pengiriman':
-            widget.catatanPengiriman ?? '', // ✅ TAMBAHKAN CATATAN
+        // ✅ PERBAIKAN: Simpan dengan SEMUA format key yang mungkin
+        'catatan_pengiriman': widget.catatanPengiriman ?? '',
+        // 'catatanPengiriman': widget.catatanPengiriman ?? '', // camelCase
+        'delivery_note': widget.catatanPengiriman ?? '', // English
       };
 
       print('📦 Transaction data prepared:');
-      transactionData.forEach((key, value) {
-        print('  $key: ${value.runtimeType} = $value');
-      });
+      print(
+        '  📝 catatan_pengiriman: "${transactionData['catatan_pengiriman']}"',
+      );
+      print(
+        '  📝 catatanPengiriman: "${transactionData['catatanPengiriman']}"',
+      );
 
-      // Simpan transaksi dengan catatan
+      // ✅ Simpan transaksi dengan catatan
+      print(
+        '💾 Saving transaction with catatan: "${widget.catatanPengiriman}"',
+      );
+
       final success = await TransactionManager.createTransaction(
         cartItems: _cartItems,
         deliveryOption: widget.deliveryOption,
         alamat: widget.alamat,
-        catatanPengiriman:
-            widget.catatanPengiriman, // ✅ PASS KE TRANSACTION MANAGER
+        catatanPengiriman: widget.catatanPengiriman,
       );
 
       if (success) {
         print('✅ Transaction created successfully');
+
+        // ✅ VERIFIKASI: Ambil transaksi yang baru disimpan
+        final transactions = await TransactionManager.getTransactions();
+        if (transactions.isNotEmpty) {
+          final savedTransaction = transactions.first;
+          print(
+            '✅ Verified saved transaction catatan: "${savedTransaction.catatanPengiriman}"',
+          );
+        }
 
         // Hapus semua item dari keranjang
         final clearSuccess = await CartManager.clearCart();
@@ -187,21 +206,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
         // ✅ TRIGGER NOTIFIKASI dengan data lengkap
         if (mounted) {
-          // Ambil gambar produk pertama (jika ada)
           final firstProductImage =
               _cartItems.isNotEmpty ? _cartItems.first.imageUrl : null;
 
-          // 1. Tampilkan Local Notification dengan transaction data
+          // 1. Tampilkan Local Notification
           await NotificationService().showPaymentSuccessNotification(
             orderId: transactionId,
             paymentMethod: paymentType,
             totalAmount: getTotal(),
             productImage: firstProductImage,
-            transactionData:
-                transactionData, // ✅ Pass transaction data untuk navigation
+            transactionData: transactionData, // ✅ Sudah include catatan
           );
 
-          // 2. Simpan ke NotificationProvider dengan data lengkap
+          // 2. Simpan ke NotificationProvider
           final notifProvider = Provider.of<NotificationProvider>(
             context,
             listen: false,
@@ -212,10 +229,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             paymentMethod: paymentType,
             total: getTotal(),
             productImage: firstProductImage,
-            transactionData: transactionData,
+            transactionData: transactionData, // ✅ Sudah include catatan
           );
 
-          print('🔔 Notification sent successfully with ID: $transactionId');
+          print(
+            '🔔 Notification sent with catatan: "${transactionData['catatan_pengiriman']}"',
+          );
 
           // 3. Navigasi ke halaman sukses
           Navigator.of(context).pushAndRemoveUntil(
@@ -319,6 +338,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               ],
                             ),
                           ),
+
+                          // ✅ TAMPILKAN CATATAN DI CHECKOUT
                           if (widget.catatanPengiriman != null &&
                               widget.catatanPengiriman!.isNotEmpty) ...[
                             const SizedBox(height: 16),
@@ -366,6 +387,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               ),
                             ),
                           ],
+
                           const SizedBox(height: 20),
                           const Text(
                             "Daftar Produk",

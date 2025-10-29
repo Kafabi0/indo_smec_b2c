@@ -128,6 +128,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                           'Dikirim : ${DateFormat('EEEE, d MMM yyyy, HH:mm').format(latestTransaction.date)}',
                       'biaya_pengiriman': 5000.0,
                       'biaya_admin': 0.0,
+                      'catatan_pengiriman': latestTransaction.catatanPengiriman,
                     };
 
                     // Cek apakah context masih valid sebelum navigation
@@ -137,6 +138,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                           builder:
                               (_) => DetailPembayaranScreen(
                                 transaksi: transaksiMap,
+                                
                               ),
                         ),
                         (route) => false,

@@ -48,6 +48,7 @@ class DetailPembayaranScreen extends StatelessWidget {
         return Colors.green;
       case 'menunggu pembayaran':
       case 'pending':
+      case 'diproses':
         return Colors.orange;
       case 'dibatalkan':
         return Colors.red;
@@ -62,9 +63,9 @@ class DetailPembayaranScreen extends StatelessWidget {
     for (var item in items) {
       final quantity = item['quantity'] ?? 0;
       final harga =
-          (item['harga'] ?? 0.0) is int
-              ? (item['harga'] as int).toDouble()
-              : item['harga'] ?? 0.0;
+          (item['harga'] ?? item['price'] ?? 0.0) is int
+              ? ((item['harga'] ?? item['price']) as int).toDouble()
+              : (item['harga'] ?? item['price'] ?? 0.0);
       subtotal += (quantity * harga);
     }
     return subtotal;
@@ -72,21 +73,18 @@ class DetailPembayaranScreen extends StatelessWidget {
 
   double _hitungTotal() {
     final subtotal = _hitungSubtotal();
-    final biayaPengiriman = transaksi['biaya_pengiriman'] ?? 0.0;
+    final biayaPengiriman = transaksi['biaya_pengiriman'] ?? 5000.0;
     final biayaAdmin = transaksi['biaya_admin'] ?? 0.0;
     return subtotal + biayaPengiriman + biayaAdmin;
   }
 
-  // ✅ Helper function untuk extract alamat (jika masih berbentuk Map)
   String _getAlamatString() {
     final alamat = transaksi['alamat'];
 
-    // Jika sudah String, langsung return
     if (alamat is String) {
       return alamat;
     }
 
-    // Jika Map, konversi ke String
     if (alamat is Map) {
       final List<String> parts = [];
 
@@ -115,10 +113,11 @@ class DetailPembayaranScreen extends StatelessWidget {
     return 'Alamat tidak tersedia';
   }
 
-  // ✅ Helper function untuk extract nama penerima
   String _getPenerimaString() {
     final penerima = transaksi['penerima'];
+    final alamat = transaksi['alamat'];
 
+    // Cek dari field penerima dulu
     if (penerima is String) {
       return penerima;
     }
@@ -129,13 +128,40 @@ class DetailPembayaranScreen extends StatelessWidget {
           'N/A';
     }
 
+    // Jika tidak ada, cek dari alamat
+    if (alamat is Map) {
+      return alamat['nama_penerima']?.toString() ??
+          alamat['nama']?.toString() ??
+          'N/A';
+    }
+
     return 'N/A';
+  }
+
+  // ✅ TAMBAHKAN FUNCTION UNTUK GET CATATAN PENGIRIMAN
+  String? _getCatatanPengiriman() {
+    // Cek dari berbagai kemungkinan key
+    final catatan =
+        transaksi['catatan_pengiriman'] ??
+        transaksi['catatanPengiriman'] ??
+        transaksi['delivery_note'];
+
+    if (catatan != null && catatan.toString().isNotEmpty) {
+      return catatan.toString();
+    }
+
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     final subtotal = _hitungSubtotal();
     final total = _hitungTotal();
+    final catatanPengiriman = _getCatatanPengiriman(); // ✅ GET CATATAN
+
+    // ✅ DEBUG: Print untuk cek data
+    print('📋 [DEBUG] Data transaksi: $transaksi');
+    print('📝 [DEBUG] Catatan pengiriman: $catatanPengiriman');
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -172,20 +198,21 @@ class DetailPembayaranScreen extends StatelessWidget {
                 children: [
                   _buildInfoRow(
                     'No. Transaksi',
-                    transaksi['no_transaksi'] ?? 'N/A',
+                    transaksi['no_transaksi'] ?? transaksi['id'] ?? 'N/A',
                     showCopy: true,
                     context: context,
                   ),
                   const SizedBox(height: 12),
                   _buildInfoRow(
                     'Tanggal Transaksi',
-                    formatTanggal(transaksi['tanggal'] ?? DateTime.now()),
+                    formatTanggal(
+                      transaksi['tanggal'] ??
+                          transaksi['date'] ??
+                          DateTime.now(),
+                    ),
                   ),
                   const SizedBox(height: 12),
-                  _buildStatusRow(
-                    'Status',
-                    transaksi['status'] ?? 'Pembayaran Lunas',
-                  ),
+                  _buildStatusRow('Status', transaksi['status'] ?? 'Diproses'),
                 ],
               ),
             ),
@@ -199,37 +226,6 @@ class DetailPembayaranScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // const Text(
-                  //   'Belanja Xpress',
-                  //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  // ),
-                  // const SizedBox(height: 16),
-                  // Row(
-                  //   children: [
-                  //     Container(
-                  //       padding: const EdgeInsets.all(8),
-                  //       decoration: BoxDecoration(
-                  //         color: Colors.blue[50],
-                  //         borderRadius: BorderRadius.circular(8),
-                  //       ),
-                  //       child: Icon(
-                  //         Icons.shopping_cart,
-                  //         color: Colors.blue[700],
-                  //         size: 24,
-                  //       ),
-                  //     ),
-                  //     const SizedBox(width: 12),
-                  //     const Text(
-                  //       'Grocery',
-                  //       style: TextStyle(
-                  //         fontSize: 14,
-                  //         fontWeight: FontWeight.w500,
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
-                  // const SizedBox(height: 16),
-                  // const Divider(height: 1),
                   const SizedBox(height: 16),
                   ...(transaksi['items'] as List? ?? []).map(
                     (item) => _buildProductItem(item),
@@ -262,6 +258,7 @@ class DetailPembayaranScreen extends StatelessWidget {
 
             // Detail Pengiriman Section
             Container(
+              width: double.infinity,
               color: Colors.white,
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -275,6 +272,8 @@ class DetailPembayaranScreen extends StatelessWidget {
                   _buildDetailItem('Penerima', _getPenerimaString()),
                   const SizedBox(height: 12),
                   _buildDetailItem('Alamat', _getAlamatString()),
+
+                  // ✅ TAMPILKAN CATATAN JIKA ADA
                   if (transaksi['catatan_pengiriman'] != null &&
                       transaksi['catatan_pengiriman']
                           .toString()
@@ -324,6 +323,7 @@ class DetailPembayaranScreen extends StatelessWidget {
                       ),
                     ),
                   ],
+
                   const SizedBox(height: 16),
                   const Text(
                     'Metode Pengiriman',
@@ -345,7 +345,9 @@ class DetailPembayaranScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          transaksi['metode_pengiriman'] ?? 'Reguler',
+                          transaksi['metode_pengiriman'] ??
+                              transaksi['deliveryOption'] ??
+                              'Reguler',
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -383,7 +385,7 @@ class DetailPembayaranScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   _buildRincianRow(
                     'Metode Pembayaran',
-                    transaksi['metode_pembayaran'] ?? 'N/A',
+                    transaksi['metode_pembayaran'] ?? 'Transfer Bank',
                     showIcon: true,
                   ),
                   const SizedBox(height: 12),
@@ -393,7 +395,7 @@ class DetailPembayaranScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   _buildRincianRow(
                     'Biaya Pengiriman',
-                    formatRupiah(transaksi['biaya_pengiriman'] ?? 0.0),
+                    formatRupiah(transaksi['biaya_pengiriman'] ?? 5000.0),
                   ),
                   const SizedBox(height: 8),
                   _buildRincianRow(
@@ -405,12 +407,6 @@ class DetailPembayaranScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   _buildRincianRow(
                     'Total Pembayaran',
-                    formatRupiah(total),
-                    isBold: true,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildRincianRow(
-                    transaksi['metode_pembayaran'] ?? 'N/A',
                     formatRupiah(total),
                     isBold: true,
                   ),
@@ -557,9 +553,9 @@ class DetailPembayaranScreen extends StatelessWidget {
   Widget _buildProductItem(Map<String, dynamic> item) {
     final quantity = item['quantity'] ?? 0;
     final harga =
-        (item['harga'] ?? 0.0) is int
-            ? (item['harga'] as int).toDouble()
-            : item['harga'] ?? 0.0;
+        (item['harga'] ?? item['price'] ?? 0.0) is int
+            ? ((item['harga'] ?? item['price']) as int).toDouble()
+            : (item['harga'] ?? item['price'] ?? 0.0);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
