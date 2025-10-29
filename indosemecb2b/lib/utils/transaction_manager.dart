@@ -1,17 +1,25 @@
 // lib/utils/transaction_manager.dart
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart';
 import 'package:indosemecb2b/models/transaction.dart';
 import 'package:indosemecb2b/models/cart_item.dart';
 
 class TransactionManager {
+  // ⭐ Helper untuk randomize status
+  static String _getRandomStatus() {
+    final statuses = ['Diproses', 'Selesai',];
+    final random = Random();
+    return statuses[random.nextInt(statuses.length)];
+  }
+
   // Buat transaksi dari keranjang
   static Future<bool> createTransaction({
     required List<CartItem> cartItems,
     required String deliveryOption,
     Map<String, dynamic>? alamat,
-    String? initialStatus, // ⭐ Tambahkan parameter untuk status awal
-    String? catatanPengiriman, // ✅ TAMBAHKAN PARAMETER
+    String? initialStatus, // Parameter opsional untuk override
+    String? catatanPengiriman,
   }) async {
     try {
       print('📦 Creating transaction...');
@@ -29,16 +37,15 @@ class TransactionManager {
       print('🆔 Transaction ID: $transactionId');
 
       // Convert CartItem ke TransactionItem
-      final items =
-          cartItems.map((cartItem) {
-            return TransactionItem(
-              productId: cartItem.productId,
-              name: cartItem.name,
-              price: cartItem.price,
-              quantity: cartItem.quantity,
-              imageUrl: cartItem.imageUrl,
-            );
-          }).toList();
+      final items = cartItems.map((cartItem) {
+        return TransactionItem(
+          productId: cartItem.productId,
+          name: cartItem.name,
+          price: cartItem.price,
+          quantity: cartItem.quantity,
+          imageUrl: cartItem.imageUrl,
+        );
+      }).toList();
 
       print('📦 Items count: ${items.length}');
 
@@ -50,23 +57,23 @@ class TransactionManager {
 
       print('💰 Total price: $total');
 
-      // ⭐ Gunakan status yang diberikan atau default 'Diproses'
-      final status = initialStatus ?? 'Diproses';
-      print('📊 Transaction status: $status');
+      // ⭐ RANDOMIZE STATUS (jika tidak ada initialStatus)
+      final status = initialStatus ?? _getRandomStatus();
+      print('📊 Transaction status (randomized): $status');
 
       // Buat objek transaksi
       final transaction = Transaction(
         id: transactionId,
         date: DateTime.now(),
-        status: status, // ⭐ Status dinamis
+        status: status, // ⭐ Status sudah dirandomize
         deliveryOption: deliveryOption,
         alamat: alamat,
         items: items,
         totalPrice: total,
-        catatanPengiriman: catatanPengiriman, // ✅ SIMPAN CATATAN
+        catatanPengiriman: catatanPengiriman,
       );
 
-      print('✅ Transaction object created');
+      print('✅ Transaction object created with status: $status');
       if (catatanPengiriman != null && catatanPengiriman.isNotEmpty) {
         print('📝 Catatan pengiriman: $catatanPengiriman');
       }
@@ -95,6 +102,15 @@ class TransactionManager {
         print(
           '✓ Verification - Transactions in storage: ${verifyTransactions.length}',
         );
+        
+        // ⭐ Verifikasi status tersimpan
+        final savedTransaction = verifyTransactions.firstWhere(
+          (t) => t['id'] == transactionId,
+          orElse: () => <String, dynamic>{},
+        );
+        if (savedTransaction.isNotEmpty) {
+          print('✓ Saved transaction status: ${savedTransaction['status']}');
+        }
       }
 
       return saved;
@@ -119,18 +135,16 @@ class TransactionManager {
       final data = await UserDataManager.getTransactions(userLogin);
       print('📊 Raw data count: ${data.length}');
 
-      // ⭐ Debug: Print sample data
       if (data.isNotEmpty) {
         print('📊 Sample transaction data: ${data.first}');
+        print('📊 Sample status: ${data.first['status']}');
       } else {
         print('⚠️ No transaction data found for user: $userLogin');
       }
 
-      final transactions =
-          data.map((item) => Transaction.fromMap(item)).toList();
+      final transactions = data.map((item) => Transaction.fromMap(item)).toList();
       print('✅ Parsed transactions: ${transactions.length}');
 
-      // ⭐ Debug: Print parsed transactions
       if (transactions.isNotEmpty) {
         print('✅ First transaction ID: ${transactions.first.id}');
         print('✅ First transaction status: ${transactions.first.status}');
@@ -146,18 +160,14 @@ class TransactionManager {
   }
 
   // Filter transaksi berdasarkan status
-  static Future<List<Transaction>> getTransactionsByStatus(
-    String status,
-  ) async {
+  static Future<List<Transaction>> getTransactionsByStatus(String status) async {
     final transactions = await getTransactions();
     if (status == 'Semua Status') return transactions;
     return transactions.where((t) => t.status == status).toList();
   }
 
   // Filter transaksi berdasarkan tanggal
-  static Future<List<Transaction>> getTransactionsByDate(
-    String dateFilter,
-  ) async {
+  static Future<List<Transaction>> getTransactionsByDate(String dateFilter) async {
     final transactions = await getTransactions();
     if (dateFilter == 'Semua Tanggal') return transactions;
 
@@ -176,13 +186,10 @@ class TransactionManager {
   }
 
   // Filter transaksi berdasarkan kategori (delivery option)
-  static Future<List<Transaction>> getTransactionsByCategory(
-    String category,
-  ) async {
+  static Future<List<Transaction>> getTransactionsByCategory(String category) async {
     final transactions = await getTransactions();
     if (category == 'Semua') return transactions;
 
-    // Map kategori ke delivery option
     String? deliveryOption;
     if (category == 'Xpress') {
       deliveryOption = 'xpress';
@@ -192,9 +199,7 @@ class TransactionManager {
 
     if (deliveryOption == null) return transactions;
 
-    return transactions
-        .where((t) => t.deliveryOption == deliveryOption)
-        .toList();
+    return transactions.where((t) => t.deliveryOption == deliveryOption).toList();
   }
 
   // Ambil transaksi dengan filter gabungan
@@ -210,10 +215,15 @@ class TransactionManager {
     var transactions = await getTransactions();
     print('🔍 Initial transactions: ${transactions.length}');
 
+    // ⭐ Debug: Print status dari setiap transaksi
+    for (var t in transactions) {
+      print('  - ${t.id}: ${t.status}');
+    }
+
     // Filter status
     if (status != 'Semua Status') {
       transactions = transactions.where((t) => t.status == status).toList();
-      print('🔍 After status filter: ${transactions.length}');
+      print('🔍 After status filter ($status): ${transactions.length}');
     }
 
     // Filter tanggal
@@ -229,8 +239,7 @@ class TransactionManager {
         startDate = DateTime(1970);
       }
 
-      transactions =
-          transactions.where((t) => t.date.isAfter(startDate)).toList();
+      transactions = transactions.where((t) => t.date.isAfter(startDate)).toList();
       print('🔍 After date filter: ${transactions.length}');
     }
 
@@ -244,10 +253,9 @@ class TransactionManager {
       }
 
       if (deliveryOption != null) {
-        transactions =
-            transactions
-                .where((t) => t.deliveryOption == deliveryOption)
-                .toList();
+        transactions = transactions
+            .where((t) => t.deliveryOption == deliveryOption)
+            .toList();
         print('🔍 After category filter: ${transactions.length}');
       }
     }
@@ -256,39 +264,39 @@ class TransactionManager {
     return transactions;
   }
 
-  // Update status transaksi
+  // Update status transaksi (jika diperlukan manual update)
   static Future<bool> updateTransactionStatus(
     String transactionId,
     String newStatus,
   ) async {
     try {
+      print('🔄 Updating transaction $transactionId to status: $newStatus');
+      
       final userLogin = await UserDataManager.getCurrentUserLogin();
       if (userLogin == null) return false;
 
       final transactions = await getTransactions();
       final index = transactions.indexWhere((t) => t.id == transactionId);
 
-      if (index == -1) return false;
+      if (index == -1) {
+        print('❌ Transaction not found: $transactionId');
+        return false;
+      }
 
-      // Buat transaksi baru dengan status yang diupdate
-      final updatedTransaction = Transaction(
-        id: transactions[index].id,
-        date: transactions[index].date,
-        status: newStatus,
-        deliveryOption: transactions[index].deliveryOption,
-        alamat: transactions[index].alamat,
-        items: transactions[index].items,
-        totalPrice: transactions[index].totalPrice,
-      );
+      // Update status langsung pada objek
+      transactions[index].status = newStatus;
+      print('✅ Status updated in memory');
 
-      transactions[index] = updatedTransaction;
-
-      return await UserDataManager.saveTransactions(
+      // Simpan kembali
+      final saved = await UserDataManager.saveTransactions(
         userLogin,
         transactions.map((t) => t.toMap()).toList(),
       );
+
+      print('💾 Save result: $saved');
+      return saved;
     } catch (e) {
-      debugPrint('Error updating transaction status: $e');
+      debugPrint('❌ Error updating transaction status: $e');
       return false;
     }
   }
@@ -322,5 +330,13 @@ class TransactionManager {
   static Future<double> getTotalSpending() async {
     final transactions = await getTransactions();
     return transactions.fold<double>(0.0, (sum, t) => sum + t.totalPrice);
+  }
+
+  // ⭐ TAMBAHAN: Hitung total dari transaksi yang selesai saja
+  static Future<double> getTotalSpendingCompleted() async {
+    final transactions = await getTransactions();
+    return transactions
+        .where((t) => t.status == 'Selesai')
+        .fold<double>(0.0, (sum, t) => sum + t.totalPrice);
   }
 }

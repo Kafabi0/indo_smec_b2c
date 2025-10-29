@@ -4,6 +4,8 @@ import 'package:indosemecb2b/screen/pembayaran_berhasil.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class PaymentMethodScreen extends StatelessWidget {
   final double totalPembayaran;
 
@@ -572,12 +574,16 @@ class _PaymentDetailScreenState extends State<PaymentDetailScreen> {
             ],
           ),
           child: ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               print(
                 '💳 User clicked "Saya Sudah Bayar" for: ${widget.paymentType}',
               );
-              // ✅ Pop dengan hasil metode pembayaran
-              // Ini akan kembali ke PaymentMethodScreen
+
+              // ⭐ TAMBAHKAN: Trigger refresh poin setelah pembayaran
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('should_refresh_poin', true);
+
+              // Pop dengan hasil metode pembayaran
               Navigator.of(context).pop(widget.paymentType);
             },
             style: ElevatedButton.styleFrom(

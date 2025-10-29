@@ -90,24 +90,28 @@ class _TransaksiScreenState extends State<TransaksiScreen>
     final userLogin = await UserDataManager.getCurrentUserLogin();
     print('🔍 DEBUG TRANSAKSI - Current user login: $userLogin');
 
-    // Ambil semua transaksi
+    // Ambil semua transaksi (status sudah dirandomize saat create)
     final allTransactions = await TransactionManager.getTransactions();
 
     print('🔍 DEBUG TRANSAKSI - Raw transactions: ${allTransactions.length}');
 
-    // ⭐ RANDOMIZE STATUS untuk simulasi (karena belum ada BE)
-    final statuses = ['Diproses', 'Selesai'];
-    for (var t in allTransactions) {
-      t.status = statuses[Random().nextInt(statuses.length)];
-    }
+    // ⭐ HAPUS BAGIAN INI - Status sudah dirandomize saat create
+    // ❌ JANGAN RANDOMIZE LAGI
+    // final statuses = ['Diproses', 'Selesai'];
+    // for (var t in allTransactions) {
+    //   t.status = statuses[Random().nextInt(statuses.length)];
+    // }
 
-    print('🔍 DEBUG TRANSAKSI - After randomize: ${allTransactions.length}');
+    // ⭐ Debug: Tampilkan status asli
+    for (var t in allTransactions) {
+      print('  - ${t.id}: ${t.status}');
+    }
 
     if (!mounted) return;
 
-    // ⭐ Update state dengan data baru
+    // Update state dengan data baru
     setState(() {
-      _allTransactions = List.from(allTransactions); // Buat copy baru
+      _allTransactions = List.from(allTransactions);
       _isLoading = false;
     });
 
