@@ -1042,7 +1042,7 @@ class HomeScreenState extends State<HomeScreen> {
                   return Padding(
                     padding: EdgeInsets.only(bottom: 8),
                     child: InkWell(
-                      onTap: () {
+                      onTap: () async {
                         // ⭐ PAKAI setModalState + setState BIAR KEDUANYA UPDATE
                         setModalState(() {
                           _selectedAlamatIndex = index;
@@ -1052,6 +1052,15 @@ class HomeScreenState extends State<HomeScreen> {
                           _selectedAlamatIndex = index;
                           _savedAlamat = alamat;
                         });
+
+                        // ⭐ SIMPAN KE UserDataManager
+                        if (userEmail.isNotEmpty) {
+                          await UserDataManager.setSelectedAlamatIndex(
+                            userEmail,
+                            index,
+                          );
+                          print('💾 Selected index saved: $index');
+                        }
                       },
                       child: Container(
                         padding: EdgeInsets.all(12),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/screen/keranjang.dart';
 import 'package:indosemecb2b/services/notifikasi.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
@@ -37,6 +38,8 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'IndoSmec b2c',
         navigatorKey: navigatorKey,
+        navigatorObservers: [CartScreenState.routeObserver], // ⭐ TAMBAHKAN INI
+
         theme: ThemeData(
           primarySwatch: Colors.blue,
           scaffoldBackgroundColor: Colors.grey[100],

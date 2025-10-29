@@ -44,13 +44,27 @@ class CartScreenState extends State<CartScreen> with RouteAware {
     _loadUserData();
   }
 
+  static final RouteObserver<PageRoute> routeObserver =
+      RouteObserver<PageRoute>();
+
   // ⭐ AUTO RELOAD: Dipanggil setiap kali halaman muncul kembali
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
     if (mounted) {
       _loadUserData();
     }
+  }
+
+  @override
+  void didPopNext() {
+    // Dipanggil ketika screen di atasnya di-pop (kembali ke CartScreen)
+    print('🔄 [CART] Screen resumed, reloading data...');
+    _loadUserData();
   }
 
   Future<void> _loadUserData() async {
