@@ -213,7 +213,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
         return Colors.purple;
       case 'Pesanan telah sampai':
         return Colors.teal;
-      case 'Pesanan selesai':
+      case 'selesai':
         return Colors.green;
       default:
         return Colors.grey;
@@ -279,7 +279,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                           'Sedang dikirim',
                           'Hampir sampai',
                           'Pesanan telah sampai',
-                          'Pesanan selesai',
+                          'Selesai',
                         ],
                         (value) {
                           if (value != null && value != selectedStatus) {
@@ -691,7 +691,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                               onPressed: () {
                                 if (currentTransaction.status == "Selesai" ||
                                     currentTransaction.status ==
-                                        "Pesanan selesai") {
+                                        "Selesai") {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -731,7 +731,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                               child: Text(
                                 (currentTransaction.status == "Selesai" ||
                                         currentTransaction.status ==
-                                            "Pesanan selesai")
+                                            "Selesai")
                                     ? "Beli Lagi"
                                     : "Lacak",
                                 style: TextStyle(

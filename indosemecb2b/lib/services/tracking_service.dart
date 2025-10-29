@@ -161,7 +161,7 @@ class TrackingServiceManager {
 
         TransactionManager.updateTransactionStatus(
           transactionId,
-          "Pesanan selesai",
+          "Selesai",
         );
 
         timer.cancel();

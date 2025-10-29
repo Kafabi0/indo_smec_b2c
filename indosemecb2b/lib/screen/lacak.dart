@@ -151,7 +151,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
         return Icons.location_on;
       case "Pesanan telah sampai":
         return Icons.check_circle;
-      case "Pesanan selesai":
+      case "Selesai":
         return Icons.done_all;
       default:
         return Icons.info_outline;
