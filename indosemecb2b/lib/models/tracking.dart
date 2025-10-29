@@ -1,4 +1,5 @@
 class OrderTrackingModel {
+  final String? transactionId;
   final String? orderId;
   final String? courierName;
   final String? courierId;
@@ -7,6 +8,7 @@ class OrderTrackingModel {
   final DateTime? updatedAt;
 
   OrderTrackingModel({
+    this.transactionId,
     this.orderId,
     this.courierName,
     this.courierId,
@@ -17,6 +19,7 @@ class OrderTrackingModel {
 
   factory OrderTrackingModel.fromJson(Map<String, dynamic> json) {
     return OrderTrackingModel(
+      transactionId: json["transaction_id"],
       orderId: json["order_id"],
       courierName: json["courier_name"],
       courierId: json["courier_id"],

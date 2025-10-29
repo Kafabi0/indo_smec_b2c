@@ -1,4 +1,4 @@
-// lib/utils/transaction_manager.dart
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart';
@@ -6,6 +6,13 @@ import 'package:indosemecb2b/models/transaction.dart';
 import 'package:indosemecb2b/models/cart_item.dart';
 
 class TransactionManager {
+  // Stream controller untuk notifikasi perubahan status
+  static final StreamController<void> _statusController = StreamController<void>.broadcast();
+  static final ValueNotifier<String> statusNotifier = ValueNotifier<String>('');
+  
+  // Stream untuk mendengarkan perubahan status
+  static Stream<void> get statusStream => _statusController.stream;
+
   // ⭐ Helper untuk randomize status
   static String _getRandomStatus() {
     final statuses = ['Diproses', 'Selesai',];
@@ -294,6 +301,11 @@ class TransactionManager {
       );
 
       print('💾 Save result: $saved');
+      
+      // Beri tahu bahwa status telah berubah
+      _statusController.add(null);
+      statusNotifier.value = newStatus;
+      
       return saved;
     } catch (e) {
       debugPrint('❌ Error updating transaction status: $e');
@@ -310,10 +322,15 @@ class TransactionManager {
       final transactions = await getTransactions();
       transactions.removeWhere((t) => t.id == transactionId);
 
-      return await UserDataManager.saveTransactions(
+      final saved = await UserDataManager.saveTransactions(
         userLogin,
         transactions.map((t) => t.toMap()).toList(),
       );
+      
+      // Beri tahu bahwa ada perubahan data
+      _statusController.add(null);
+      
+      return saved;
     } catch (e) {
       debugPrint('Error deleting transaction: $e');
       return false;
@@ -338,5 +355,10 @@ class TransactionManager {
     return transactions
         .where((t) => t.status == 'Selesai')
         .fold<double>(0.0, (sum, t) => sum + t.totalPrice);
+  }
+  
+  // Dispose resources
+  static void dispose() {
+    _statusController.close();
   }
 }

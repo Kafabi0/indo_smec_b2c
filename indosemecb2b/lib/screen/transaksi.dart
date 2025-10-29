@@ -1,5 +1,5 @@
 import 'dart:math';
-
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/models/tracking.dart';
 import 'package:indosemecb2b/screen/detail_transaksi.dart';
@@ -35,6 +35,9 @@ class _TransaksiScreenState extends State<TransaksiScreen>
   bool _isLoading = true;
   List<Transaction> _transactions = [];
   List<Transaction> _allTransactions = [];
+  
+  // Tambahkan stream subscription untuk mendengarkan perubahan status
+  StreamSubscription? _statusSubscription;
 
   final List<String> kategoriList = [
     'Semua',
@@ -50,11 +53,17 @@ class _TransaksiScreenState extends State<TransaksiScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadTransactions();
+    
+    // Dengarkan perubahan status
+    _statusSubscription = TransactionManager.statusStream.listen((_) {
+      _loadTransactions();
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _statusSubscription?.cancel(); // Batalkan subscription saat dispose
     super.dispose();
   }
 
@@ -94,13 +103,6 @@ class _TransaksiScreenState extends State<TransaksiScreen>
     final allTransactions = await TransactionManager.getTransactions();
 
     print('🔍 DEBUG TRANSAKSI - Raw transactions: ${allTransactions.length}');
-
-    // ⭐ HAPUS BAGIAN INI - Status sudah dirandomize saat create
-    // ❌ JANGAN RANDOMIZE LAGI
-    // final statuses = ['Diproses', 'Selesai'];
-    // for (var t in allTransactions) {
-    //   t.status = statuses[Random().nextInt(statuses.length)];
-    // }
 
     // ⭐ Debug: Tampilkan status asli
     for (var t in allTransactions) {
@@ -213,6 +215,14 @@ class _TransaksiScreenState extends State<TransaksiScreen>
         return Colors.red;
       case 'Diproses':
         return Colors.orange;
+      case 'Sedang dikirim':
+        return Colors.blue;
+      case 'Hampir sampai':
+        return Colors.purple;
+      case 'Pesanan telah sampai':
+        return Colors.teal;
+      case 'Pesanan selesai':
+        return Colors.green;
       default:
         return Colors.grey;
     }
@@ -270,7 +280,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                     Expanded(
                       child: _buildDropdown(
                         selectedStatus,
-                        ['Semua Status', 'Selesai', 'Dibatalkan', 'Diproses'],
+                        ['Semua Status', 'Selesai', 'Dibatalkan', 'Diproses', 'Sedang dikirim', 'Hampir sampai', 'Pesanan telah sampai', 'Pesanan selesai'],
                         (value) {
                           if (value != null && value != selectedStatus) {
                             print(
@@ -515,154 +525,159 @@ class _TransaksiScreenState extends State<TransaksiScreen>
   }
 
   Widget _buildTransactionCard(Transaction transaction) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => TransactionDetailScreen(transaction: transaction),
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(
-                      transaction.status,
-                    ).withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    transaction.status,
-                    style: TextStyle(
-                      color: _getStatusColor(transaction.status),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 6),
-            Text(
-              _formatDate(transaction.date),
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-
-            const SizedBox(height: 14),
-
-            Text(
-              transaction.deliveryOption == 'xpress'
-                  ? 'Belanja Xpress'
-                  : 'Belanja Xtra',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'No. Transaksi - ${transaction.id}',
-              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-            ),
-
-            const SizedBox(height: 14),
-
-            ...transaction.items.take(1).map((item) {
-              return Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      item.imageUrl ?? '',
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      errorBuilder:
-                          (_, __, ___) => Container(
-                            width: 50,
-                            height: 50,
-                            color: Colors.grey[200],
-                            child: Icon(Icons.image, color: Colors.grey[400]),
-                          ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'x${item.quantity}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            }),
-
-            if (transaction.items.length > 1)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  '+${transaction.items.length - 1} produk lainnya',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.blue[700],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+    return ValueListenableBuilder<String>(
+      valueListenable: TransactionManager.statusNotifier,
+      builder: (context, currentStatus, child) {
+        // Cek apakah status transaksi ini berubah
+        final status = transaction.status;
+        
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TransactionDetailScreen(transaction: transaction),
               ),
-
-            const SizedBox(height: 14),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            );
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                OutlinedButton(
-                  onPressed: () {
-                    if (transaction.status == "Selesai") {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => MainNavigation()),
-                      );
-                    } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => TrackingScreen(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(status).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        status,
+                        style: TextStyle(
+                          color: _getStatusColor(status),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 6),
+                Text(
+                  _formatDate(transaction.date),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+
+                const SizedBox(height: 14),
+
+                Text(
+                  transaction.deliveryOption == 'xpress'
+                      ? 'Belanja Xpress'
+                      : 'Belanja Xtra',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'No. Transaksi - ${transaction.id}',
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                ),
+
+                const SizedBox(height: 14),
+
+                ...transaction.items.take(1).map((item) {
+                  return Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          item.imageUrl ?? '',
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                          errorBuilder:
+                              (_, __, ___) => Container(
+                                width: 50,
+                                height: 50,
+                                color: Colors.grey[200],
+                                child: Icon(Icons.image, color: Colors.grey[400]),
+                              ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'x${item.quantity}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+
+                if (transaction.items.length > 1)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      '+${transaction.items.length - 1} produk lainnya',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue[700],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(height: 14),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () {
+                        if (transaction.status == "Selesai" || transaction.status == "Pesanan selesai") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => MainNavigation()),
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => TrackingScreen(
                                 trackingData: OrderTrackingModel(
+                                  transactionId: transaction.id, // Kirim transaction ID
                                   courierName: "Tryan Gumilar",
                                   courierId: "D 4563 ADP",
                                   statusMessage: transaction.status,
@@ -670,38 +685,42 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                                   updatedAt: transaction.date ?? DateTime.now(),
                                 ),
                               ),
+                            ),
+                          );
+                        }
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.blue[700]!),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
                         ),
-                      );
-                    }
-                  },
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.blue[700]!),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        (transaction.status == "Selesai" || transaction.status == "Pesanan selesai") 
+                            ? "Beli Lagi" 
+                            : "Lacak",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.blue[700],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    transaction.status == "Selesai" ? "Beli Lagi" : "Lacak",
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.blue[700],
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
 
-                Text(
-                  'Total ${formatRupiah(transaction.totalPrice)}',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
+                    Text(
+                      'Total ${formatRupiah(transaction.totalPrice)}',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import '../models/tracking.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../utils/transaction_manager.dart'; // Tambahkan import ini
 
 class TrackingScreen extends StatefulWidget {
   final OrderTrackingModel trackingData;
@@ -55,6 +56,7 @@ class _TrackingScreenState extends State<TrackingScreen>
 
   late AnimationController _animController;
   Animation<double>? _animasi;
+  final ValueNotifier<String> _statusNotifier = ValueNotifier<String>("Menyiapkan pesanan");
 
   @override
   void initState() {
@@ -110,22 +112,42 @@ class _TrackingScreenState extends State<TrackingScreen>
   }
 
   void _updateStatus() {
+    String newStatus;
+    String newDesc;
+    
     if (_index < _rute.length / 3) {
-      _statusPesanan = _semuaStatus[1]["title"]!;
-      _statusDesc = _semuaStatus[1]["desc"]!;
+      newStatus = _semuaStatus[1]["title"]!;
+      newDesc = _semuaStatus[1]["desc"]!;
     } else if (_index < _rute.length * 2 / 3) {
-      _statusPesanan = _semuaStatus[2]["title"]!;
-      _statusDesc = _semuaStatus[2]["desc"]!;
+      newStatus = _semuaStatus[2]["title"]!;
+      newDesc = _semuaStatus[2]["desc"]!;
     } else {
-      _statusPesanan = _semuaStatus[3]["title"]!;
-      _statusDesc = _semuaStatus[3]["desc"]!;
+      newStatus = _semuaStatus[3]["title"]!;
+      newDesc = _semuaStatus[3]["desc"]!;
     }
+    
+    // Update status notifier
+    _statusNotifier.value = newStatus;
+    
+    setState(() {
+      _statusPesanan = newStatus;
+      _statusDesc = newDesc;
+    });
+    
+    // Update status di TransactionManager
+    if (widget.trackingData.transactionId != null) {
+      TransactionManager.updateTransactionStatus(
+        widget.trackingData.transactionId!, 
+        newStatus
+      );
+    }
+    
     // Tambahkan status ke list jika belum ada
-    final sudahAda = _statusList.any((s) => s["title"] == _statusPesanan);
+    final sudahAda = _statusList.any((s) => s["title"] == newStatus);
     if (!sudahAda) {
       _statusList.add({
-        "title": _statusPesanan,
-        "desc": _statusDesc,
+        "title": newStatus,
+        "desc": newDesc,
         "time": formatDate(DateTime.now()),
       });
     }
@@ -153,7 +175,6 @@ class _TrackingScreenState extends State<TrackingScreen>
           if (!_isUserInteracting) {
             _mapController.move(_posisiKurir!, 16);
           }
-          // _mapController.move(_posisiKurir!, 16);
         });
 
         _animController.forward();
@@ -165,6 +186,16 @@ class _TrackingScreenState extends State<TrackingScreen>
           _statusPesanan = "Pesanan selesai";
           _statusDesc = "Kurir telah menyelesaikan pengantaran";
         });
+        
+        // Update final status
+        _statusNotifier.value = "Pesanan selesai";
+        if (widget.trackingData.transactionId != null) {
+          TransactionManager.updateTransactionStatus(
+            widget.trackingData.transactionId!, 
+            "Pesanan selesai"
+          );
+        }
+        
         timer.cancel();
       }
     });
@@ -175,6 +206,7 @@ class _TrackingScreenState extends State<TrackingScreen>
     _timer?.cancel();
     _animController.dispose();
     _userInactivityTimer?.cancel();
+    _statusNotifier.dispose();
     super.dispose();
   }
 
@@ -465,93 +497,103 @@ class _TrackingScreenState extends State<TrackingScreen>
             const SizedBox(height: 20),
 
             // ================= STATUS =================
-            const Text(
-              "Status Pesanan",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            Column(
-              children:
-                  _statusList.map((status) {
-                    final isLast = status == _statusList.last;
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 6,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                        border: Border.all(
-                          color: isLast ? Colors.blue : Colors.grey.shade300,
-                          width: isLast ? 2 : 1,
-                        ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Column(
-                            children: [
-                              Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: isLast ? Colors.blue : Colors.grey,
-                                  shape: BoxShape.circle,
+            ValueListenableBuilder<String>(
+              valueListenable: _statusNotifier,
+              builder: (context, currentStatus, child) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Status Pesanan",
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    Column(
+                      children:
+                          _statusList.map((status) {
+                            final isLast = status["title"] == currentStatus;
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                                border: Border.all(
+                                  color: isLast ? Colors.blue : Colors.grey.shade300,
+                                  width: isLast ? 2 : 1,
                                 ),
                               ),
-                              if (!isLast)
-                                Container(
-                                  width: 2,
-                                  height: 40,
-                                  color: Colors.grey.shade300,
-                                ),
-                            ],
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  status["title"]!,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight:
-                                        isLast
-                                            ? FontWeight.bold
-                                            : FontWeight.w500,
-                                    color: isLast ? Colors.blue : Colors.black,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Column(
+                                    children: [
+                                      Container(
+                                        width: 12,
+                                        height: 12,
+                                        decoration: BoxDecoration(
+                                          color: isLast ? Colors.blue : Colors.grey,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      if (!isLast)
+                                        Container(
+                                          width: 2,
+                                          height: 40,
+                                          color: Colors.grey.shade300,
+                                        ),
+                                    ],
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  status["desc"]!,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.black87,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          status["title"]!,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight:
+                                                isLast
+                                                    ? FontWeight.bold
+                                                    : FontWeight.w500,
+                                            color: isLast ? Colors.blue : Colors.black,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          status["desc"]!,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          status["time"]!,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  status["time"]!,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
