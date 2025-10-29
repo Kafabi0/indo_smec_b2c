@@ -463,6 +463,11 @@ class CartScreenState extends State<CartScreen> with RouteAware {
 
   Widget _buildTimeSelectorSheet() {
     List<String> allTimes = [
+      "09.00 - 09.59",
+      "10.00 - 10.59",
+      "11.00 - 11.59",
+      "12.00 - 12.59",
+      "13.00 - 13.59",
       "14.00 - 14.59",
       "15.00 - 15.59",
       "16.00 - 16.59",
@@ -486,12 +491,26 @@ class CartScreenState extends State<CartScreen> with RouteAware {
       builder: (context, setStateSB) {
         List<String> times = List.from(allTimes);
 
+        // Filter waktu berdasarkan hari yang dipilih
         if (selectedDayIndex == 0) {
+          // Hari ini - tampilkan waktu yang lebih besar dari jam sekarang
           int nowHour = DateTime.now().hour;
+          int nowMinute = DateTime.now().minute;
+
           times =
               times.where((t) {
+                // Ambil jam awal dari string waktu (contoh: "09.00 - 09.59" -> 9)
                 int h = int.parse(t.substring(0, 2));
-                return h > nowHour;
+
+                // Tampilkan jika jam lebih besar dari jam sekarang
+                // ATAU jika jam sama tapi masih dalam rentang waktu
+                if (h > nowHour) {
+                  return true;
+                } else if (h == nowHour && nowMinute < 59) {
+                  // Jika masih di jam yang sama tapi belum lewat jam 59 menit
+                  return true;
+                }
+                return false;
               }).toList();
         }
 
@@ -524,7 +543,13 @@ class CartScreenState extends State<CartScreen> with RouteAware {
 
                     return Expanded(
                       child: GestureDetector(
-                        onTap: () => setStateSB(() => selectedDayIndex = index),
+                        onTap: () {
+                          setStateSB(() {
+                            selectedDayIndex = index;
+                            // Reset pilihan waktu ketika ganti hari
+                            selectedTime = null;
+                          });
+                        },
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           margin: const EdgeInsets.only(right: 8),
@@ -579,43 +604,117 @@ class CartScreenState extends State<CartScreen> with RouteAware {
                 Expanded(
                   child:
                       times.isEmpty
-                          ? const Center(
-                            child: Text(
-                              "Tidak ada jadwal tersisa untuk hari ini",
+                          ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.schedule_outlined,
+                                  size: 64,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  "Tidak ada jadwal tersisa untuk hari ini",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "Silakan pilih hari besok atau lusa",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              ],
                             ),
                           )
                           : ListView.builder(
                             itemCount: times.length,
                             itemBuilder: (ctx, i) {
-                              return ListTile(
-                                title: Text(times[i]),
-                                trailing:
-                                    selectedTime == times[i]
-                                        ? const Icon(
-                                          Icons.check,
-                                          color: Colors.blue,
-                                        )
-                                        : null,
-                                onTap:
-                                    () => setStateSB(
-                                      () => selectedTime = times[i],
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color:
+                                        selectedTime == times[i]
+                                            ? Colors.blue
+                                            : Colors.grey.shade300,
+                                    width: selectedTime == times[i] ? 2 : 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  color:
+                                      selectedTime == times[i]
+                                          ? Colors.blue.shade50
+                                          : Colors.white,
+                                ),
+                                child: ListTile(
+                                  title: Text(
+                                    times[i],
+                                    style: TextStyle(
+                                      fontWeight:
+                                          selectedTime == times[i]
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                      color:
+                                          selectedTime == times[i]
+                                              ? Colors.blue
+                                              : Colors.black,
                                     ),
+                                  ),
+                                  trailing:
+                                      selectedTime == times[i]
+                                          ? const Icon(
+                                            Icons.check_circle,
+                                            color: Colors.blue,
+                                          )
+                                          : null,
+                                  onTap:
+                                      () => setStateSB(
+                                        () => selectedTime = times[i],
+                                      ),
+                                ),
                               );
                             },
                           ),
                 ),
                 const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed:
-                      selectedTime == null
-                          ? null
-                          : () {
-                            setState(() {
-                              selectedRegulerTime = selectedTime!;
-                            });
-                            Navigator.pop(context);
-                          },
-                  child: const Text("Pilih Waktu"),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed:
+                        selectedTime == null
+                            ? null
+                            : () {
+                              setState(() {
+                                selectedRegulerTime = selectedTime!;
+                              });
+                              Navigator.pop(context);
+                            },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[700],
+                      disabledBackgroundColor: Colors.grey[300],
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      "Pilih Waktu",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color:
+                            selectedTime == null
+                                ? Colors.grey[600]
+                                : Colors.white,
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
               ],
