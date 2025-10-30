@@ -178,7 +178,7 @@ class TransactionManager {
         deliveryOption: 'topup', // ✅ Special delivery option for top-up
         alamat: {
           'nama_penerima': 'Top-Up Saldo',
-          'nomor_hp': '-',
+          'nomor_hp': userLogin,
           'alamat_lengkap': 'Saldo Klik',
           'metode_pembayaran': paymentMethod,
         },
