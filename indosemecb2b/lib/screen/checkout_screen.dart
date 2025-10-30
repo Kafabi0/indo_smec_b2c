@@ -6,6 +6,7 @@ import 'package:indosemecb2b/screen/pembayaran_berhasil.dart';
 import 'package:indosemecb2b/screen/transaksi.dart';
 import 'package:indosemecb2b/services/notifikasi.dart';
 import 'package:indosemecb2b/utils/cart_manager.dart';
+import 'package:indosemecb2b/utils/saldo_klik_manager.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:indosemecb2b/models/cart_item.dart';
 import 'package:intl/intl.dart';
@@ -168,7 +169,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           print('  📝 Catatan: "${savedTransaction.catatanPengiriman}"');
           print('  💳 Metode: "${savedTransaction.metodePembayaran}"');
         }
+        if (paymentType == "Saldo Klik") {
+          final saldoDeducted = await SaldoKlikManager.deductSaldo(
+            getTotal(),
+            'Pembayaran Transaksi $transactionId',
+          );
 
+          if (!saldoDeducted) {
+            print('❌ Failed to deduct Saldo Klik');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Gagal memotong saldo. Saldo tidak mencukupi.'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            return;
+          }
+
+          print('✅ Saldo Klik successfully deducted');
+        }
         // Hapus semua item dari keranjang
         final clearSuccess = await CartManager.clearCart();
         print('🗑️ Cart cleared: $clearSuccess');

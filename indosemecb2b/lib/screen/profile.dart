@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/daftar_alamat.dart';
 import 'package:indosemecb2b/screen/edit_profile_screen.dart';
 import 'package:indosemecb2b/screen/notification_provider.dart';
+import 'package:indosemecb2b/screen/saldo.dart';
 import 'package:indosemecb2b/screen/ubah_pw.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -358,14 +359,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const SizedBox(height: 12),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: const [
+                            children: [
                               _ConnectedItem(
                                 icon: Icons.account_balance_wallet_outlined,
                                 label: 'Saldo Klik',
                                 buttonText: 'Aktifkan',
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => const SaldoKlikScreen(),
+                                    ),
+                                  );
+                                },
                               ),
-                              SizedBox(width: 1),
-                              _ConnectedItem(
+                              const SizedBox(width: 1),
+                              const _ConnectedItem(
                                 icon: Icons.credit_card_outlined,
                                 label: 'i.saku',
                                 buttonText: 'Hubungkan',
@@ -662,38 +672,45 @@ class _ConnectedItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final String buttonText;
+  final VoidCallback? onTap; // ✅ TAMBAHKAN PARAMETER INI
 
   const _ConnectedItem({
     required this.icon,
     required this.label,
     required this.buttonText,
+    this.onTap, // ✅ TAMBAHKAN INI
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.blue[700]),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 13)),
-          const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              buttonText,
-              style: TextStyle(
-                color: Colors.blue[700],
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
+      child: InkWell(
+        // ✅ WRAP DENGAN InkWell
+        onTap: onTap, // ✅ TAMBAHKAN onTap
+        borderRadius: BorderRadius.circular(12), // ✅ TAMBAHKAN BORDER RADIUS
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.blue[700]),
+            const SizedBox(height: 4),
+            Text(label, style: const TextStyle(fontSize: 13)),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                buttonText,
+                style: TextStyle(
+                  color: Colors.blue[700],
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

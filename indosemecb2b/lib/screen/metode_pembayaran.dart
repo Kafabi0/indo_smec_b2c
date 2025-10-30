@@ -3,15 +3,24 @@ import 'package:flutter/services.dart';
 import 'package:indosemecb2b/screen/pembayaran_berhasil.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
-
+import 'package:indosemecb2b/utils/saldo_klik_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class PaymentMethodScreen extends StatelessWidget {
+class PaymentMethodScreen extends StatefulWidget {
   final double totalPembayaran;
 
   const PaymentMethodScreen({Key? key, required this.totalPembayaran})
     : assert(totalPembayaran > 0, 'Total pembayaran harus lebih dari 0'),
       super(key: key);
+
+  @override
+  State<PaymentMethodScreen> createState() => _PaymentMethodScreenState();
+}
+
+class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
+  bool _isLoadingSaldo = true;
+  bool _isSaldoKlikActive = false;
+  double _saldoKlik = 0.0;
 
   static final _formatRupiah = NumberFormat.currency(
     locale: 'id_ID',
@@ -20,11 +29,28 @@ class PaymentMethodScreen extends StatelessWidget {
   );
 
   @override
+  void initState() {
+    super.initState();
+    _checkSaldoKlik();
+  }
+
+  Future<void> _checkSaldoKlik() async {
+    final isActive = await SaldoKlikManager.isActive();
+    final saldo = await SaldoKlikManager.getSaldo();
+
+    setState(() {
+      _isSaldoKlikActive = isActive;
+      _saldoKlik = saldo;
+      _isLoadingSaldo = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Validasi tambahan
-    if (totalPembayaran <= 0 ||
-        totalPembayaran.isNaN ||
-        totalPembayaran.isInfinite) {
+    if (widget.totalPembayaran <= 0 ||
+        widget.totalPembayaran.isNaN ||
+        widget.totalPembayaran.isInfinite) {
       return Scaffold(
         appBar: AppBar(
           title: const Text("Error"),
@@ -43,7 +69,7 @@ class PaymentMethodScreen extends StatelessWidget {
               ),
               SizedBox(height: 8),
               Text(
-                "Total: ${totalPembayaran}",
+                "Total: ${widget.totalPembayaran}",
                 style: TextStyle(color: Colors.grey),
               ),
               SizedBox(height: 24),
@@ -84,7 +110,7 @@ class PaymentMethodScreen extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 Text(
-                  _formatRupiah.format(totalPembayaran),
+                  _formatRupiah.format(widget.totalPembayaran),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
@@ -96,6 +122,23 @@ class PaymentMethodScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: 24),
+          if (_isSaldoKlikActive) ...[
+            _sectionHeader("Saldo Klik"),
+            _paymentItem(
+              context: context,
+              imageUrl:
+                  "https://i.pinimg.com/736x/65/c4/1d/65c41db5a939f1e45c5f1ff1244689f5.jpg",
+              title: "Saldo Klik",
+              subtitle: "Saldo: ${_formatRupiah.format(_saldoKlik)}",
+              badge:
+                  _saldoKlik >= widget.totalPembayaran
+                      ? "Tersedia"
+                      : "Tidak Cukup",
+              paymentType: "Saldo Klik",
+              isEnabled: _saldoKlik >= widget.totalPembayaran,
+            ),
+            const SizedBox(height: 16),
+          ],
 
           // E-Wallet Section
           _sectionHeader("E-Wallet"),
@@ -299,6 +342,7 @@ class PaymentMethodScreen extends StatelessWidget {
     required String subtitle,
     String? badge,
     required String paymentType,
+    bool isEnabled = true, // ✅ Tambahkan parameter ini
   }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -307,73 +351,181 @@ class PaymentMethodScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: Colors.grey.shade200),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(20),
+      child: Opacity(
+        opacity: isEnabled ? 1.0 : 0.5, // ✅ Tambahkan opacity
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
           ),
-          child: Image.network(imageUrl, fit: BoxFit.cover),
-        ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                ),
-              ),
+          leading: Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(20),
             ),
-            if (badge != null)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade100,
-                  borderRadius: BorderRadius.circular(4),
-                ),
+            child: Image.network(imageUrl, fit: BoxFit.cover),
+          ),
+          title: Row(
+            children: [
+              Expanded(
                 child: Text(
-                  badge,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange.shade800,
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
                   ),
                 ),
               ),
-          ],
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text(
-            subtitle,
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-          ),
-        ),
-        trailing: Icon(Icons.chevron_right, color: Colors.grey.shade400),
-        onTap: () async {
-          // Navigasi ke detail pembayaran
-          final selectedMethod = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (_) => PaymentDetailScreen(
-                    paymentType: paymentType,
-                    totalPembayaran: totalPembayaran,
+              if (badge != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
                   ),
+                  decoration: BoxDecoration(
+                    color:
+                        badge ==
+                                "Tidak Cukup" // ✅ Update warna badge
+                            ? Colors.red.shade100
+                            : Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    badge,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color:
+                          badge == "Tidak Cukup"
+                              ? Colors.red.shade800
+                              : Colors.orange.shade800,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              subtitle,
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
             ),
-          );
+          ),
+          trailing: Icon(Icons.chevron_right, color: Colors.grey.shade400),
+          enabled: isEnabled, // ✅ Tambahkan ini
+          onTap:
+              isEnabled
+                  ? () async {
+                    // ✅ TAMBAHKAN HANDLING UNTUK SALDO KLIK
+                    if (paymentType == "Saldo Klik") {
+                      // Langsung konfirmasi pembayaran dengan Saldo Klik
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder:
+                            (context) => AlertDialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              title: const Text('Konfirmasi Pembayaran'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Total Pembayaran:'),
+                                  Text(
+                                    _formatRupiah.format(
+                                      widget.totalPembayaran,
+                                    ),
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue[700],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Divider(),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text('Saldo Saat Ini:'),
+                                      Text(
+                                        _formatRupiah.format(_saldoKlik),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text('Saldo Setelah:'),
+                                      Text(
+                                        _formatRupiah.format(
+                                          _saldoKlik - widget.totalPembayaran,
+                                        ),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.green[700],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed:
+                                      () => Navigator.pop(context, false),
+                                  child: const Text('Batal'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue[700],
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Bayar',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                      );
 
-          // ✅ Jika user klik "Saya Sudah Bayar", kembalikan metode ke CheckoutScreen
-          if (selectedMethod != null && context.mounted) {
-            // Pop kembali ke CheckoutScreen dengan membawa metode pembayaran
-            Navigator.pop(context, selectedMethod);
-          }
-        },
+                      if (confirmed == true && context.mounted) {
+                        // Langsung return ke checkout untuk proses pembayaran
+                        Navigator.pop(context, paymentType);
+                      }
+                    } else {
+                      // Navigasi ke detail pembayaran untuk metode lain (kode yang sudah ada)
+                      final selectedMethod = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => PaymentDetailScreen(
+                                paymentType: paymentType,
+                                totalPembayaran: widget.totalPembayaran,
+                              ),
+                        ),
+                      );
+
+                      if (selectedMethod != null && context.mounted) {
+                        Navigator.pop(context, selectedMethod);
+                      }
+                    }
+                  }
+                  : null,
+        ),
       ),
     );
   }
