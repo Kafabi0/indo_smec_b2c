@@ -12,6 +12,7 @@ import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:share_plus/share_plus.dart';
+import 'package:open_file/open_file.dart';
 
 // Fungsi helper untuk format mata uang Indonesia
 String formatCurrency(int amount) {
@@ -2432,38 +2433,36 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                                       showDialog(
                                         context: context,
                                         barrierDismissible: false,
-                                        builder:
-                                            (context) => const Center(
-                                              child:
-                                                  CircularProgressIndicator(),
-                                            ),
-                                      );
-
-                                      final pdfFile = await _generatePDF(
-                                        transaction,
-                                      );
-
-                                      Navigator.pop(context);
-
-                                      await Printing.layoutPdf(
-                                        onLayout:
-                                            (PdfPageFormat format) async =>
-                                                pdfFile.readAsBytesSync(),
-                                      );
-
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('PDF berhasil dibuat!'),
-                                          backgroundColor: Colors.green,
+                                        builder: (context) => const Center(
+                                          child: CircularProgressIndicator(),
                                         ),
                                       );
+
+                                      final pdfFile = await _generatePDF(transaction);
+                                      
+                                      Navigator.pop(context);
+
+                                      // Buka file PDF setelah diunduh
+                                      final result = await OpenFile.open(pdfFile.path);
+                                      
+                                      if (result.type != ResultType.done) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('PDF berhasil diunduh tapi tidak bisa dibuka: ${result.message}'),
+                                            backgroundColor: Colors.orange,
+                                          ),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('PDF berhasil diunduh dan dibuka!'),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                        );
+                                      }
                                     } catch (e) {
                                       Navigator.pop(context);
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
+                                      ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
                                           content: Text('Gagal: $e'),
                                           backgroundColor: Colors.red,
