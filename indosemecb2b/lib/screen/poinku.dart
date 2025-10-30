@@ -819,6 +819,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
   bool _isLoading = true;
   String _currentUserName = '';
   String _currentUserPhone = '';
+  String _metodePembayaran = '';
 
   @override
   void initState() {
@@ -985,10 +986,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
 
                 // Info Transaksi
                 _buildPdfInfoRow('NO. TRANSAKSI', transaction.id, bold: true),
-                _buildPdfInfoRow(
-                  'TANGGAL',
-                  _formatDateStruk(transaction.date),
-                ),
+                _buildPdfInfoRow('TANGGAL', _formatDateStruk(transaction.date)),
                 _buildPdfInfoRow(
                   'KASIR',
                   transaction.deliveryOption == 'xpress'
@@ -1039,6 +1037,13 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                       ),
                     ],
                   ),
+                ),
+                pw.SizedBox(height: 10),
+                _buildPdfInfoRow(
+                  'METODE BAYAR',
+                  transaction.metodePembayaran ??
+                      transaction.alamat?['metode_pembayaran'] ??
+                      'Tidak Diketahui',
                 ),
 
                 pw.SizedBox(height: 15),
@@ -1820,12 +1825,14 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.black
-                                                  .withOpacity(0.2),
+                                              color: Colors.black.withOpacity(
+                                                0.2,
+                                              ),
                                               blurRadius: 10,
                                               offset: const Offset(0, 4),
                                             ),
@@ -1943,8 +1950,9 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                         padding: const EdgeInsets.all(14),
                                         decoration: BoxDecoration(
                                           color: Colors.blue[50],
-                                          borderRadius:
-                                              BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                           border: Border.all(
                                             color: Colors.blue[200]!,
                                             width: 1,
@@ -1964,11 +1972,9 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                                 const SizedBox(width: 6),
                                                 Text(
                                                   'ALAMAT PENGIRIMAN',
-                                                  style:
-                                                      GoogleFonts.robotoMono(
+                                                  style: GoogleFonts.robotoMono(
                                                     fontSize: 11,
-                                                    fontWeight:
-                                                        FontWeight.bold,
+                                                    fontWeight: FontWeight.bold,
                                                     color: Colors.blue[900],
                                                   ),
                                                 ),
@@ -1976,8 +1982,8 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
-                                              transaction.alamat?[
-                                                      'nama_penerima'] ??
+                                              transaction
+                                                      .alamat?['nama_penerima'] ??
                                                   _currentUserName,
                                               style: GoogleFonts.robotoMono(
                                                 fontSize: 11,
@@ -1994,8 +2000,8 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                             ),
                                             const SizedBox(height: 6),
                                             Text(
-                                              transaction.alamat?[
-                                                      'alamat_lengkap'] ??
+                                              transaction
+                                                      .alamat?['alamat_lengkap'] ??
                                                   'Alamat tidak tersedia',
                                               style: GoogleFonts.robotoMono(
                                                 fontSize: 10,
@@ -2028,79 +2034,74 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                       ),
                                       const SizedBox(height: 12),
 
-                                      ...transaction.items
-                                          .asMap()
-                                          .entries
-                                          .map(
-                                        (entry) {
-                                          final index = entry.key;
-                                          final item = entry.value;
-                                          final hargaSatuan =
-                                              item.totalPrice / item.quantity;
+                                      ...transaction.items.asMap().entries.map((
+                                        entry,
+                                      ) {
+                                        final index = entry.key;
+                                        final item = entry.value;
+                                        final hargaSatuan =
+                                            item.totalPrice / item.quantity;
 
-                                          return Padding(
-                                            padding: const EdgeInsets.only(
-                                              bottom: 10,
-                                            ),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  '${index + 1}. ${item.name.toUpperCase()}',
-                                                  style:
-                                                      GoogleFonts.robotoMono(
-                                                    fontSize: 11,
-                                                    fontWeight:
-                                                        FontWeight.w600,
-                                                    height: 1.4,
+                                        return Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 10,
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '${index + 1}. ${item.name.toUpperCase()}',
+                                                style: GoogleFonts.robotoMono(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600,
+                                                  height: 1.4,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    '${item.quantity}x @ ${formatCurrency(hargaSatuan.toInt())}',
+                                                    style:
+                                                        GoogleFonts.robotoMono(
+                                                          fontSize: 10,
+                                                          color:
+                                                              Colors.grey[600],
+                                                        ),
+                                                  ),
+                                                  Text(
+                                                    formatCurrency(
+                                                      item.totalPrice.toInt(),
+                                                    ),
+                                                    style:
+                                                        GoogleFonts.robotoMono(
+                                                          fontSize: 11,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                              if (index <
+                                                  transaction.items.length - 1)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        top: 8,
+                                                      ),
+                                                  child: Divider(
+                                                    color: Colors.grey[200],
+                                                    height: 1,
                                                   ),
                                                 ),
-                                                const SizedBox(height: 4),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      '${item.quantity}x @ ${formatCurrency(hargaSatuan.toInt())}',
-                                                      style: GoogleFonts
-                                                          .robotoMono(
-                                                        fontSize: 10,
-                                                        color:
-                                                            Colors.grey[600],
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      formatCurrency(
-                                                        item.totalPrice
-                                                            .toInt(),
-                                                      ),
-                                                      style: GoogleFonts
-                                                          .robotoMono(
-                                                        fontSize: 11,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                if (index < transaction.items.length - 1)
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                      top: 8,
-                                                    ),
-                                                    child: Divider(
-                                                      color: Colors.grey[200],
-                                                      height: 1,
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                      ).toList(),
+                                            ],
+                                          ),
+                                        );
+                                      }).toList(),
 
                                       _buildDivider(),
 
@@ -2118,8 +2119,9 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
                                           color: Colors.green[50],
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           border: Border.all(
                                             color: Colors.green[200]!,
                                             width: 1,
@@ -2157,8 +2159,9 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
                                           color: Colors.grey[100],
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: Row(
                                           children: [
@@ -2174,20 +2177,22 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                               children: [
                                                 Text(
                                                   'METODE PEMBAYARAN',
-                                                  style:
-                                                      GoogleFonts.robotoMono(
+                                                  style: GoogleFonts.robotoMono(
                                                     fontSize: 10,
                                                     color: Colors.grey[600],
                                                   ),
                                                 ),
                                                 const SizedBox(height: 2),
                                                 Text(
-                                                  'TRANSFER BANK',
-                                                  style:
-                                                      GoogleFonts.robotoMono(
+                                                  // ✅ PERBAIKAN: Ambil dari transaction.metodePembayaran
+                                                  transaction
+                                                          .metodePembayaran ??
+                                                      transaction
+                                                          .alamat?['metode_pembayaran'] ??
+                                                      'Tidak Diketahui',
+                                                  style: GoogleFonts.robotoMono(
                                                     fontSize: 11,
-                                                    fontWeight:
-                                                        FontWeight.bold,
+                                                    fontWeight: FontWeight.bold,
                                                   ),
                                                 ),
                                               ],
@@ -2210,8 +2215,9 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
                                           ),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           border: Border.all(
                                             color: Colors.orange[300]!,
                                             width: 2,
@@ -2297,9 +2303,9 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                             Container(
                                               padding:
                                                   const EdgeInsets.symmetric(
-                                                horizontal: 16,
-                                                vertical: 8,
-                                              ),
+                                                    horizontal: 16,
+                                                    vertical: 8,
+                                                  ),
                                               decoration: BoxDecoration(
                                                 color: Colors.grey[100],
                                                 borderRadius:
@@ -2311,18 +2317,18 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                                     'LAYANAN KONSUMEN 24/7',
                                                     style:
                                                         GoogleFonts.robotoMono(
-                                                      fontSize: 9,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
+                                                          fontSize: 9,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
                                                   ),
                                                   const SizedBox(height: 4),
                                                   Text(
                                                     'WA: 0811.1500.280 | Email: kontak@indosmec.co.id',
                                                     style:
                                                         GoogleFonts.robotoMono(
-                                                      fontSize: 9,
-                                                    ),
+                                                          fontSize: 9,
+                                                        ),
                                                     textAlign: TextAlign.center,
                                                   ),
                                                 ],
@@ -2358,13 +2364,16 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                       showDialog(
                                         context: context,
                                         barrierDismissible: false,
-                                        builder: (context) => const Center(
-                                          child: CircularProgressIndicator(),
-                                        ),
+                                        builder:
+                                            (context) => const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            ),
                                       );
 
-                                      final pdfFile =
-                                          await _generatePDF(transaction);
+                                      final pdfFile = await _generatePDF(
+                                        transaction,
+                                      );
 
                                       Navigator.pop(context);
 
@@ -2375,8 +2384,9 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                       );
                                     } catch (e) {
                                       Navigator.pop(context);
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         SnackBar(
                                           content: Text('Gagal: $e'),
                                           backgroundColor: Colors.red,
@@ -2417,23 +2427,28 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                       showDialog(
                                         context: context,
                                         barrierDismissible: false,
-                                        builder: (context) => const Center(
-                                          child: CircularProgressIndicator(),
-                                        ),
+                                        builder:
+                                            (context) => const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            ),
                                       );
 
-                                      final pdfFile =
-                                          await _generatePDF(transaction);
+                                      final pdfFile = await _generatePDF(
+                                        transaction,
+                                      );
 
                                       Navigator.pop(context);
 
                                       await Printing.layoutPdf(
-                                        onLayout: (PdfPageFormat format) async =>
-                                            pdfFile.readAsBytesSync(),
+                                        onLayout:
+                                            (PdfPageFormat format) async =>
+                                                pdfFile.readAsBytesSync(),
                                       );
 
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         const SnackBar(
                                           content: Text('PDF berhasil dibuat!'),
                                           backgroundColor: Colors.green,
@@ -2441,8 +2456,9 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                       );
                                     } catch (e) {
                                       Navigator.pop(context);
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         SnackBar(
                                           content: Text('Gagal: $e'),
                                           backgroundColor: Colors.red,

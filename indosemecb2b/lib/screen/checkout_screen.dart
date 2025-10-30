@@ -58,7 +58,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   double getSubtotal() =>
-    _cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
+      _cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
 
   double getBiayaPengiriman() => 5000.0;
 
@@ -77,11 +77,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     try {
       print('🔍 DEBUG CHECKOUT - Cart items: ${_cartItems.length}');
       print('🔍 DEBUG CHECKOUT - Delivery option: ${widget.deliveryOption}');
-      print(
-        '🔍 DEBUG CHECKOUT - Catatan: "${widget.catatanPengiriman}"',
-      ); // ✅ DEBUG
+      print('🔍 DEBUG CHECKOUT - Catatan: "${widget.catatanPengiriman}"');
       print('🔍 DEBUG CHECKOUT - Alamat: ${widget.alamat}');
-      print('🔍 DEBUG CHECKOUT - Payment type: $paymentType');
+      print('💳 DEBUG CHECKOUT - Payment type: $paymentType'); // ✅ LOG PAYMENT
 
       final transactionId = 'TRX${DateTime.now().millisecondsSinceEpoch}';
       print('✅ Generated Transaction ID: $transactionId');
@@ -135,60 +133,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       print('📍 Nomor HP: $nomorHP');
       print('📍 Alamat: $alamatLengkap');
 
-      // ✅ PERBAIKAN: Buat transaction data dengan SEMUA format key catatan
-      final transactionData = {
-        'no_transaksi': transactionId,
-        'tanggal': DateTime.now().toIso8601String(),
-        'status': 'Pembayaran Lunas',
-        'metode_pembayaran': paymentType,
-        'items':
-            _cartItems
-                .map(
-                  (item) => {
-                    'nama': item.name,
-                    'name': item.name,
-                    'quantity': item.quantity,
-                    'harga': item.price,
-                    'image': item.imageUrl ?? '',
-                  },
-                )
-                .toList(),
-        'penerima': penerimaName,
+      // ✅ PERBAIKAN: Siapkan alamat data dengan metode pembayaran
+      final alamatData = {
+        'nama_penerima': penerimaName,
         'nomor_hp': nomorHP,
-        'alamat': alamatLengkap,
-        'metode_pengiriman':
-            widget.deliveryOption.contains('xpress')
-                ? 'Xpress (Rp5.000)'
-                : 'Reguler (Rp5.000)',
-        'jadwal_pengiriman':
-            'Dikirim : ${DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID').format(DateTime.now())}',
-        'biaya_pengiriman': 5000.0,
-        'biaya_admin': 0.0,
-        'delivery_option': widget.deliveryOption,
-        // ✅ PERBAIKAN: Simpan dengan SEMUA format key yang mungkin
-        'catatan_pengiriman': widget.catatanPengiriman ?? '',
-        // 'catatanPengiriman': widget.catatanPengiriman ?? '', // camelCase
-        'delivery_note': widget.catatanPengiriman ?? '', // English
+        'alamat_lengkap': alamatLengkap,
+        'kelurahan': widget.alamat?['kelurahan'],
+        'kecamatan': widget.alamat?['kecamatan'],
+        'kota': widget.alamat?['kota'],
+        'provinsi': widget.alamat?['provinsi'],
+        'kodepos': widget.alamat?['kodepos'],
+        'metode_pembayaran': paymentType, // ✅ SIMPAN METODE PEMBAYARAN
       };
 
-      print('📦 Transaction data prepared:');
-      print(
-        '  📝 catatan_pengiriman: "${transactionData['catatan_pengiriman']}"',
-      );
-      print(
-        '  📝 catatanPengiriman: "${transactionData['catatanPengiriman']}"',
-      );
+      print('💳 Metode pembayaran yang akan disimpan: $paymentType');
 
-      // ✅ Simpan transaksi dengan catatan
-      print(
-        '💾 Saving transaction with catatan: "${widget.catatanPengiriman}"',
-      );
-
+      // ✅ SIMPAN TRANSAKSI dengan parameter metodePembayaran
       final success = await TransactionManager.createTransaction(
         cartItems: _cartItems,
         deliveryOption: widget.deliveryOption,
-        alamat: widget.alamat,
+        alamat: alamatData, // ✅ Alamat sudah include metode_pembayaran
         catatanPengiriman: widget.catatanPengiriman,
+        metodePembayaran: paymentType, // ✅ PASS SEBAGAI PARAMETER TERPISAH
       );
 
       if (success) {
@@ -198,9 +164,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         final transactions = await TransactionManager.getTransactions();
         if (transactions.isNotEmpty) {
           final savedTransaction = transactions.first;
-          print(
-            '✅ Verified saved transaction catatan: "${savedTransaction.catatanPengiriman}"',
-          );
+          print('✅ Verified saved transaction:');
+          print('  📝 Catatan: "${savedTransaction.catatanPengiriman}"');
+          print('  💳 Metode: "${savedTransaction.metodePembayaran}"');
         }
 
         // Hapus semua item dari keranjang
@@ -210,6 +176,55 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         if (!clearSuccess) {
           print('⚠️ Warning: Cart clearing failed, but transaction was saved');
         }
+
+        // Prepare transaction data for notification
+        final transactionData = {
+          'no_transaksi': transactionId,
+          'id': transactionId,
+          'tanggal': DateTime.now().toIso8601String(),
+          'date': DateTime.now().toIso8601String(),
+          'status': 'Diproses',
+          'metode_pembayaran': paymentType, // ✅ TAMBAHKAN DI NOTIFICATION DATA
+          'items':
+              _cartItems
+                  .map(
+                    (item) => {
+                      'nama': item.name,
+                      'name': item.name,
+                      'quantity': item.quantity,
+                      'harga': item.price,
+                      'price': item.price,
+                      'image': item.imageUrl ?? '',
+                      'imageUrl': item.imageUrl ?? '',
+                    },
+                  )
+                  .toList(),
+          'penerima': penerimaName,
+          'nomor_hp': nomorHP,
+          'alamat': alamatLengkap,
+          'metode_pengiriman':
+              widget.deliveryOption.contains('xpress')
+                  ? 'Xpress (Rp5.000)'
+                  : 'Reguler (Rp5.000)',
+          'deliveryOption': widget.deliveryOption,
+          'jadwal_pengiriman':
+              'Dikirim : ${DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID').format(DateTime.now())}',
+          'biaya_pengiriman': 5000.0,
+          'biaya_admin': 0.0,
+          'delivery_option': widget.deliveryOption,
+          'catatan_pengiriman': widget.catatanPengiriman ?? '',
+          'catatanPengiriman': widget.catatanPengiriman ?? '',
+          'delivery_note': widget.catatanPengiriman ?? '',
+          'totalPrice': getTotal(),
+        };
+
+        print('📦 Transaction data for notification:');
+        print(
+          '  💳 metode_pembayaran: "${transactionData['metode_pembayaran']}"',
+        );
+        print(
+          '  📝 catatan_pengiriman: "${transactionData['catatan_pengiriman']}"',
+        );
 
         // ✅ TRIGGER NOTIFIKASI dengan data lengkap
         if (mounted) {
@@ -222,7 +237,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             paymentMethod: paymentType,
             totalAmount: getTotal(),
             productImage: firstProductImage,
-            transactionData: transactionData, // ✅ Sudah include catatan
+            transactionData: transactionData,
           );
 
           // 2. Simpan ke NotificationProvider
@@ -236,12 +251,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             paymentMethod: paymentType,
             total: getTotal(),
             productImage: firstProductImage,
-            transactionData: transactionData, // ✅ Sudah include catatan
+            transactionData: transactionData,
           );
 
-          print(
-            '🔔 Notification sent with catatan: "${transactionData['catatan_pengiriman']}"',
-          );
+          print('🔔 Notification sent with metode: "$paymentType"');
 
           // 3. Navigasi ke halaman sukses
           Navigator.of(context).pushAndRemoveUntil(
@@ -492,7 +505,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             child: Column(
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       "Subtotal Produk",
@@ -512,7 +526,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 ),
                                 const SizedBox(height: 12),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Row(
                                       children: [
@@ -541,14 +556,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   ],
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
                                   child: Divider(
                                     color: Colors.grey[300],
                                     thickness: 1,
                                   ),
                                 ),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text(
                                       "Total Pembayaran",

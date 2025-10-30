@@ -26,8 +26,9 @@ class TransactionManager {
     required List<CartItem> cartItems,
     required String deliveryOption,
     Map<String, dynamic>? alamat,
-    String? initialStatus, // Parameter opsional untuk override
+    String? initialStatus,
     String? catatanPengiriman,
+    String? metodePembayaran, // ✅ TAMBAHKAN PARAMETER
   }) async {
     try {
       print('📦 Creating transaction...');
@@ -69,19 +70,25 @@ class TransactionManager {
       final status = initialStatus ?? _getRandomStatus();
       print('📊 Transaction status (randomized): $status');
 
+      // ✅ Ambil metode pembayaran dari alamat jika tidak diberikan langsung
+      final finalMetodePembayaran =
+          metodePembayaran ?? alamat?['metode_pembayaran'] ?? 'Tidak Diketahui';
+
       // Buat objek transaksi
       final transaction = Transaction(
         id: transactionId,
         date: DateTime.now(),
-        status: status, // ⭐ Status sudah dirandomize
+        status: status,
         deliveryOption: deliveryOption,
         alamat: alamat,
         items: items,
         totalPrice: total,
         catatanPengiriman: catatanPengiriman,
+        metodePembayaran: finalMetodePembayaran, // ✅ SIMPAN METODE PEMBAYARAN
       );
 
       print('✅ Transaction object created with status: $status');
+      print('💳 Metode pembayaran: $finalMetodePembayaran');
       if (catatanPengiriman != null && catatanPengiriman.isNotEmpty) {
         print('📝 Catatan pengiriman: $catatanPengiriman');
       }
@@ -118,6 +125,9 @@ class TransactionManager {
         );
         if (savedTransaction.isNotEmpty) {
           print('✓ Saved transaction status: ${savedTransaction['status']}');
+          print(
+            '✓ Saved metode pembayaran: ${savedTransaction['metodePembayaran']}',
+          );
         }
       }
 

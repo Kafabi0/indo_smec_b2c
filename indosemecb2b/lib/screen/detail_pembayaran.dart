@@ -73,13 +73,15 @@ class DetailPembayaranScreen extends StatelessWidget {
 
   double _hitungTotal() {
     final subtotal = _hitungSubtotal();
-    final biayaPengiriman = (transaksi['biaya_pengiriman'] ?? 5000.0) is int
-        ? ((transaksi['biaya_pengiriman'] ?? 5000.0) as int).toDouble()
-        : (transaksi['biaya_pengiriman'] ?? 5000.0);
-    final biayaAdmin = (transaksi['biaya_admin'] ?? 0.0) is int
-        ? ((transaksi['biaya_admin'] ?? 0.0) as int).toDouble()
-        : (transaksi['biaya_admin'] ?? 0.0);
-    
+    final biayaPengiriman =
+        (transaksi['biaya_pengiriman'] ?? 5000.0) is int
+            ? ((transaksi['biaya_pengiriman'] ?? 5000.0) as int).toDouble()
+            : (transaksi['biaya_pengiriman'] ?? 5000.0);
+    final biayaAdmin =
+        (transaksi['biaya_admin'] ?? 0.0) is int
+            ? ((transaksi['biaya_admin'] ?? 0.0) as int).toDouble()
+            : (transaksi['biaya_admin'] ?? 0.0);
+
     return subtotal + biayaPengiriman + biayaAdmin;
   }
 
@@ -390,7 +392,12 @@ class DetailPembayaranScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   _buildRincianRow(
                     'Metode Pembayaran',
-                    transaksi['metode_pembayaran'] ?? 'Transfer Bank',
+                    // Coba dari berbagai field yang mungkin ada
+                    transaksi['metode_pembayaran'] ??
+                        transaksi['metodePembayaran'] ??
+                        transaksi['payment_method'] ??
+                        transaksi['alamat']?['metode_pembayaran'] ??
+                        'Tidak Diketahui', // Default jika tidak ada
                     showIcon: true,
                   ),
                   const SizedBox(height: 12),

@@ -7,7 +7,8 @@ class Transaction {
   final Map<String, dynamic>? alamat;
   final List<TransactionItem> items;
   final double totalPrice;
-  final String? catatanPengiriman; // ✅ TAMBAHKAN FIELD
+  final String? catatanPengiriman;
+  final String? metodePembayaran; // ✅ TAMBAHKAN FIELD BARU
 
   Transaction({
     required this.id,
@@ -17,7 +18,8 @@ class Transaction {
     this.alamat,
     required this.items,
     required this.totalPrice,
-    this.catatanPengiriman, // ✅ TAMBAHKAN FIELD
+    this.catatanPengiriman,
+    this.metodePembayaran, // ✅ TAMBAHKAN PARAMETER
   });
 
   Map<String, dynamic> toMap() {
@@ -29,7 +31,8 @@ class Transaction {
       'alamat': alamat,
       'items': items.map((item) => item.toMap()).toList(),
       'totalPrice': totalPrice,
-      'catatanPengiriman': catatanPengiriman, // ✅ SIMPAN KE MAP
+      'catatanPengiriman': catatanPengiriman,
+      'metodePembayaran': metodePembayaran, // ✅ SIMPAN KE MAP
     };
   }
 
@@ -45,7 +48,8 @@ class Transaction {
               .map((item) => TransactionItem.fromMap(item))
               .toList(),
       totalPrice: (map['totalPrice'] ?? 0).toDouble(),
-      catatanPengiriman: map['catatanPengiriman'], // ✅ LOAD DARI MAP
+      catatanPengiriman: map['catatanPengiriman'],
+      metodePembayaran: map['metodePembayaran'], // ✅ LOAD DARI MAP
     );
   }
 }
