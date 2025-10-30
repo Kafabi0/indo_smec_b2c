@@ -375,32 +375,46 @@ class CartScreenState extends State<CartScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      // 🔹 AnimatedContainer memberi transisi halus pada warna AppBar
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          color: _isScrolled ? Colors.blue : Colors.white,
-          child: SafeArea(
+  return Scaffold(
+    backgroundColor: Colors.white,
+    appBar: PreferredSize(
+      preferredSize: const Size.fromHeight(90), 
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        decoration: BoxDecoration(
+          color: _isScrolled ? Colors.blue : Colors.blue,
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(20), 
+            bottomRight: Radius.circular(20), 
+          ),
+          boxShadow: [
+            if (_isScrolled)
+              BoxShadow(
+                color: Colors.blue.withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Padding(
-                  padding: EdgeInsets.only(left: 16),
-                  child: Text(
-                    'Keranjang Belanja',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                const Text(
+                  'Keranjang Belanja',
+                  style: TextStyle(
+                    color: Colors.white, 
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 IconButton(
                   icon: Icon(
                     Icons.favorite_sharp,
-                    color: _isScrolled ? Colors.white : Colors.red,
+                    color: _isScrolled ? Colors.white : Colors.white,
+                    size: 26,
                   ),
                   onPressed: () async {
                     await Navigator.push(
@@ -416,6 +430,7 @@ class CartScreenState extends State<CartScreen> with RouteAware {
           ),
         ),
       ),
+    ),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
