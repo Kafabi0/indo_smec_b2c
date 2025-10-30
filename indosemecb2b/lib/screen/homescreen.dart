@@ -5,6 +5,7 @@ import 'package:indosemecb2b/screen/product_list_screen.dart';
 import 'package:indosemecb2b/screen/search_screen.dart';
 import 'package:indosemecb2b/utils/cart_manager.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product_model.dart';
 import '../models/store_model.dart';
@@ -16,6 +17,8 @@ import 'favorit.dart';
 import 'package:indosemecb2b/screen/lengkapi_alamat_screen.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:indosemecb2b/models/transaction.dart';
+
+import 'notification_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -760,33 +763,88 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       letterSpacing: 0.5,
                     ),
                   ),
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => NotificationScreen(),
+                  Consumer<NotificationProvider>(
+                    builder: (context, notifProvider, child) {
+                      final unreadCount = notifProvider.unreadCount;
+
+                      return InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => NotificationScreen(),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(30),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.notifications_outlined,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                            ),
+
+                            // Badge untuk unread count
+                            if (unreadCount > 0)
+                              Positioned(
+                                right: -2,
+                                top: -2,
+                                child: Container(
+                                  padding: EdgeInsets.all(
+                                    unreadCount > 9 ? 4 : 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red[600],
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.red.withOpacity(0.5),
+                                        blurRadius: 4,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  constraints: BoxConstraints(
+                                    minWidth: unreadCount > 9 ? 22 : 20,
+                                    minHeight: unreadCount > 9 ? 22 : 20,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      unreadCount > 99 ? '99+' : '$unreadCount',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: unreadCount > 9 ? 9 : 10,
+                                        fontWeight: FontWeight.bold,
+                                        height: 1,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       );
                     },
-                    borderRadius: BorderRadius.circular(30),
-                    child: Container(
-                      padding: EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.notifications_outlined,
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                    ),
                   ),
                 ],
               ),
             ),
 
+            // Search bar (tetap sama)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: GestureDetector(
