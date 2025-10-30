@@ -32,11 +32,11 @@ class _SaldoKlikScreenState extends State<SaldoKlikScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    
+
     final isActive = await SaldoKlikManager.isActive();
     final saldo = await SaldoKlikManager.getSaldo();
     final history = await SaldoKlikManager.getHistory();
-    
+
     setState(() {
       _isActive = isActive;
       _saldo = saldo;
@@ -46,49 +46,513 @@ class _SaldoKlikScreenState extends State<SaldoKlikScreen> {
   }
 
   Future<void> _activateSaldo() async {
-    final confirmed = await showDialog<bool>(
+    final pinController = TextEditingController();
+    final confirmPinController = TextEditingController();
+    bool isPinVisible = false;
+    bool isConfirmPinVisible = false;
+
+    final result = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Aktifkan Saldo Klik'),
-        content: const Text(
-          'Dengan mengaktifkan Saldo Klik, Anda dapat:\n\n'
-          '• Isi saldo dengan mudah\n'
-          '• Bayar transaksi lebih cepat\n'
-          '• Dapatkan promo eksklusif\n'
-          '• Tarik saldo ke rekening bank',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
+      barrierDismissible: false,
+      builder:
+          (context) => StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                contentPadding: EdgeInsets.zero,
+                content: Container(
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Colors.blue[700]!, Colors.blue[900]!],
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Header Section
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.lock_outline,
+                                size: 48,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Buat PIN Saldo Klik',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'PIN digunakan untuk mengamankan\ntransaksi Saldo Klik Anda',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white.withOpacity(0.9),
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Form Section
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(20),
+                            bottomRight: Radius.circular(20),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            // PIN Input
+                            TextField(
+                              controller: pinController,
+                              keyboardType: TextInputType.number,
+                              maxLength: 6,
+                              obscureText: !isPinVisible,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 2,
+                              ),
+                              decoration: InputDecoration(
+                                labelText: 'Buat PIN',
+                                hintText: '••••••',
+                                prefixIcon: Icon(
+                                  Icons.lock,
+                                  color: Colors.blue[700],
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    isPinVisible
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                    color: Colors.grey[600],
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      isPinVisible = !isPinVisible;
+                                    });
+                                  },
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey[300]!,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey[300]!,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.blue[700]!,
+                                    width: 2,
+                                  ),
+                                ),
+                                counterText: '',
+                                filled: true,
+                                fillColor: Colors.grey[50],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Confirm PIN Input
+                            TextField(
+                              controller: confirmPinController,
+                              keyboardType: TextInputType.number,
+                              maxLength: 6,
+                              obscureText: !isConfirmPinVisible,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 2,
+                              ),
+                              decoration: InputDecoration(
+                                labelText: 'Konfirmasi PIN',
+                                hintText: '••••••',
+                                prefixIcon: Icon(
+                                  Icons.lock_clock,
+                                  color: Colors.blue[700],
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    isConfirmPinVisible
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                    color: Colors.grey[600],
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      isConfirmPinVisible =
+                                          !isConfirmPinVisible;
+                                    });
+                                  },
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey[300]!,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey[300]!,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.blue[700]!,
+                                    width: 2,
+                                  ),
+                                ),
+                                counterText: '',
+                                filled: true,
+                                fillColor: Colors.grey[50],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Info Box
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.amber[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.amber[200]!),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    color: Colors.amber[800],
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'Jangan berikan PIN kepada siapapun, termasuk pihak Indoseme',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.amber[900],
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Buttons
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      side: BorderSide(
+                                        color: Colors.grey[300]!,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Batal',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      final pin = pinController.text;
+                                      final confirmPin =
+                                          confirmPinController.text;
+
+                                      if (pin.isEmpty || confirmPin.isEmpty) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: const Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.error_outline,
+                                                  color: Colors.white,
+                                                ),
+                                                SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Text(
+                                                    'PIN tidak boleh kosong',
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            backgroundColor: Colors.red,
+                                            behavior: SnackBarBehavior.floating,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+
+                                      if (pin.length != 6) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: const Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.error_outline,
+                                                  color: Colors.white,
+                                                ),
+                                                SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Text(
+                                                    'PIN harus 6 digit',
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            backgroundColor: Colors.red,
+                                            behavior: SnackBarBehavior.floating,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+
+                                      if (pin != confirmPin) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: const Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.error_outline,
+                                                  color: Colors.white,
+                                                ),
+                                                SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Text(
+                                                    'PIN tidak cocok',
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            backgroundColor: Colors.red,
+                                            behavior: SnackBarBehavior.floating,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+
+                                      Navigator.pop(context, pin);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue[700],
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Aktifkan',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[700],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Aktifkan',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
     );
 
-    if (confirmed == true) {
-      await SaldoKlikManager.activate();
+    if (result != null) {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder:
+            (context) => Dialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              child: Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Animated Loading Container
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Outer ring
+                        SizedBox(
+                          width: 80,
+                          height: 80,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.blue[200]!,
+                            ),
+                          ),
+                        ),
+                        // Inner ring
+                        SizedBox(
+                          width: 60,
+                          height: 60,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 4,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.blue[700]!,
+                            ),
+                          ),
+                        ),
+                        // Icon
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[50],
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.account_balance_wallet,
+                            color: Colors.blue[700],
+                            size: 24,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // Title
+                    const Text(
+                      'Mengaktifkan Saldo Klik',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Subtitle
+                    Text(
+                      'Mohon tunggu sebentar...',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+      );
+
+      final success = await SaldoKlikManager.activate(result);
+
+      // Close loading
+      if (mounted) Navigator.pop(context);
+
       await _loadData();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Saldo Klik berhasil diaktifkan!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  success ? Icons.check_circle : Icons.error_outline,
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    success
+                        ? '✅ Saldo Klik berhasil diaktifkan!'
+                        : '❌ Gagal mengaktifkan Saldo Klik',
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: success ? Colors.green : Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -143,19 +607,13 @@ class _SaldoKlikScreenState extends State<SaldoKlikScreen> {
               const SizedBox(height: 24),
               const Text(
                 'Aktifkan Saldo Klik',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               Text(
                 'Nikmati kemudahan bertransaksi dengan Saldo Klik',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 15, color: Colors.grey[600]),
               ),
               const SizedBox(height: 32),
               _buildFeatureItem(
@@ -229,10 +687,7 @@ class _SaldoKlikScreenState extends State<SaldoKlikScreen> {
               ),
               Text(
                 subtitle,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
               ),
             ],
           ),
@@ -257,10 +712,7 @@ class _SaldoKlikScreenState extends State<SaldoKlikScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Colors.blue[700]!,
-                      Colors.blue[900]!,
-                    ],
+                    colors: [Colors.blue[700]!, Colors.blue[900]!],
                   ),
                 ),
                 child: SafeArea(
@@ -428,10 +880,7 @@ class _SaldoKlikScreenState extends State<SaldoKlikScreen> {
                             ],
                           ),
                         ),
-                        const Icon(
-                          Icons.chevron_right,
-                          color: Colors.white,
-                        ),
+                        const Icon(Icons.chevron_right, color: Colors.white),
                       ],
                     ),
                   ),
@@ -534,10 +983,7 @@ class _SaldoKlikScreenState extends State<SaldoKlikScreen> {
             const SizedBox(height: 8),
             Text(
               label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
           ],
         ),
@@ -612,10 +1058,7 @@ class _SaldoKlikScreenState extends State<SaldoKlikScreen> {
                 const SizedBox(height: 4),
                 Text(
                   DateFormat('dd MMM yyyy, HH:mm').format(date),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
                 if (status == 'processing')
                   Padding(

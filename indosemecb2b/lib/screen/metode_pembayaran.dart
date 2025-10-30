@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:indosemecb2b/screen/pembayaran_berhasil.dart';
+import 'package:indosemecb2b/screen/input_pin.dart'; // ✅ ADD
 import 'package:intl/intl.dart';
 import 'dart:math';
 import 'package:indosemecb2b/utils/saldo_klik_manager.dart';
@@ -342,7 +343,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     required String subtitle,
     String? badge,
     required String paymentType,
-    bool isEnabled = true, // ✅ Tambahkan parameter ini
+    bool isEnabled = true,
   }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -352,7 +353,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         side: BorderSide(color: Colors.grey.shade200),
       ),
       child: Opacity(
-        opacity: isEnabled ? 1.0 : 0.5, // ✅ Tambahkan opacity
+        opacity: isEnabled ? 1.0 : 0.5,
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
@@ -386,8 +387,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   ),
                   decoration: BoxDecoration(
                     color:
-                        badge ==
-                                "Tidak Cukup" // ✅ Update warna badge
+                        badge == "Tidak Cukup"
                             ? Colors.red.shade100
                             : Colors.orange.shade100,
                     borderRadius: BorderRadius.circular(4),
@@ -414,13 +414,13 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             ),
           ),
           trailing: Icon(Icons.chevron_right, color: Colors.grey.shade400),
-          enabled: isEnabled, // ✅ Tambahkan ini
+          enabled: isEnabled,
           onTap:
               isEnabled
                   ? () async {
-                    // ✅ TAMBAHKAN HANDLING UNTUK SALDO KLIK
+                    // ✅ UPDATED: HANDLE SALDO KLIK WITH PIN
                     if (paymentType == "Saldo Klik") {
-                      // Langsung konfirmasi pembayaran dengan Saldo Klik
+                      // Step 1: Show confirmation dialog
                       final confirmed = await showDialog<bool>(
                         context: context,
                         builder:
@@ -477,6 +477,33 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                       ),
                                     ],
                                   ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue[50],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.lock_outline,
+                                          color: Colors.blue[700],
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            'Anda akan diminta memasukkan PIN untuk konfirmasi',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.blue[900],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               ),
                               actions: [
@@ -494,7 +521,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                     ),
                                   ),
                                   child: const Text(
-                                    'Bayar',
+                                    'Lanjutkan',
                                     style: TextStyle(color: Colors.white),
                                   ),
                                 ),
@@ -502,12 +529,167 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                             ),
                       );
 
-                      if (confirmed == true && context.mounted) {
-                        // Langsung return ke checkout untuk proses pembayaran
+                      if (confirmed != true || !context.mounted) return;
+
+                      // Step 2: Request PIN
+                      final pin = await Navigator.push<String>(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => const InputPinScreen(
+                                title: 'Masukkan PIN',
+                                subtitle:
+                                    'Masukkan PIN untuk konfirmasi pembayaran',
+                              ),
+                        ),
+                      );
+
+                      if (pin == null || !context.mounted) return;
+
+                      // Step 3: Show loading
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder:
+                            (context) => Dialog(
+                              backgroundColor: Colors.transparent,
+                              elevation: 0,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 36,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.15),
+                                      blurRadius: 30,
+                                      offset: const Offset(0, 10),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Animated Payment Icon
+                                    Container(
+                                      padding: const EdgeInsets.all(20),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            Colors.green[400]!,
+                                            Colors.green[700]!,
+                                          ],
+                                        ),
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.green.withOpacity(
+                                              0.3,
+                                            ),
+                                            blurRadius: 15,
+                                            offset: const Offset(0, 5),
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Icon(
+                                        Icons.payment,
+                                        color: Colors.white,
+                                        size: 40,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 28),
+
+                                    // Loading Indicator
+                                    SizedBox(
+                                      width: 40,
+                                      height: 40,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 3,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.green[700]!,
+                                            ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+
+                                    // Title
+                                    const Text(
+                                      'Memproses Pembayaran',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+
+                                    // Subtitle
+                                    Text(
+                                      'Mohon jangan tutup aplikasi\nProses akan selesai sebentar lagi',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                      );
+
+                      // Step 4: Verify PIN and process payment
+                      await Future.delayed(const Duration(seconds: 1));
+
+                      final transactionId =
+                          'TRX${DateTime.now().millisecondsSinceEpoch}';
+                      print('✅ Generated Transaction ID: $transactionId');
+
+                      // Step 5: Verify PIN and process payment
+                      await Future.delayed(const Duration(seconds: 1));
+
+                      final success = await SaldoKlikManager.deductSaldo(
+                        widget.totalPembayaran,
+                        'Pembayaran Transaksi $transactionId', // ✅ WITH TRANSACTION ID
+                        pin,
+                      );
+
+                      if (context.mounted) {
+                        Navigator.pop(context); // Close loading
+                      }
+
+                      if (success && context.mounted) {
+                        // ✅ Set flag untuk refresh poin
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setBool('should_refresh_poin', true);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('✅ Pembayaran berhasil!'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+
+                        // Return to checkout
                         Navigator.pop(context, paymentType);
+                      } else if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('❌ PIN salah atau pembayaran gagal'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
                       }
                     } else {
-                      // Navigasi ke detail pembayaran untuk metode lain (kode yang sudah ada)
+                      // Navigate to detail payment for other methods
                       final selectedMethod = await Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -531,7 +713,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   }
 }
 
-// Payment Detail Screen
+// Payment Detail Screen (unchanged from original)
 class PaymentDetailScreen extends StatefulWidget {
   final String paymentType;
   final double totalPembayaran;
@@ -558,7 +740,7 @@ class _PaymentDetailScreenState extends State<PaymentDetailScreen> {
     final random = Random();
     final buffer = StringBuffer();
     for (int i = 0; i < length; i++) {
-      buffer.write(random.nextInt(10)); // 0..9
+      buffer.write(random.nextInt(10));
     }
     return buffer.toString();
   }
@@ -570,7 +752,6 @@ class _PaymentDetailScreenState extends State<PaymentDetailScreen> {
   @override
   void initState() {
     super.initState();
-    // Generate nomor VA/kode pembayaran
     vaNumber = _generateVANumber();
     paymentCode = _generatePaymentCode();
     expiredTime = DateTime.now().add(const Duration(hours: 24));
@@ -582,16 +763,12 @@ class _PaymentDetailScreenState extends State<PaymentDetailScreen> {
       return "80777" + _randomNumericString(10);
     } else if (widget.paymentType.contains("Mandiri")) {
       return "8908" + _randomNumericString(10);
-      ;
     } else if (widget.paymentType.contains("BNI")) {
       return "8808" + _randomNumericString(10);
-      ;
     } else if (widget.paymentType.contains("BRI")) {
       return "26215" + _randomNumericString(10);
-      ;
     } else if (widget.paymentType.contains("Permata")) {
       return "8528" + _randomNumericString(10);
-      ;
     }
     return _randomNumericString(16);
   }
@@ -623,7 +800,6 @@ class _PaymentDetailScreenState extends State<PaymentDetailScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Status Card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -663,7 +839,6 @@ class _PaymentDetailScreenState extends State<PaymentDetailScreen> {
 
           const SizedBox(height: 20),
 
-          // Total Pembayaran
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -694,7 +869,6 @@ class _PaymentDetailScreenState extends State<PaymentDetailScreen> {
 
           const SizedBox(height: 20),
 
-          // Nomor VA / Kode Pembayaran
           if (_isVirtualAccount())
             _buildVASection()
           else if (_isRetail())
@@ -706,7 +880,6 @@ class _PaymentDetailScreenState extends State<PaymentDetailScreen> {
 
           const SizedBox(height: 24),
 
-          // Cara Pembayaran
           _buildInstructionsSection(),
 
           const SizedBox(height: 100),
@@ -731,11 +904,9 @@ class _PaymentDetailScreenState extends State<PaymentDetailScreen> {
                 '💳 User clicked "Saya Sudah Bayar" for: ${widget.paymentType}',
               );
 
-              // ⭐ TAMBAHKAN: Trigger refresh poin setelah pembayaran
               final prefs = await SharedPreferences.getInstance();
               await prefs.setBool('should_refresh_poin', true);
 
-              // Pop dengan hasil metode pembayaran
               Navigator.of(context).pop(widget.paymentType);
             },
             style: ElevatedButton.styleFrom(

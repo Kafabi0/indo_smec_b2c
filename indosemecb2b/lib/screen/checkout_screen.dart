@@ -58,6 +58,51 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
   }
 
+  Future<String?> _showPinDialog() async {
+    final pinController = TextEditingController();
+
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Masukkan PIN Saldo Klik'),
+          content: TextField(
+            controller: pinController,
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'PIN (6 digit)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (pinController.text.length == 6) {
+                  Navigator.pop(context, pinController.text);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('PIN harus 6 digit'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Lanjut'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   double getSubtotal() =>
       _cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
 
@@ -170,25 +215,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           print('  💳 Metode: "${savedTransaction.metodePembayaran}"');
         }
         if (paymentType == "Saldo Klik") {
-          final saldoDeducted = await SaldoKlikManager.deductSaldo(
-            getTotal(),
-            'Pembayaran Transaksi $transactionId',
-          );
+          // ❌ HAPUS BAGIAN INI - PIN sudah diminta di PaymentMethodScreen
+          // Tidak perlu request PIN lagi di checkout
 
-          if (!saldoDeducted) {
-            print('❌ Failed to deduct Saldo Klik');
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Gagal memotong saldo. Saldo tidak mencukupi.'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-            return;
-          }
+          print('✅ Payment with Saldo Klik (PIN already verified)');
 
-          print('✅ Saldo Klik successfully deducted');
+          // Saldo sudah dipotong di PaymentMethodScreen
+          // Tidak perlu deduct lagi
+          print('✅ Saldo already deducted in PaymentMethodScreen');
         }
         // Hapus semua item dari keranjang
         final clearSuccess = await CartManager.clearCart();

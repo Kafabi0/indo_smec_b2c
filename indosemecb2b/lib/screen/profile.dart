@@ -4,10 +4,13 @@ import 'package:indosemecb2b/screen/edit_profile_screen.dart';
 import 'package:indosemecb2b/screen/notification_provider.dart';
 import 'package:indosemecb2b/screen/saldo.dart';
 import 'package:indosemecb2b/screen/ubah_pw.dart';
+import 'package:indosemecb2b/screen/setup_pin.dart'; // ✅ ADD
+import 'package:indosemecb2b/utils/saldo_klik_manager.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:indosemecb2b/screen/login.dart';
-import 'package:indosemecb2b/utils/user_data_manager.dart'; // Import helper
+import 'package:indosemecb2b/utils/user_data_manager.dart';
 
 class ProfileScreen extends StatefulWidget {
   final VoidCallback? onLogout;
@@ -23,6 +26,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? userName;
   String? userLogin;
 
+  // ✅ TAMBAHKAN STATE UNTUK SALDO KLIK
+  bool _isSaldoKlikActive = false;
+  double _saldoKlik = 0.0;
+
+  // ✅ TAMBAHKAN FORMAT RUPIAH
+  static final _formatRupiah = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp',
+    decimalDigits: 0,
+  );
+
   @override
   void initState() {
     super.initState();
@@ -34,13 +48,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final loggedIn = prefs.getBool('isLoggedIn') ?? false;
     final email = prefs.getString('userEmail');
     final name = prefs.getString('userName');
-    final login = prefs.getString('userLogin'); // <- Tambahkan
+    final login = prefs.getString('userLogin');
+
+    // ✅ LOAD STATUS DAN SALDO KLIK
+    final isSaldoActive = await SaldoKlikManager.isActive();
+    final saldo = await SaldoKlikManager.getSaldo();
 
     setState(() {
       isLoggedIn = loggedIn;
       userEmail = email;
       userName = name;
       userLogin = login;
+      _isSaldoKlikActive = isSaldoActive;
+      _saldoKlik = saldo;
     });
   }
 
@@ -70,7 +90,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: TextStyle(fontSize: 14, color: Colors.black87),
                 ),
                 const SizedBox(height: 24),
-                // Tombol "Keluar" (atas)
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -94,7 +113,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                // Tombol "Batalkan" (bawah)
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
@@ -126,7 +144,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (confirmed != true) return;
 
-    // Lanjut proses logout
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
     if (context.mounted) {
@@ -170,7 +187,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ==================== VIEW BELUM LOGIN ====================
   Widget _buildLoginView() {
     return SafeArea(
       child: Column(
@@ -247,13 +263,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ==================== VIEW SUDAH LOGIN ====================
   Widget _buildLoggedInView() {
     return SafeArea(
       child: SingleChildScrollView(
         child: Column(
           children: [
-            // ======= HEADER BIRU DENGAN AKUN + AKUN TERHUBUNG + KUPON =======
             Container(
               width: double.infinity,
               decoration: BoxDecoration(color: Colors.blue[700]),
@@ -289,7 +303,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: Colors.white,
                             ),
                           ),
-
                           Text(
                             userLogin ?? 'kafabi',
                             style: const TextStyle(
@@ -360,18 +373,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
+                              // ✅ UPDATE _ConnectedItem UNTUK SALDO KLIK
                               _ConnectedItem(
                                 icon: Icons.account_balance_wallet_outlined,
                                 label: 'Saldo Klik',
-                                buttonText: 'Aktifkan',
-                                onTap: () {
-                                  Navigator.push(
+                                buttonText:
+                                    _isSaldoKlikActive
+                                        ? _formatRupiah.format(_saldoKlik)
+                                        : 'Aktifkan',
+                                isActive: _isSaldoKlikActive,
+                                onTap: () async {
+                                  await Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder:
                                           (context) => const SaldoKlikScreen(),
                                     ),
                                   );
+                                  // ✅ REFRESH SETELAH KEMBALI
+                                  _loadLoginStatus();
                                 },
                               ),
                               const SizedBox(width: 1),
@@ -379,6 +399,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 icon: Icons.credit_card_outlined,
                                 label: 'i.saku',
                                 buttonText: 'Hubungkan',
+                                isActive: false,
                               ),
                             ],
                           ),
@@ -512,7 +533,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
-            // ======= KONTEN BAWAH =======
             const SizedBox(height: 16),
             _buildMenuSection(
               title: 'Pengaturan Akun',
@@ -526,9 +546,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       MaterialPageRoute(
                         builder: (context) => const EditProfileScreen(),
                       ),
-                    ).then(
-                      (_) => _loadLoginStatus(),
-                    ); // Refresh setelah kembali
+                    ).then((_) => _loadLoginStatus());
                   },
                 ),
                 _menuItem(
@@ -540,9 +558,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       MaterialPageRoute(
                         builder: (context) => const ChangePasswordScreen(),
                       ),
-                    ).then(
-                      (_) => _loadLoginStatus(),
-                    ); // Refresh setelah kembali
+                    ).then((_) => _loadLoginStatus());
                   },
                 ),
                 _menuItem(
@@ -554,9 +570,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       MaterialPageRoute(
                         builder: (context) => const DaftarAlamatScreen(),
                       ),
-                    ).then(
-                      (_) => _loadLoginStatus(),
-                    ); // Refresh setelah kembali
+                    ).then((_) => _loadLoginStatus());
                   },
                 ),
                 _menuItem(
@@ -580,7 +594,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Tombol logout di kiri
                   TextButton.icon(
                     onPressed: _logout,
                     icon: const Icon(Icons.logout, color: Colors.red, size: 18),
@@ -593,8 +606,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ),
-
-                  // Kode pengguna di kanan
                   Text(
                     'V2510102',
                     style: TextStyle(
@@ -672,22 +683,23 @@ class _ConnectedItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final String buttonText;
-  final VoidCallback? onTap; // ✅ TAMBAHKAN PARAMETER INI
+  final bool isActive; // ✅ TAMBAHKAN PARAMETER
+  final VoidCallback? onTap;
 
   const _ConnectedItem({
     required this.icon,
     required this.label,
     required this.buttonText,
-    this.onTap, // ✅ TAMBAHKAN INI
+    this.isActive = false, // ✅ DEFAULT FALSE
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: InkWell(
-        // ✅ WRAP DENGAN InkWell
-        onTap: onTap, // ✅ TAMBAHKAN onTap
-        borderRadius: BorderRadius.circular(12), // ✅ TAMBAHKAN BORDER RADIUS
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
         child: Column(
           children: [
             Icon(icon, color: Colors.blue[700]),
@@ -697,16 +709,21 @@ class _ConnectedItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
+                // ✅ UBAH WARNA BERDASARKAN STATUS
+                color: isActive ? Colors.green[50] : Colors.blue[50],
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
                 buttonText,
                 style: TextStyle(
-                  color: Colors.blue[700],
+                  // ✅ UBAH WARNA TEXT BERDASARKAN STATUS
+                  color: isActive ? Colors.green[700] : Colors.blue[700],
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
