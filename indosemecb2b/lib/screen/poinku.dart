@@ -15,6 +15,7 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:share_plus/share_plus.dart';
 import 'package:open_file/open_file.dart';
+import 'package:indosemecb2b/utils/poin_cash_manager.dart'; // ✅ TAMBAHKAN IMPORT INI di bagian atas file
 
 // Fungsi helper untuk format mata uang Indonesia
 String formatCurrency(int amount) {
@@ -171,10 +172,21 @@ class _PoinkuScreenState extends State<PoinkuScreen>
 
     int poinFromTransactions = 0;
     int stampCount = 0;
-    int poinCashValue = 0;
 
     for (var transaction in transactions) {
       print('💰 [POINKU] Processing: ${transaction.id}');
+
+      // ⭐ SKIP transaksi penggunaan Poin Cash
+      if (transaction.deliveryOption == 'poin_cash_usage') {
+        print('   ⏭️ Skipping Poin Cash usage transaction');
+        continue;
+      }
+
+      // ⭐ SKIP transaksi Top-Up
+      if (transaction.deliveryOption == 'topup') {
+        print('   ⏭️ Skipping Top-Up transaction');
+        continue;
+      }
 
       // Poin UMKM: Rp 1.000 = 1 Poin
       int poin = (transaction.totalPrice / 1000).floor();
@@ -183,11 +195,7 @@ class _PoinkuScreenState extends State<PoinkuScreen>
       // Stamp: Setiap transaksi = 1 Stamp
       stampCount++;
 
-      // ⭐ Poin Cash = Poin UMKM x 10
-      int cashFromTransaction = poin * 10;
-      poinCashValue += cashFromTransaction;
-
-      print('   ➕ ${poin} poin UMKM, ${cashFromTransaction} poin cash');
+      print('   ➕ ${poin} poin UMKM');
     }
 
     // Bonus poin member baru
@@ -196,20 +204,24 @@ class _PoinkuScreenState extends State<PoinkuScreen>
 
     if (!isFirstTime) {
       poinFromTransactions += 1000;
-      poinCashValue += 10000;
       await prefs.setBool('poin_welcome_given', true);
-      print('🎁 [POINKU] Bonus welcome: +1000 UMKM, +10000 Cash');
+      print('🎁 [POINKU] Bonus welcome: +1000 UMKM');
     }
 
+    // ✅ GUNAKAN PoinCashManager untuk menghitung Poin Cash yang benar
+    final poinCashValue = await PoinCashManager.getTotalPoinCash();
+    print('💰 [POINKU] Poin Cash dari PoinCashManager: $poinCashValue');
+
     print(
-      '✅ [POINKU] Final - UMKM: $poinFromTransactions, Cash: $poinCashValue',
+      '✅ [POINKU] Final - UMKM: $poinFromTransactions, Cash: ${poinCashValue.toInt()}',
     );
 
     if (mounted) {
       setState(() {
         totalPoin = poinFromTransactions;
         totalStamp = stampCount;
-        totalPoinCash = poinCashValue;
+        totalPoinCash =
+            poinCashValue.toInt(); // ✅ GUNAKAN NILAI DARI PoinCashManager
       });
     }
   }
@@ -899,388 +911,394 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
 
   // ✅ FUNGSI GENERATE PDF
   Future<File> _generatePDF(Transaction transaction) async {
-  final pdf = pw.Document();
-  final ongkir = 5000.0;
-  final subtotal = transaction.totalPrice - ongkir;
+    final pdf = pw.Document();
+    final ongkir = 5000.0;
+    final subtotal = transaction.totalPrice - ongkir;
 
-  // Menggunakan format kertas yang lebih sempit seperti struk kasir
-  pdf.addPage(
-    pw.Page(
-      pageFormat: PdfPageFormat.roll80.copyWith(
-        marginTop: 10,
-        marginBottom: 10,
-        marginLeft: 5,
-        marginRight: 5,
-      ),
-      build: (pw.Context context) {
-        return pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.center,
-          children: [
-            // Header - lebih kecil dan di tengah
-            pw.Container(
-              width: double.infinity,
-              padding: const pw.EdgeInsets.all(5),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.blue700,
-                borderRadius: pw.BorderRadius.circular(3),
+    // Menggunakan format kertas yang lebih sempit seperti struk kasir
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.roll80.copyWith(
+          marginTop: 10,
+          marginBottom: 10,
+          marginLeft: 5,
+          marginRight: 5,
+        ),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              // Header - lebih kecil dan di tengah
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.all(5),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.blue700,
+                  borderRadius: pw.BorderRadius.circular(3),
+                ),
+                child: pw.Center(
+                  child: pw.Column(
+                    children: [
+                      pw.Text(
+                        'INDOSMEC',
+                        style: pw.TextStyle(
+                          fontSize: 14,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.white,
+                        ),
+                      ),
+                      pw.SizedBox(height: 1),
+                      pw.Text(
+                        'BELANJA LEBIH MUDAH',
+                        style: pw.TextStyle(
+                          fontSize: 7,
+                          color: PdfColors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              child: pw.Center(
+
+              pw.SizedBox(height: 5),
+
+              // Info Toko - lebih kecil dan di tengah
+              pw.Column(
+                children: [
+                  pw.Text(
+                    'KOPERASI MERAH PUTIH ANTAPANI',
+                    style: pw.TextStyle(
+                      fontSize: 8,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                  pw.Text(
+                    'Jl. AH. Nasution No.928 Blok E',
+                    style: const pw.TextStyle(fontSize: 6),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                  pw.Text(
+                    'Antapani Wetan, Kec. Antapani',
+                    style: const pw.TextStyle(fontSize: 6),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                  pw.Text(
+                    'Kota Bandung, Jawa Barat 40291',
+                    style: const pw.TextStyle(fontSize: 6),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                  pw.SizedBox(height: 2),
+                  pw.Text(
+                    'NPWP: 001.337.994.6-092.000',
+                    style: const pw.TextStyle(fontSize: 5),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                  pw.Text(
+                    'Telp: 0811.1500.280',
+                    style: const pw.TextStyle(fontSize: 5),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                ],
+              ),
+
+              pw.SizedBox(height: 5),
+              pw.Divider(thickness: 0.3),
+              pw.SizedBox(height: 3),
+
+              // Info Transaksi - lebih kecil
+              _buildPdfInfoRow('NO. TRANSAKSI', transaction.id, bold: true),
+              _buildPdfInfoRow('TANGGAL', _formatDateStruk(transaction.date)),
+              _buildPdfInfoRow(
+                'KASIR',
+                transaction.deliveryOption == 'xpress'
+                    ? 'ONLINE XPRESS'
+                    : 'ONLINE REGULER',
+              ),
+
+              pw.SizedBox(height: 3),
+              pw.Divider(thickness: 0.3),
+              pw.SizedBox(height: 3),
+
+              // Alamat Pengiriman - lebih kecil
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.all(4),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.blue50,
+                  borderRadius: pw.BorderRadius.circular(3),
+                  border: pw.Border.all(color: PdfColors.blue200),
+                ),
                 child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                      'INDOSMEC',
+                      'ALAMAT PENGIRIMAN',
                       style: pw.TextStyle(
-                        fontSize: 14,
+                        fontSize: 7,
                         fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.white,
                       ),
                     ),
                     pw.SizedBox(height: 1),
                     pw.Text(
-                      'BELANJA LEBIH MUDAH',
+                      transaction.alamat?['nama_penerima'] ?? _currentUserName,
                       style: pw.TextStyle(
                         fontSize: 7,
-                        color: PdfColors.white,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                    pw.Text(
+                      transaction.alamat?['nomor_hp'] ?? _currentUserPhone,
+                      style: const pw.TextStyle(fontSize: 6),
+                    ),
+                    pw.SizedBox(height: 1),
+                    pw.Text(
+                      transaction.alamat?['alamat_lengkap'] ??
+                          'Alamat tidak tersedia',
+                      style: const pw.TextStyle(fontSize: 6),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 3),
+              _buildPdfInfoRow(
+                'METODE BAYAR',
+                transaction.metodePembayaran ??
+                    transaction.alamat?['metode_pembayaran'] ??
+                    'Tidak Diketahui',
+              ),
+
+              pw.SizedBox(height: 3),
+              pw.Divider(thickness: 0.3),
+              pw.SizedBox(height: 3),
+
+              // Daftar Belanja - lebih kecil
+              pw.Text(
+                'DAFTAR BELANJA',
+                style: pw.TextStyle(
+                  fontSize: 8,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 2),
+
+              // Header Tabel Produk - lebih kecil
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(vertical: 1),
+                decoration: const pw.BoxDecoration(
+                  border: pw.Border(
+                    bottom: pw.BorderSide(width: 0.2, color: PdfColors.grey300),
+                  ),
+                ),
+                child: pw.Row(
+                  children: [
+                    pw.Expanded(
+                      flex: 5,
+                      child: pw.Text(
+                        'NAMA PRODUK',
+                        style: pw.TextStyle(
+                          fontSize: 5,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    pw.Expanded(
+                      flex: 1,
+                      child: pw.Text(
+                        'QTY',
+                        style: pw.TextStyle(
+                          fontSize: 5,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                        textAlign: pw.TextAlign.center,
+                      ),
+                    ),
+                    pw.Expanded(
+                      flex: 2,
+                      child: pw.Text(
+                        'TOTAL',
+                        style: pw.TextStyle(
+                          fontSize: 5,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                        textAlign: pw.TextAlign.right,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
 
-            pw.SizedBox(height: 5),
+              // Daftar Produk - lebih kecil
+              pw.Column(
+                children:
+                    transaction.items.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final item = entry.value;
+                      final hargaSatuan = item.totalPrice / item.quantity;
 
-            // Info Toko - lebih kecil dan di tengah
-            pw.Column(
-              children: [
-                pw.Text(
-                  'KOPERASI MERAH PUTIH ANTAPANI',
-                  style: pw.TextStyle(
-                    fontSize: 8,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                  textAlign: pw.TextAlign.center,
-                ),
-                pw.Text(
-                  'Jl. AH. Nasution No.928 Blok E',
-                  style: const pw.TextStyle(fontSize: 6),
-                  textAlign: pw.TextAlign.center,
-                ),
-                pw.Text(
-                  'Antapani Wetan, Kec. Antapani',
-                  style: const pw.TextStyle(fontSize: 6),
-                  textAlign: pw.TextAlign.center,
-                ),
-                pw.Text(
-                  'Kota Bandung, Jawa Barat 40291',
-                  style: const pw.TextStyle(fontSize: 6),
-                  textAlign: pw.TextAlign.center,
-                ),
-                pw.SizedBox(height: 2),
-                pw.Text(
-                  'NPWP: 001.337.994.6-092.000',
-                  style: const pw.TextStyle(fontSize: 5),
-                  textAlign: pw.TextAlign.center,
-                ),
-                pw.Text(
-                  'Telp: 0811.1500.280',
-                  style: const pw.TextStyle(fontSize: 5),
-                  textAlign: pw.TextAlign.center,
-                ),
-              ],
-            ),
-
-            pw.SizedBox(height: 5),
-            pw.Divider(thickness: 0.3),
-            pw.SizedBox(height: 3),
-
-            // Info Transaksi - lebih kecil
-            _buildPdfInfoRow('NO. TRANSAKSI', transaction.id, bold: true),
-            _buildPdfInfoRow('TANGGAL', _formatDateStruk(transaction.date)),
-            _buildPdfInfoRow(
-              'KASIR',
-              transaction.deliveryOption == 'xpress'
-                  ? 'ONLINE XPRESS'
-                  : 'ONLINE REGULER',
-            ),
-
-            pw.SizedBox(height: 3),
-            pw.Divider(thickness: 0.3),
-            pw.SizedBox(height: 3),
-
-            // Alamat Pengiriman - lebih kecil
-            pw.Container(
-              width: double.infinity,
-              padding: const pw.EdgeInsets.all(4),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.blue50,
-                borderRadius: pw.BorderRadius.circular(3),
-                border: pw.Border.all(color: PdfColors.blue200),
+                      return pw.Container(
+                        padding: const pw.EdgeInsets.symmetric(vertical: 1),
+                        decoration: const pw.BoxDecoration(
+                          border: pw.Border(
+                            bottom: pw.BorderSide(
+                              width: 0.1,
+                              color: PdfColors.grey200,
+                            ),
+                          ),
+                        ),
+                        child: pw.Row(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Expanded(
+                              flex: 5,
+                              child: pw.Text(
+                                '${index + 1}. ${item.name}',
+                                style: const pw.TextStyle(fontSize: 5),
+                                maxLines: 1,
+                                overflow: pw.TextOverflow.clip,
+                              ),
+                            ),
+                            pw.Expanded(
+                              flex: 1,
+                              child: pw.Text(
+                                '${item.quantity}',
+                                style: const pw.TextStyle(fontSize: 5),
+                                textAlign: pw.TextAlign.center,
+                              ),
+                            ),
+                            pw.Expanded(
+                              flex: 2,
+                              child: pw.Text(
+                                formatCurrency(item.totalPrice.toInt()),
+                                style: pw.TextStyle(
+                                  fontSize: 5,
+                                  fontWeight: pw.FontWeight.bold,
+                                ),
+                                textAlign: pw.TextAlign.right,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
               ),
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(
-                    'ALAMAT PENGIRIMAN',
-                    style: pw.TextStyle(
-                      fontSize: 7,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                  pw.SizedBox(height: 1),
-                  pw.Text(
-                    transaction.alamat?['nama_penerima'] ?? _currentUserName,
-                    style: pw.TextStyle(
-                      fontSize: 7,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                  pw.Text(
-                    transaction.alamat?['nomor_hp'] ?? _currentUserPhone,
-                    style: const pw.TextStyle(fontSize: 6),
-                  ),
-                  pw.SizedBox(height: 1),
-                  pw.Text(
-                    transaction.alamat?['alamat_lengkap'] ?? 'Alamat tidak tersedia',
-                    style: const pw.TextStyle(fontSize: 6),
-                  ),
-                ],
-              ),
-            ),
-            pw.SizedBox(height: 3),
-            _buildPdfInfoRow(
-              'METODE BAYAR',
-              transaction.metodePembayaran ??
-                  transaction.alamat?['metode_pembayaran'] ??
-                  'Tidak Diketahui',
-            ),
 
-            pw.SizedBox(height: 3),
-            pw.Divider(thickness: 0.3),
-            pw.SizedBox(height: 3),
+              pw.SizedBox(height: 3),
+              pw.Divider(thickness: 0.3),
+              pw.SizedBox(height: 3),
 
-            // Daftar Belanja - lebih kecil
-            pw.Text(
-              'DAFTAR BELANJA',
-              style: pw.TextStyle(
-                fontSize: 8,
-                fontWeight: pw.FontWeight.bold,
+              // Ringkasan - lebih kecil
+              _buildPdfTotalRow(
+                'Subtotal Produk',
+                formatCurrency(subtotal.toInt()),
               ),
-            ),
-            pw.SizedBox(height: 2),
+              _buildPdfTotalRow('Ongkos Kirim', formatCurrency(ongkir.toInt())),
+              pw.SizedBox(height: 3),
 
-            // Header Tabel Produk - lebih kecil
-            pw.Container(
-              padding: const pw.EdgeInsets.symmetric(vertical: 1),
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(bottom: pw.BorderSide(width: 0.2, color: PdfColors.grey300))
-              ),
-              child: pw.Row(
-                children: [
-                  pw.Expanded(
-                    flex: 5,
-                    child: pw.Text(
-                      'NAMA PRODUK',
+              // Total - lebih kecil
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.all(4),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.green50,
+                  borderRadius: pw.BorderRadius.circular(3),
+                  border: pw.Border.all(color: PdfColors.green200),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'TOTAL BAYAR',
                       style: pw.TextStyle(
-                        fontSize: 5,
+                        fontSize: 8,
                         fontWeight: pw.FontWeight.bold,
                       ),
                     ),
-                  ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Text(
-                      'QTY',
+                    pw.Text(
+                      formatCurrency(transaction.totalPrice.toInt()),
                       style: pw.TextStyle(
-                        fontSize: 5,
+                        fontSize: 10,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              pw.SizedBox(height: 5),
+              pw.Divider(thickness: 0.3),
+              pw.SizedBox(height: 3),
+
+              // Footer sederhana seperti struk kasir
+              pw.Center(
+                child: pw.Column(
+                  children: [
+                    pw.Text(
+                      'TERIMA KASIH TELAH BERBELANJA',
+                      style: pw.TextStyle(
+                        fontSize: 8,
                         fontWeight: pw.FontWeight.bold,
                       ),
                       textAlign: pw.TextAlign.center,
                     ),
-                  ),
-                  pw.Expanded(
-                    flex: 2,
-                    child: pw.Text(
-                      'TOTAL',
-                      style: pw.TextStyle(
-                        fontSize: 5,
-                        fontWeight: pw.FontWeight.bold,
-                      ),
-                      textAlign: pw.TextAlign.right,
+                    pw.SizedBox(height: 2),
+                    pw.Text(
+                      'www.indosmec.com',
+                      style: const pw.TextStyle(fontSize: 6),
+                      textAlign: pw.TextAlign.center,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+            ],
+          );
+        },
+      ),
+    );
+
+    // Simpan ke file
+    final output = await getTemporaryDirectory();
+    final file = File('${output.path}/struk_${transaction.id}.pdf');
+    await file.writeAsBytes(await pdf.save());
+
+    return file;
+  }
+
+  // Helper functions untuk PDF - disesuaikan dengan ukuran struk kasir
+  pw.Widget _buildPdfInfoRow(String label, String value, {bool bold = false}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 1),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(label, style: const pw.TextStyle(fontSize: 6)),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 6,
+              fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
             ),
-
-            // Daftar Produk - lebih kecil
-            pw.Column(
-              children: transaction.items.asMap().entries.map((entry) {
-                final index = entry.key;
-                final item = entry.value;
-                final hargaSatuan = item.totalPrice / item.quantity;
-
-                return pw.Container(
-                  padding: const pw.EdgeInsets.symmetric(vertical: 1),
-                  decoration: const pw.BoxDecoration(
-                    border: pw.Border(bottom: pw.BorderSide(width: 0.1, color: PdfColors.grey200))
-                  ),
-                  child: pw.Row(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Expanded(
-                        flex: 5,
-                        child: pw.Text(
-                          '${index + 1}. ${item.name}',
-                          style: const pw.TextStyle(fontSize: 5),
-                          maxLines: 1,
-                          overflow: pw.TextOverflow.clip,
-                        ),
-                      ),
-                      pw.Expanded(
-                        flex: 1,
-                        child: pw.Text(
-                          '${item.quantity}',
-                          style: const pw.TextStyle(fontSize: 5),
-                          textAlign: pw.TextAlign.center,
-                        ),
-                      ),
-                      pw.Expanded(
-                        flex: 2,
-                        child: pw.Text(
-                          formatCurrency(item.totalPrice.toInt()),
-                          style: pw.TextStyle(
-                            fontSize: 5,
-                            fontWeight: pw.FontWeight.bold,
-                          ),
-                          textAlign: pw.TextAlign.right,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
-
-            pw.SizedBox(height: 3),
-            pw.Divider(thickness: 0.3),
-            pw.SizedBox(height: 3),
-
-            // Ringkasan - lebih kecil
-            _buildPdfTotalRow(
-              'Subtotal Produk',
-              formatCurrency(subtotal.toInt()),
-            ),
-            _buildPdfTotalRow(
-              'Ongkos Kirim',
-              formatCurrency(ongkir.toInt()),
-            ),
-            pw.SizedBox(height: 3),
-
-            // Total - lebih kecil
-            pw.Container(
-              width: double.infinity,
-              padding: const pw.EdgeInsets.all(4),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.green50,
-                borderRadius: pw.BorderRadius.circular(3),
-                border: pw.Border.all(color: PdfColors.green200),
-              ),
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'TOTAL BAYAR',
-                    style: pw.TextStyle(
-                      fontSize: 8,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                  pw.Text(
-                    formatCurrency(transaction.totalPrice.toInt()),
-                    style: pw.TextStyle(
-                      fontSize: 10,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            pw.SizedBox(height: 5),
-            pw.Divider(thickness: 0.3),
-            pw.SizedBox(height: 3),
-
-            // Footer sederhana seperti struk kasir
-            pw.Center(
-              child: pw.Column(
-                children: [
-                  pw.Text(
-                    'TERIMA KASIH TELAH BERBELANJA',
-                    style: pw.TextStyle(
-                      fontSize: 8,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                    textAlign: pw.TextAlign.center,
-                  ),
-                  pw.SizedBox(height: 2),
-                  pw.Text(
-                    'www.indosmec.com',
-                    style: const pw.TextStyle(fontSize: 6),
-                    textAlign: pw.TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    ),
-  );
-
-  // Simpan ke file
-  final output = await getTemporaryDirectory();
-  final file = File('${output.path}/struk_${transaction.id}.pdf');
-  await file.writeAsBytes(await pdf.save());
-
-  return file;
-}
-
-// Helper functions untuk PDF - disesuaikan dengan ukuran struk kasir
-pw.Widget _buildPdfInfoRow(String label, String value, {bool bold = false}) {
-  return pw.Padding(
-    padding: const pw.EdgeInsets.only(bottom: 1),
-    child: pw.Row(
-      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      children: [
-        pw.Text(label, style: const pw.TextStyle(fontSize: 6)),
-        pw.Text(
-          value,
-          style: pw.TextStyle(
-            fontSize: 6,
-            fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
-pw.Widget _buildPdfTotalRow(String label, String value) {
-  return pw.Padding(
-    padding: const pw.EdgeInsets.only(bottom: 1),
-    child: pw.Row(
-      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      children: [
-        pw.Text(label, style: const pw.TextStyle(fontSize: 7)),
-        pw.Text(
-          value,
-          style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold),
-        ),
-      ],
-    ),
-  );
-}
+  pw.Widget _buildPdfTotalRow(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 1),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(label, style: const pw.TextStyle(fontSize: 7)),
+          pw.Text(
+            value,
+            style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1436,12 +1454,19 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
 
   Widget _buildStrukItem(Transaction transaction) {
     final points = _calculatePoints(transaction.totalPrice);
+    final isPoinCashUsage = transaction.deliveryOption == 'poin_cash_usage';
     final deliveryIcon =
-        transaction.deliveryOption == 'xpress'
+        isPoinCashUsage
+            ? Icons
+                .account_balance_wallet // ✅ Icon wallet untuk Poin Cash
+            : transaction.deliveryOption == 'xpress'
             ? Icons.flash_on
             : Icons.inventory_2_outlined;
+
     final deliveryColor =
-        transaction.deliveryOption == 'xpress'
+        isPoinCashUsage
+            ? Colors.red[700]! // ✅ Warna merah untuk penggunaan
+            : transaction.deliveryOption == 'xpress'
             ? Colors.orange[700]!
             : Colors.green[700]!;
 
@@ -1488,7 +1513,9 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                       Icon(deliveryIcon, color: deliveryColor, size: 14),
                       const SizedBox(width: 4),
                       Text(
-                        transaction.deliveryOption == 'xpress'
+                        isPoinCashUsage
+                            ? 'Poin Cash' // ✅ Label khusus
+                            : transaction.deliveryOption == 'xpress'
                             ? 'Xpress'
                             : 'Xtra',
                         style: TextStyle(
@@ -1516,15 +1543,17 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                     style: TextStyle(
                       color: _getStatusColor(transaction.status),
                       fontWeight: FontWeight.bold,
-                      fontSize: 11,
+                      fontSize: 12,
                     ),
                   ),
                 ),
               ],
             ),
+
             const SizedBox(height: 12),
             Divider(color: Colors.grey[200], height: 1),
             const SizedBox(height: 12),
+
             Row(
               children: [
                 ClipRRect(
@@ -1547,7 +1576,10 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                               },
                             )
                             : Icon(
-                              Icons.shopping_bag,
+                              isPoinCashUsage
+                                  ? Icons
+                                      .account_balance_wallet // ✅ Icon khusus
+                                  : Icons.shopping_bag,
                               color: Colors.grey[400],
                               size: 30,
                             ),
@@ -1568,7 +1600,9 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        transaction.items.isNotEmpty
+                        isPoinCashUsage
+                            ? 'Penggunaan Poin Cash' // ✅ Deskripsi khusus
+                            : transaction.items.isNotEmpty
                             ? transaction.items.first.name
                             : 'Produk',
                         style: TextStyle(
@@ -1579,7 +1613,7 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (transaction.items.length > 1) ...[
+                      if (!isPoinCashUsage && transaction.items.length > 1) ...[
                         const SizedBox(height: 2),
                         Text(
                           '+${transaction.items.length - 1} produk lainnya',
@@ -1595,9 +1629,11 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                 ),
               ],
             ),
+
             const SizedBox(height: 12),
             Divider(color: Colors.grey[200], height: 1),
             const SizedBox(height: 12),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -1605,7 +1641,7 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Total Belanja',
+                      isPoinCashUsage ? 'Saldo Digunakan' : 'Total Belanja',
                       style: TextStyle(color: Colors.grey[600], fontSize: 11),
                     ),
                     const SizedBox(height: 3),
@@ -1614,11 +1650,16 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
-                        color: Colors.black87,
+                        color:
+                            isPoinCashUsage
+                                ? Colors.red[700]
+                                : Colors.black87, // ✅ Merah untuk penggunaan
                       ),
                     ),
                   ],
                 ),
+
+                // ✅ UBAH BADGE POIN
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -1626,12 +1667,19 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                   ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.green[600]!, Colors.green[800]!],
+                      colors:
+                          isPoinCashUsage
+                              ? [
+                                Colors.red[600]!,
+                                Colors.red[800]!,
+                              ] // ✅ Merah untuk minus
+                              : [Colors.green[600]!, Colors.green[800]!],
                     ),
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.green.withOpacity(0.3),
+                        color: (isPoinCashUsage ? Colors.red : Colors.green)
+                            .withOpacity(0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -1639,10 +1687,16 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.stars, color: Colors.white, size: 14),
+                      Icon(
+                        isPoinCashUsage ? Icons.remove_circle : Icons.stars,
+                        color: Colors.white,
+                        size: 14,
+                      ),
                       const SizedBox(width: 4),
                       Text(
-                        '+$points Poin',
+                        isPoinCashUsage
+                            ? '-${formatCurrency(transaction.totalPrice.toInt())}' // ✅ MINUS untuk penggunaan
+                            : '+$points Poin',
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
@@ -1654,6 +1708,7 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                 ),
               ],
             ),
+
             const SizedBox(height: 8),
             Row(
               children: [
@@ -1685,10 +1740,12 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
   }
 
   void _showStrukDetail(Transaction transaction) {
+    final isPoinCashUsage = transaction.deliveryOption == 'poin_cash_usage';
     final points = _calculatePoints(transaction.totalPrice);
-    int pointsEarned = _calculatePoints(transaction.totalPrice);
+    int pointsEarned =
+        isPoinCashUsage ? 0 : _calculatePoints(transaction.totalPrice);
     int cashPointsEarned = pointsEarned * 10;
-    final ongkir = 5000.0;
+    final ongkir = isPoinCashUsage ? 0.0 : 5000.0;
     final subtotal = transaction.totalPrice - ongkir;
 
     showModalBottomSheet(
@@ -1743,18 +1800,28 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue[50],
+                                    color:
+                                        isPoinCashUsage
+                                            ? Colors.red[50]
+                                            : Colors.blue[50],
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Icon(
-                                    Icons.receipt_long,
-                                    color: Colors.blue[700],
+                                    isPoinCashUsage
+                                        ? Icons.account_balance_wallet
+                                        : Icons.receipt_long,
+                                    color:
+                                        isPoinCashUsage
+                                            ? Colors.red[700]
+                                            : Colors.blue[700],
                                     size: 24,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
-                                  'Struk Belanja',
+                                  isPoinCashUsage
+                                      ? 'Penggunaan Poin Cash'
+                                      : 'Struk Belanja',
                                   style: GoogleFonts.poppins(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -1805,6 +1872,68 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                             ),
                             child: Column(
                               children: [
+                                // ✅ BADGE KHUSUS UNTUK POIN CASH
+                                if (isPoinCashUsage)
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red[50],
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(16),
+                                      ),
+                                      border: Border(
+                                        bottom: BorderSide(
+                                          color: Colors.red[200]!,
+                                          width: 2,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red[100],
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.info_outline,
+                                            color: Colors.red[700],
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Transaksi Penggunaan Poin Cash',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.red[900],
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                'Poin Cash digunakan untuk potongan pembayaran',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.red[700],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
                                 Container(
                                   width: double.infinity,
                                   padding: const EdgeInsets.symmetric(
@@ -1814,15 +1943,22 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        Colors.blue[700]!,
-                                        Colors.blue[900]!,
+                                        isPoinCashUsage
+                                            ? Colors.red[700]!
+                                            : Colors.blue[700]!,
+                                        isPoinCashUsage
+                                            ? Colors.red[900]!
+                                            : Colors.blue[900]!,
                                       ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
-                                    borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(16),
-                                    ),
+                                    borderRadius:
+                                        isPoinCashUsage
+                                            ? BorderRadius.zero
+                                            : const BorderRadius.vertical(
+                                              top: Radius.circular(16),
+                                            ),
                                   ),
                                   child: Column(
                                     children: [
@@ -1851,14 +1987,19 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                                           style: GoogleFonts.poppins(
                                             fontSize: 24,
                                             fontWeight: FontWeight.w900,
-                                            color: Colors.blue[800],
+                                            color:
+                                                isPoinCashUsage
+                                                    ? Colors.red[800]
+                                                    : Colors.blue[800],
                                             letterSpacing: 3,
                                           ),
                                         ),
                                       ),
                                       const SizedBox(height: 12),
                                       Text(
-                                        'BELANJA LEBIH MUDAH',
+                                        isPoinCashUsage
+                                            ? 'TRANSAKSI POIN CASH'
+                                            : 'BELANJA LEBIH MUDAH',
                                         style: GoogleFonts.poppins(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
@@ -1946,96 +2087,117 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                                       ),
                                       _buildInfoRow(
                                         'KASIR',
-                                        transaction.deliveryOption == 'xpress'
+                                        isPoinCashUsage
+                                            ? 'SISTEM POIN CASH'
+                                            : transaction.deliveryOption ==
+                                                'xpress'
                                             ? 'ONLINE XPRESS'
                                             : 'ONLINE REGULER',
                                       ),
 
                                       _buildDivider(),
 
-                                      Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.all(14),
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue[50],
-                                          borderRadius: BorderRadius.circular(
-                                            10,
+                                      // ✅ ALAMAT - Skip jika Poin Cash
+                                      if (!isPoinCashUsage)
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(14),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue[50],
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.blue[200]!,
+                                              width: 1,
+                                            ),
                                           ),
-                                          border: Border.all(
-                                            color: Colors.blue[200]!,
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.location_on,
-                                                  size: 16,
-                                                  color: Colors.blue[700],
-                                                ),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                  'ALAMAT PENGIRIMAN',
-                                                  style: GoogleFonts.robotoMono(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.blue[900],
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.location_on,
+                                                    size: 16,
+                                                    color: Colors.blue[700],
                                                   ),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    'ALAMAT PENGIRIMAN',
+                                                    style:
+                                                        GoogleFonts.robotoMono(
+                                                          fontSize: 11,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color:
+                                                              Colors.blue[900],
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                transaction
+                                                        .alamat?['nama_penerima'] ??
+                                                    _currentUserName,
+                                                style: GoogleFonts.robotoMono(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              transaction
-                                                      .alamat?['nama_penerima'] ??
-                                                  _currentUserName,
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
                                               ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              transaction.alamat?['nomor_hp'] ??
-                                                  _currentUserPhone,
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 10,
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                transaction
+                                                        .alamat?['nomor_hp'] ??
+                                                    _currentUserPhone,
+                                                style: GoogleFonts.robotoMono(
+                                                  fontSize: 10,
+                                                ),
                                               ),
-                                            ),
-                                            const SizedBox(height: 6),
-                                            Text(
-                                              transaction
-                                                      .alamat?['alamat_lengkap'] ??
-                                                  'Alamat tidak tersedia',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 10,
-                                                height: 1.5,
-                                                color: Colors.grey[800],
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                transaction
+                                                        .alamat?['alamat_lengkap'] ??
+                                                    'Alamat tidak tersedia',
+                                                style: GoogleFonts.robotoMono(
+                                                  fontSize: 10,
+                                                  height: 1.5,
+                                                  color: Colors.grey[800],
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
-                                      ),
 
-                                      _buildDivider(),
+                                      if (!isPoinCashUsage) _buildDivider(),
 
+                                      // ✅ DAFTAR BELANJA/ITEM
                                       Row(
                                         children: [
                                           Icon(
-                                            Icons.shopping_cart,
+                                            isPoinCashUsage
+                                                ? Icons.account_balance_wallet
+                                                : Icons.shopping_cart,
                                             size: 16,
-                                            color: Colors.grey[700],
+                                            color:
+                                                isPoinCashUsage
+                                                    ? Colors.red[700]
+                                                    : Colors.grey[700],
                                           ),
                                           const SizedBox(width: 6),
                                           Text(
-                                            'DAFTAR BELANJA',
+                                            isPoinCashUsage
+                                                ? 'DETAIL PENGGUNAAN'
+                                                : 'DAFTAR BELANJA',
                                             style: GoogleFonts.robotoMono(
                                               fontSize: 11,
                                               fontWeight: FontWeight.bold,
+                                              color:
+                                                  isPoinCashUsage
+                                                      ? Colors.red[900]
+                                                      : Colors.black,
                                             ),
                                           ),
                                         ],
@@ -2090,11 +2252,18 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                                                           fontSize: 11,
                                                           fontWeight:
                                                               FontWeight.bold,
+                                                          color:
+                                                              isPoinCashUsage
+                                                                  ? Colors
+                                                                      .red[900]
+                                                                  : Colors
+                                                                      .black,
                                                         ),
                                                   ),
                                                 ],
                                               ),
-                                              if (index <
+
+                                              if (index !=
                                                   transaction.items.length - 1)
                                                 Padding(
                                                   padding:
@@ -2113,56 +2282,97 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
 
                                       _buildDivider(),
 
-                                      _buildTotalRow(
-                                        'Subtotal Produk',
-                                        formatCurrency(subtotal.toInt()),
-                                      ),
-                                      _buildTotalRow(
-                                        'Ongkos Kirim',
-                                        formatCurrency(ongkir.toInt()),
-                                      ),
-
-                                      const SizedBox(height: 8),
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: Colors.green[50],
-                                          borderRadius: BorderRadius.circular(
-                                            8,
+                                      // ✅ RINGKASAN - Berbeda untuk Poin Cash
+                                      if (!isPoinCashUsage) ...[
+                                        _buildTotalRow(
+                                          'Subtotal Produk',
+                                          formatCurrency(subtotal.toInt()),
+                                        ),
+                                        _buildTotalRow(
+                                          'Ongkos Kirim',
+                                          formatCurrency(ongkir.toInt()),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.green[50],
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.green[200]!,
+                                              width: 1,
+                                            ),
                                           ),
-                                          border: Border.all(
-                                            color: Colors.green[200]!,
-                                            width: 1,
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'TOTAL BAYAR',
+                                                style: GoogleFonts.robotoMono(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: Colors.green[900],
+                                                ),
+                                              ),
+                                              Text(
+                                                formatCurrency(
+                                                  transaction.totalPrice
+                                                      .toInt(),
+                                                ),
+                                                style: GoogleFonts.robotoMono(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: Colors.green[900],
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              'TOTAL BAYAR',
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w900,
-                                                color: Colors.green[900],
-                                              ),
+                                      ] else ...[
+                                        // ✅ UNTUK POIN CASH - Tampilan Minus
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red[50],
+                                            borderRadius: BorderRadius.circular(
+                                              8,
                                             ),
-                                            Text(
-                                              formatCurrency(
-                                                transaction.totalPrice.toInt(),
-                                              ),
-                                              style: GoogleFonts.robotoMono(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w900,
-                                                color: Colors.green[900],
-                                              ),
+                                            border: Border.all(
+                                              color: Colors.red[200]!,
+                                              width: 1,
                                             ),
-                                          ],
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'SALDO DIKURANGI',
+                                                style: GoogleFonts.robotoMono(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: Colors.red[900],
+                                                ),
+                                              ),
+                                              Text(
+                                                '- ${formatCurrency(transaction.totalPrice.toInt())}',
+                                                style: GoogleFonts.robotoMono(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: Colors.red[900],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
+                                      ],
 
                                       _buildDivider(),
 
+                                      // ✅ METODE PEMBAYARAN
                                       Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
@@ -2192,7 +2402,6 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                                                 ),
                                                 const SizedBox(height: 2),
                                                 Text(
-                                                  // ✅ PERBAIKAN: Ambil dari transaction.metodePembayaran
                                                   transaction
                                                           .metodePembayaran ??
                                                       transaction
@@ -2211,71 +2420,131 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
 
                                       _buildDivider(thick: true),
 
-                                      Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              Colors.amber[100]!,
-                                              Colors.orange[100]!,
-                                            ],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
+                                      // ✅ REWARD SECTION - Berbeda untuk Poin Cash
+                                      if (!isPoinCashUsage)
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Colors.amber[100]!,
+                                                Colors.orange[100]!,
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.orange[300]!,
+                                              width: 2,
+                                            ),
                                           ),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.orange[300]!,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          children: [
-                                            Icon(
-                                              Icons.stars,
-                                              color: Colors.orange[800],
-                                              size: 36,
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              'POIN REWARD ANDA',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.orange[900],
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '+ $pointsEarned POIN UMKM',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.w900,
-                                                color: Colors.orange[900],
-                                              ),
-                                            ),
-                                            Text(
-                                              '+ ${formatCurrency(cashPointsEarned)} POIN CASH',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w700,
-                                                color: Colors.green[700],
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              'Selamat! Poin akan masuk ke akun Anda',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 10,
+                                          child: Column(
+                                            children: [
+                                              Icon(
+                                                Icons.stars,
                                                 color: Colors.orange[800],
+                                                size: 36,
                                               ),
-                                              textAlign: TextAlign.center,
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                'POIN REWARD ANDA',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.orange[900],
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '+ $pointsEarned POIN UMKM',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: Colors.orange[900],
+                                                ),
+                                              ),
+                                              Text(
+                                                '+ ${formatCurrency(cashPointsEarned)} POIN CASH',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Colors.green[700],
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'Selamat! Poin akan masuk ke akun Anda',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 10,
+                                                  color: Colors.orange[800],
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      else
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Colors.red[100]!,
+                                                Colors.red[200]!,
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
                                             ),
-                                          ],
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.red[300]!,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: Column(
+                                            children: [
+                                              Icon(
+                                                Icons.remove_circle,
+                                                color: Colors.red[800],
+                                                size: 36,
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                'SALDO POIN CASH DIKURANGI',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.red[900],
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '- ${formatCurrency(transaction.totalPrice.toInt())}',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: Colors.red[900],
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'Poin Cash Anda telah digunakan untuk potongan pembayaran',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 10,
+                                                  color: Colors.red[800],
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
 
                                       _buildDivider(thick: true),
 
@@ -2435,36 +2704,52 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
                                       showDialog(
                                         context: context,
                                         barrierDismissible: false,
-                                        builder: (context) => const Center(
-                                          child: CircularProgressIndicator(),
-                                        ),
+                                        builder:
+                                            (context) => const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            ),
                                       );
 
-                                      final pdfFile = await _generatePDF(transaction);
-                                      
+                                      final pdfFile = await _generatePDF(
+                                        transaction,
+                                      );
+
                                       Navigator.pop(context);
 
                                       // Buka file PDF setelah diunduh
-                                      final result = await OpenFile.open(pdfFile.path);
-                                      
+                                      final result = await OpenFile.open(
+                                        pdfFile.path,
+                                      );
+
                                       if (result.type != ResultType.done) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           SnackBar(
-                                            content: Text('PDF berhasil diunduh tapi tidak bisa dibuka: ${result.message}'),
+                                            content: Text(
+                                              'PDF berhasil diunduh tapi tidak bisa dibuka: ${result.message}',
+                                            ),
                                             backgroundColor: Colors.orange,
                                           ),
                                         );
                                       } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           const SnackBar(
-                                            content: Text('PDF berhasil diunduh dan dibuka!'),
+                                            content: Text(
+                                              'PDF berhasil diunduh dan dibuka!',
+                                            ),
                                             backgroundColor: Colors.green,
                                           ),
                                         );
                                       }
                                     } catch (e) {
                                       Navigator.pop(context);
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         SnackBar(
                                           content: Text('Gagal: $e'),
                                           backgroundColor: Colors.red,
@@ -2592,15 +2877,42 @@ pw.Widget _buildPdfTotalRow(String label, String value) {
         ),
 
         ...completedTransactions.map((transaction) {
-          final points = _calculatePoints(transaction.totalPrice);
-          return _buildAktivasiItem(
-            'Transaksi Selesai',
-            '${transaction.deliveryOption == 'xpress' ? 'Belanja Xpress' : 'Belanja Xtra'} - ${transaction.id}',
-            '+ $points Poin',
-            _formatDate(transaction.date),
-            Colors.green[700]!,
-            Icons.shopping_bag,
-          );
+          // ✅ CEK JENIS TRANSAKSI
+          if (transaction.deliveryOption == 'poin_cash_usage') {
+            // Transaksi penggunaan Poin Cash
+            final amount = transaction.totalPrice.toInt();
+            return _buildAktivasiItem(
+              'Penggunaan Poin Cash',
+              'Digunakan untuk potongan pembayaran - ${transaction.id}',
+              '- ${formatCurrency(amount)}', // ✅ MINUS
+              _formatDate(transaction.date),
+              Colors.red[700]!,
+              Icons.remove_circle_outline,
+            );
+          } else if (transaction.deliveryOption == 'topup') {
+            // Transaksi Top-Up Saldo
+            final amount = transaction.totalPrice.toInt();
+            return _buildAktivasiItem(
+              'Top-Up Saldo Klik',
+              'Isi saldo berhasil - ${transaction.id}',
+              '+ ${formatCurrency(amount)}',
+              _formatDate(transaction.date),
+              Colors.green[700]!,
+              Icons.add_circle_outline,
+            );
+          } else {
+            // Transaksi belanja biasa
+            final points = _calculatePoints(transaction.totalPrice);
+            final cashPoints = points * 10;
+            return _buildAktivasiItem(
+              'Transaksi Selesai',
+              '${transaction.deliveryOption == 'xpress' ? 'Belanja Xpress' : 'Belanja Xtra'} - ${transaction.id}',
+              '+ $points Poin UMKM\n+ ${formatCurrency(cashPoints)} Poin Cash',
+              _formatDate(transaction.date),
+              Colors.green[700]!,
+              Icons.shopping_bag,
+            );
+          }
         }).toList(),
 
         _buildAktivasiItem(
@@ -3046,9 +3358,7 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
             () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => PinSettingsScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => PinSettingsScreen()),
               );
             },
           ),

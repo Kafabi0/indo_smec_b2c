@@ -4,6 +4,7 @@ import 'package:indosemecb2b/screen/notif.dart';
 import 'package:indosemecb2b/screen/product_list_screen.dart';
 import 'package:indosemecb2b/screen/search_screen.dart';
 import 'package:indosemecb2b/utils/cart_manager.dart';
+import 'package:indosemecb2b/utils/poin_cash_manager.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,7 +19,7 @@ import 'package:indosemecb2b/screen/lengkapi_alamat_screen.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:indosemecb2b/models/transaction.dart';
 import 'notification_provider.dart';
-import 'dart:async'; 
+import 'dart:async';
 import 'package:indosemecb2b/models/flash_sale_model.dart';
 import 'package:indosemecb2b/services/flash_sale_service.dart';
 import 'package:indosemecb2b/widgets/flash_sale_timer.dart';
@@ -84,9 +85,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _updateFlashSaleStatus();
 
     _flashSaleCheckTimer = Timer.periodic(Duration(seconds: 10), (_) {
-    _updateFlashSaleStatus();
-  });
-}
+      _updateFlashSaleStatus();
+    });
+  }
 
   @override
   void dispose() {
@@ -111,12 +112,12 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _updateFlashSaleStatus() {
     if (!mounted) return;
-    
+
     setState(() {
       currentFlashSale = FlashSaleService.getCurrentFlashSale();
       nextFlashSale = FlashSaleService.getNextFlashSale();
     });
-    
+
     print('🔥 [FLASH SALE] Status update:');
     print('   Current: ${currentFlashSale?.title ?? "None"}');
     print('   Next: ${nextFlashSale?.title ?? "None"}');
@@ -129,17 +130,20 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   String _getFlashSaleTimeRange() {
-  FlashSaleSchedule? activeOrNext = currentFlashSale ?? nextFlashSale;
-  
-  if (activeOrNext == null) return '00.00 - 00.00';
-  
-  String startHour = activeOrNext.startTime.hour.toString().padLeft(2, '0');
-  String startMinute = activeOrNext.startTime.minute.toString().padLeft(2, '0');
-  String endHour = activeOrNext.endTime.hour.toString().padLeft(2, '0');
-  String endMinute = activeOrNext.endTime.minute.toString().padLeft(2, '0');
-  
-  return '$startHour.$startMinute - $endHour.$endMinute';
-}
+    FlashSaleSchedule? activeOrNext = currentFlashSale ?? nextFlashSale;
+
+    if (activeOrNext == null) return '00.00 - 00.00';
+
+    String startHour = activeOrNext.startTime.hour.toString().padLeft(2, '0');
+    String startMinute = activeOrNext.startTime.minute.toString().padLeft(
+      2,
+      '0',
+    );
+    String endHour = activeOrNext.endTime.hour.toString().padLeft(2, '0');
+    String endMinute = activeOrNext.endTime.minute.toString().padLeft(2, '0');
+
+    return '$startHour.$startMinute - $endHour.$endMinute';
+  }
 
   Future<void> _loadAlamat() async {
     if (isLoggedIn && userEmail.isNotEmpty) {
@@ -226,11 +230,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _loadPoinFromTransactions() async {
     print('🔍 [HOME] _loadPoinFromTransactions dipanggil');
-    print('📧 [HOME] isLoggedIn: $isLoggedIn');
-    print('📧 [HOME] userEmail: $userEmail');
 
     if (!isLoggedIn || userEmail.isEmpty) {
-      print('⚠️ [HOME] User belum login, set poin = 0');
       if (mounted) {
         setState(() {
           _totalPoinUMKM = 0;
@@ -240,60 +241,44 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
 
-    print('⏳ [HOME] Mengambil transaksi...');
     final transactions = await TransactionManager.getFilteredTransactions(
       status: 'Selesai',
       dateFilter: 'Semua Tanggal',
       category: 'Semua',
     );
 
-    print('📦 [HOME] Total transaksi ditemukan: ${transactions.length}');
-
     int poinUMKM = 0;
-    int poinCash = 0;
+    int stampCount = 0;
 
     for (var transaction in transactions) {
-      print(
-        '💰 [HOME] Transaksi: ${transaction.id} - Total: ${transaction.totalPrice}',
-      );
+      // Skip transaksi penggunaan Poin Cash dan Top-Up
+      if (transaction.deliveryOption == 'poin_cash_usage' ||
+          transaction.deliveryOption == 'topup') {
+        continue;
+      }
 
-      // Poin UMKM: Rp 1.000 = 1 Poin
-      int poinDariTransaksi = (transaction.totalPrice ~/ 1000);
-      poinUMKM += poinDariTransaksi;
-
-      print('   ➕ Dapat ${poinDariTransaksi} poin UMKM');
-
-      // ⭐ Poin Cash = Poin UMKM x 10
-      int cashDariTransaksi = poinDariTransaksi * 10;
-      poinCash += cashDariTransaksi;
-
-      print(
-        '   💵 Dapat ${cashDariTransaksi} poin cash (${poinDariTransaksi} x 10)',
-      );
+      // Hitung poin
+      int poin = (transaction.totalPrice ~/ 1000);
+      poinUMKM += poin;
+      stampCount++;
     }
 
-    // Bonus welcome 1000 poin (hanya sekali)
+    // Bonus welcome hanya 1000 UMKM poin
     final prefs = await SharedPreferences.getInstance();
     final isFirstTime = prefs.getBool('poin_welcome_given') ?? false;
-
-    print('🎁 [HOME] Sudah dapat bonus welcome? ${!isFirstTime}');
-
     if (!isFirstTime) {
       poinUMKM += 1000;
-      poinCash += 10000;
       await prefs.setBool('poin_welcome_given', true);
-      print('🎉 [HOME] Bonus 1000 poin UMKM & 10.000 poin cash diberikan!');
     }
 
-    print('✅ [HOME] Total Poin UMKM: $poinUMKM');
-    print('✅ [HOME] Total Poin Cash: $poinCash');
+    // Gunakan nilai Poin Cash yang benar dari manager
+    final poinCashValue = await PoinCashManager.getTotalPoinCash();
 
     if (mounted) {
       setState(() {
         _totalPoinUMKM = poinUMKM;
-        _totalPoinCash = poinCash;
+        _totalPoinCash = poinCashValue.toInt();
       });
-      print('🔄 [HOME] setState selesai, UI harusnya update');
     }
   }
 
@@ -671,10 +656,10 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ],
 
               _buildSectionHeader(
-                'FLASH SALE ${_getFlashSaleTimeRange()}', 
+                'FLASH SALE ${_getFlashSaleTimeRange()}',
                 hasTimer: true,
               ),
-              
+
               _buildFlashSaleSection(),
               const SizedBox(height: 20),
               _buildPromoBanner(),
@@ -1860,155 +1845,172 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildFlashSaleCard(Product product) {
-  // ⭐ HITUNG HARGA FLASH SALE OTOMATIS
-  final flashPrice = _productService.getProductPrice(product.id, product.originalPrice!);
-  final isFlashActive = currentFlashSale != null && 
-                        currentFlashSale!.isActive && 
-                        currentFlashSale!.productIds.contains(product.id);
+    // ⭐ HITUNG HARGA FLASH SALE OTOMATIS
+    final flashPrice = _productService.getProductPrice(
+      product.id,
+      product.originalPrice!,
+    );
+    final isFlashActive =
+        currentFlashSale != null &&
+        currentFlashSale!.isActive &&
+        currentFlashSale!.productIds.contains(product.id);
 
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ProductDetailPage(product: product),
-        ),
-      );
-    },
-    child: Container(
-      width: 120,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: Offset(0, 4),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductDetailPage(product: product),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 100,
-            child: ClipRRect(
-              child: Image.network(
-                product.imageUrl ?? '',
-                width: double.infinity,
-                height: 100,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[200],
-                    child: Center(
-                      child: Icon(
-                        Icons.image_rounded,
-                        size: 40,
-                        color: Colors.grey[400],
+        );
+      },
+      child: Container(
+        width: 120,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 100,
+              child: ClipRRect(
+                child: Image.network(
+                  product.imageUrl ?? '',
+                  width: double.infinity,
+                  height: 100,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[200],
+                      child: Center(
+                        child: Icon(
+                          Icons.image_rounded,
+                          size: 40,
+                          color: Colors.grey[400],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
-          ),
 
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Badge diskon
-                  if (isFlashActive)
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: Colors.red[50],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '${currentFlashSale!.discountPercentage.toInt()}% OFF',
-                        style: TextStyle(
-                          color: Colors.red[700],
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Badge diskon
+                    if (isFlashActive)
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
                         ),
-                      ),
-                    ),
-                  const SizedBox(height: 4),
-                  
-                  Flexible(
-                    child: Text(
-                      product.name,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w600,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  
-                  Row(
-                    children: [
-                      Icon(Icons.star_rounded, color: Colors.amber[700], size: 10),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${product.rating}',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[700],
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        '(${product.reviewCount})',
-                        style: TextStyle(fontSize: 8, color: Colors.grey[500]),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  
-                  // ⭐ HARGA DINAMIS
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _formatPrice(flashPrice),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: isFlashActive ? Colors.red[700] : Colors.blue[700],
-                        ),
-                      ),
-                      if (isFlashActive)
-                        Text(
-                          _formatPrice(product.originalPrice!),
+                        child: Text(
+                          '${currentFlashSale!.discountPercentage.toInt()}% OFF',
                           style: TextStyle(
-                            decoration: TextDecoration.lineThrough,
-                            color: Colors.grey[500],
+                            color: Colors.red[700],
                             fontSize: 8,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                    ],
-                  ),
-                ],
+                      ),
+                    const SizedBox(height: 4),
+
+                    Flexible(
+                      child: Text(
+                        product.name,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.star_rounded,
+                          color: Colors.amber[700],
+                          size: 10,
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${product.rating}',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          '(${product.reviewCount})',
+                          style: TextStyle(
+                            fontSize: 8,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+
+                    // ⭐ HARGA DINAMIS
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _formatPrice(flashPrice),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color:
+                                isFlashActive
+                                    ? Colors.red[700]
+                                    : Colors.blue[700],
+                          ),
+                        ),
+                        if (isFlashActive)
+                          Text(
+                            _formatPrice(product.originalPrice!),
+                            style: TextStyle(
+                              decoration: TextDecoration.lineThrough,
+                              color: Colors.grey[500],
+                              fontSize: 8,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   String _formatPrice(double price) {
     final priceInt = price.toInt();
@@ -2866,56 +2868,55 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildSectionHeader(
-  String title, {
-  bool hasTimer = false,
-  bool showSeeAll = true,
-  List<Product>? products,
-}) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-        if (hasTimer && (currentFlashSale != null || nextFlashSale != null))
-          FlashSaleTimer(
-            schedule: currentFlashSale ?? nextFlashSale!,
-            onTimerEnd: _onFlashSaleTimerEnd,
-          )
-        else if (showSeeAll && products != null)
-          TextButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ProductListScreen(
-                    title: title,
-                    products: products,
-                  ),
-                ),
-              );
-            },
+    String title, {
+    bool hasTimer = false,
+    bool showSeeAll = true,
+    List<Product>? products,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
             child: Text(
-              'Lihat Semua',
+              title,
               style: TextStyle(
-                color: Colors.blue[700],
-                fontWeight: FontWeight.w600,
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
             ),
           ),
-      ],
-    ),
-  );
-}
+          if (hasTimer && (currentFlashSale != null || nextFlashSale != null))
+            FlashSaleTimer(
+              schedule: currentFlashSale ?? nextFlashSale!,
+              onTimerEnd: _onFlashSaleTimerEnd,
+            )
+          else if (showSeeAll && products != null)
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) =>
+                            ProductListScreen(title: title, products: products),
+                  ),
+                );
+              },
+              child: Text(
+                'Lihat Semua',
+                style: TextStyle(
+                  color: Colors.blue[700],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildProductGrid(List<Product> products) {
     return Container(

@@ -12,16 +12,29 @@ class PoinCashManager {
     if (userLogin == null) return 0.0;
 
     final transactions = await UserDataManager.getTransactions(userLogin);
-    
+
     double totalPoinCash = 0.0;
-    
-    // Hitung poin dari transaksi selesai
+
+    // ✅ PERBAIKAN: Hitung poin dari transaksi selesai, KECUALI transaksi penggunaan Poin Cash
     for (var transaction in transactions) {
+      // ⭐ SKIP transaksi penggunaan Poin Cash
+      if (transaction['isPoinCashUsage'] == true) {
+        print('⏭️ Skipping Poin Cash usage transaction: ${transaction['id']}');
+        continue;
+      }
+
+      // ⭐ SKIP transaksi Top-Up (tidak menghasilkan poin)
+      if (transaction['deliveryOption'] == 'topup') {
+        print('⏭️ Skipping Top-Up transaction: ${transaction['id']}');
+        continue;
+      }
+
       if (transaction['status'] == 'Selesai') {
         final totalPrice = (transaction['totalPrice'] ?? 0.0).toDouble();
         final poinUMKM = (totalPrice / 1000).floor();
         final poinCash = poinUMKM * 10;
         totalPoinCash += poinCash;
+        print('➕ Transaction ${transaction['id']}: +$poinCash poin cash');
       }
     }
 
@@ -30,14 +43,15 @@ class PoinCashManager {
     final isFirstTime = prefs.getBool('poin_welcome_given') ?? false;
     if (!isFirstTime) {
       totalPoinCash += 10000;
+      print('🎁 Welcome bonus: +10000 poin cash');
     }
 
-    // Kurangi dengan penggunaan poin cash
-    final usedPoinCash = await getUsedPoinCash();
-    totalPoinCash -= usedPoinCash;
+    // ❌ HAPUS bagian pengurangan di sini - tidak perlu lagi karena sudah skip di loop
+    // final usedPoinCash = await getUsedPoinCash();
+    // totalPoinCash -= usedPoinCash;
 
-    print('💰 Total Poin Cash: $totalPoinCash (Used: $usedPoinCash)');
-    
+    print('💰 Final Total Poin Cash: $totalPoinCash');
+
     return totalPoinCash;
   }
 
@@ -46,23 +60,21 @@ class PoinCashManager {
     final userLogin = await UserDataManager.getCurrentUserLogin();
     if (userLogin == null) return 0.0;
 
-    final prefs = await SharedPreferences.getInstance();
-    final key = '${_historyPrefix}$userLogin';
-    final historyJson = prefs.getString(key);
-    
-    if (historyJson == null) return 0.0;
-
     try {
-      final List<dynamic> history = 
-          (await UserDataManager.getTransactions(userLogin))
-              .where((t) => t['isPoinCashUsage'] == true)
-              .toList();
-      
+      final transactions = await UserDataManager.getTransactions(userLogin);
+
+      // ✅ Filter hanya transaksi penggunaan Poin Cash
+      final usageTransactions =
+          transactions.where((t) => t['isPoinCashUsage'] == true).toList();
+
       double total = 0.0;
-      for (var item in history) {
-        total += (item['amount'] ?? 0.0).toDouble();
+      for (var item in usageTransactions) {
+        final amount = (item['amount'] ?? 0.0).toDouble();
+        total += amount;
+        print('💸 Used Poin Cash: ${item['id']} = $amount');
       }
-      
+
+      print('💸 Total Used Poin Cash: $total');
       return total;
     } catch (e) {
       print('❌ Error calculating used poin cash: $e');
@@ -101,24 +113,25 @@ class PoinCashManager {
     // 3. Simpan riwayat penggunaan
     try {
       final transactions = await UserDataManager.getTransactions(userLogin);
-      
-      // Tambahkan transaksi penggunaan poin cash
-      transactions.insert(0, {
+
+      // ✅ PERBAIKAN: Tandai dengan jelas sebagai transaksi penggunaan Poin Cash
+      final usageTransaction = {
         'id': 'POIN_$transactionId',
         'date': DateTime.now().toIso8601String(),
         'status': 'Selesai',
-        'isPoinCashUsage': true,
+        'isPoinCashUsage': true, // ⭐ FLAG PENTING
         'amount': amount,
         'transactionId': transactionId,
-        'deliveryOption': 'poin_cash_usage',
+        'deliveryOption': 'poin_cash_usage', // ⭐ DELIVERY OPTION KHUSUS
         'items': [
           {
             'productId': 'poin_cash',
             'name': 'Penggunaan Poin Cash',
             'price': amount,
             'quantity': 1,
-            'imageUrl': 'https://i.pinimg.com/736x/65/c4/1d/65c41db5a939f1e45c5f1ff1244689f5.jpg',
-          }
+            'imageUrl':
+                'https://i.pinimg.com/736x/65/c4/1d/65c41db5a939f1e45c5f1ff1244689f5.jpg',
+          },
         ],
         'totalPrice': amount,
         'alamat': {
@@ -127,17 +140,19 @@ class PoinCashManager {
           'alamat_lengkap': 'Digunakan untuk potongan pembayaran',
           'metode_pembayaran': 'Poin Cash',
         },
-        'catatanPengiriman': 'Penggunaan Poin Cash untuk transaksi $transactionId',
+        'catatanPengiriman':
+            'Penggunaan Poin Cash untuk transaksi $transactionId',
         'metodePembayaran': 'Poin Cash',
-      });
+      };
 
-      await UserDataManager.saveTransactions(
-        userLogin,
-        transactions,
-      );
+      // Tambahkan transaksi penggunaan poin cash
+      transactions.insert(0, usageTransaction);
+
+      await UserDataManager.saveTransactions(userLogin, transactions);
 
       print('✅ Poin Cash berhasil digunakan: Rp$amount');
-      
+      print('📊 Sisa Poin Cash: Rp${availablePoinCash - amount}');
+
       return {
         'success': true,
         'message': 'Poin Cash berhasil digunakan',
@@ -155,9 +170,7 @@ class PoinCashManager {
     if (userLogin == null) return [];
 
     final transactions = await UserDataManager.getTransactions(userLogin);
-    
-    return transactions
-        .where((t) => t['isPoinCashUsage'] == true)
-        .toList();
+
+    return transactions.where((t) => t['isPoinCashUsage'] == true).toList();
   }
 }
