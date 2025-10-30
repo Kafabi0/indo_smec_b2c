@@ -15,7 +15,7 @@ import 'package:share_plus/share_plus.dart';
 
 // Fungsi helper untuk format mata uang Indonesia
 String formatCurrency(int amount) {
-  return 'Rp ${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+  return 'Rp${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
 }
 
 // ==== POINKU MAIN SCREEN DENGAN BOTTOM NAV SENDIRI ====
@@ -890,7 +890,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
   }
 
   String formatCurrency(int amount) {
-    return 'Rp ${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+    return 'Rp${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
 
   // ✅ FUNGSI GENERATE PDF
