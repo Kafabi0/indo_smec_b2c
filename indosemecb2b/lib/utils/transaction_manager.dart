@@ -15,7 +15,7 @@ class TransactionManager {
 
   // ⭐ Helper untuk randomize status
   static String _getRandomStatus() {
-    final statuses = ['Diproses', 'Selesai',];
+    final statuses = ['Diproses',];
     final random = Random();
     return statuses[random.nextInt(statuses.length)];
   }

@@ -211,6 +211,8 @@ class _TransaksiScreenState extends State<TransaksiScreen>
         return Colors.blue;
       case 'Hampir sampai':
         return Colors.purple;
+        case 'Mendekati tujuan':
+        return Colors.amberAccent;
       case 'Pesanan telah sampai':
         return Colors.teal;
       case 'selesai':

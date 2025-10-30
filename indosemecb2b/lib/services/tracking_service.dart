@@ -79,38 +79,50 @@ class TrackingServiceManager {
 
     List<Map<String, String>> history = [];
 
-    history.add({
-      "title": "Menyiapkan pesanan",
-      "desc": "Kurir sedang menunggu konfirmasi toko",
-      "time": _formatTime(
-        now.subtract(Duration(minutes: (progress * 60).round())),
-      ),
-    });
+    // Tambahkan semua status yang sudah dilewati
+    if (progress >= 0.0) {
+      history.add({
+        "title": "Menyiapkan pesanan",
+        "desc": "Kurir sedang menunggu konfirmasi toko",
+        "time": _formatTime(
+          now.subtract(Duration(minutes: (progress * 60).round())),
+        ),
+      });
+    }
 
-    if (progress >= 0.33) {
+    if (progress >= 0.2) {
       history.add({
         "title": "Sedang dikirim",
         "desc": "Kurir sedang dalam perjalanan mengambil rute utama",
         "time": _formatTime(
-          now.subtract(Duration(minutes: ((1 - progress) * 40).round())),
+          now.subtract(Duration(minutes: ((1 - progress) * 50).round())),
         ),
       });
     }
 
-    if (progress >= 0.66) {
+    if (progress >= 0.5) {
       history.add({
         "title": "Hampir sampai",
         "desc": "Kurir sebentar lagi tiba di lokasi tujuan",
         "time": _formatTime(
-          now.subtract(Duration(minutes: ((1 - progress) * 20).round())),
+          now.subtract(Duration(minutes: ((1 - progress) * 30).round())),
         ),
       });
     }
 
-    if (progress >= 0.95) {
+    if (progress >= 0.9) {
       history.add({
         "title": "Pesanan telah sampai",
         "desc": "Pesanan berhasil diantarkan ke alamat tujuan",
+        "time": _formatTime(now),
+      });
+    }
+
+    // 🔹 Tambahkan status aktif kalau belum ada di daftar
+    if (!history.any((h) => h["title"] == tracking.status)) {
+      history.add({
+        "title": tracking.status,
+        "desc": tracking.statusDesc,
         "time": _formatTime(now),
       });
     }
@@ -159,10 +171,7 @@ class TrackingServiceManager {
         tracking.notifier.value = tracking.currentPosition;
         tracking.statusNotifier.value = tracking.status;
 
-        TransactionManager.updateTransactionStatus(
-          transactionId,
-          "Selesai",
-        );
+        TransactionManager.updateTransactionStatus(transactionId, "Selesai");
 
         timer.cancel();
         print('✅ Kurir sampai di tujuan - Tracking selesai');
