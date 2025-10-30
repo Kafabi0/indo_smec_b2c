@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:indosemecb2b/screen/notification_provider.dart';
 import 'package:indosemecb2b/services/notifikasi.dart';
+import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:intl/intl.dart';
 import 'package:indosemecb2b/utils/saldo_klik_manager.dart';
 import 'package:provider/provider.dart';
@@ -101,14 +102,15 @@ class _TopUpSaldoScreenState extends State<TopUpSaldoScreen> {
     // Simulasi proses pembayaran
     await Future.delayed(const Duration(seconds: 2));
 
+    // ✅ Generate transaction ID SEBELUM topUp
+    final transactionId = 'TOPUP${DateTime.now().millisecondsSinceEpoch}';
+
+    // Top up saldo
     final success = await SaldoKlikManager.topUp(nominal, _selectedPayment!);
 
     setState(() => _isProcessing = false);
 
     if (success && mounted) {
-      // ✅ Generate transaction ID
-      final transactionId = 'TOPUP${DateTime.now().millisecondsSinceEpoch}';
-
       // ✅ Prepare transaction data
       final transactionData = {
         'id': transactionId,
@@ -117,11 +119,44 @@ class _TopUpSaldoScreenState extends State<TopUpSaldoScreen> {
         'amount': nominal,
         'payment_method': _selectedPayment!,
         'date': DateTime.now().toIso8601String(),
-        'status': 'success',
-        'description': 'Isi Saldo via $_selectedPayment',
+        'tanggal': DateTime.now().toIso8601String(),
+        'status': 'Selesai',
+        'items': [
+          {
+            'nama': 'Top-Up Saldo Klik',
+            'name': 'Top-Up Saldo Klik',
+            'quantity': 1,
+            'harga': nominal,
+            'price': nominal,
+            'image':
+                'https://i.pinimg.com/736x/65/c4/1d/65c41db5a939f1e45c5f1ff1244689f5.jpg',
+            'imageUrl':
+                'https://i.pinimg.com/736x/65/c4/1d/65c41db5a939f1e45c5f1ff1244689f5.jpg',
+          },
+        ],
+        'delivery_option': 'topup',
+        'deliveryOption': 'topup',
+        'metode_pembayaran': _selectedPayment!,
+        'metodePembayaran': _selectedPayment!,
+        'totalPrice': nominal,
+        'catatan_pengiriman': 'Isi Saldo via $_selectedPayment',
+        'catatanPengiriman': 'Isi Saldo via $_selectedPayment',
+        'penerima': 'Top-Up Saldo',
+        'alamat': 'Saldo Klik',
       };
 
-      // ✅ 1. Tampilkan Local Notification
+      print('💾 [TopUp] Saving to TransactionManager...');
+
+      // ✅ 1. SAVE TO TRANSACTION MANAGER (MOST IMPORTANT!)
+      final transactionSaved = await TransactionManager.createTopUpTransaction(
+        amount: nominal,
+        paymentMethod: _selectedPayment!,
+        transactionId: transactionId,
+      );
+
+      print('💾 [TopUp] Transaction saved: $transactionSaved');
+
+      // ✅ 2. Show Local Notification
       await NotificationService().showTopUpSuccessNotification(
         amount: nominal,
         paymentMethod: _selectedPayment!,
@@ -129,7 +164,7 @@ class _TopUpSaldoScreenState extends State<TopUpSaldoScreen> {
         transactionData: transactionData,
       );
 
-      // ✅ 2. Simpan ke NotificationProvider
+      // ✅ 3. Save to NotificationProvider
       final notifProvider = Provider.of<NotificationProvider>(
         context,
         listen: false,
@@ -140,7 +175,9 @@ class _TopUpSaldoScreenState extends State<TopUpSaldoScreen> {
         paymentMethod: _selectedPayment!,
       );
 
-      print('✅ Top-up notifications triggered (Local + Provider)');
+      print(
+        '✅ Top-up saved to: TransactionManager, Notifications, and Local storage',
+      );
 
       showDialog(
         context: context,
@@ -193,7 +230,7 @@ class _TopUpSaldoScreenState extends State<TopUpSaldoScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Notifikasi telah dikirim',
+                          'Transaksi berhasil disimpan',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.blue[900],

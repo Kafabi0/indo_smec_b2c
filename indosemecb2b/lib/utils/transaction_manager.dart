@@ -139,6 +139,110 @@ class TransactionManager {
     }
   }
 
+  /// ✅ Simpan transaksi top-up saldo
+  static Future<bool> createTopUpTransaction({
+    required double amount,
+    required String paymentMethod,
+    required String transactionId,
+  }) async {
+    try {
+      print('💰 [TransactionManager] Creating top-up transaction...');
+      print('   Amount: $amount');
+      print('   Method: $paymentMethod');
+      print('   ID: $transactionId');
+
+      final userLogin = await UserDataManager.getCurrentUserLogin();
+      if (userLogin == null) {
+        print('❌ No user logged in');
+        return false;
+      }
+
+      // Create transaction items for top-up
+      final items = [
+        TransactionItem(
+          productId: transactionId,
+          name: 'Top-Up Saldo Klik',
+          quantity: 1,
+          price: amount,
+          imageUrl:
+              'https://i.pinimg.com/736x/65/c4/1d/65c41db5a939f1e45c5f1ff1244689f5.jpg', // Wallet icon
+        ),
+      ];
+
+      // Create transaction object for top-up
+      final topUpTransaction = Transaction(
+        id: transactionId,
+        date: DateTime.now(),
+        status: 'Selesai', // Top-up langsung selesai
+        items: items,
+        deliveryOption: 'topup', // ✅ Special delivery option for top-up
+        alamat: {
+          'nama_penerima': 'Top-Up Saldo',
+          'nomor_hp': '-',
+          'alamat_lengkap': 'Saldo Klik',
+          'metode_pembayaran': paymentMethod,
+        },
+        totalPrice: amount,
+        catatanPengiriman: 'Isi Saldo via $paymentMethod',
+        metodePembayaran: paymentMethod,
+      );
+
+      print('✅ Top-up transaction object created');
+
+      // Get existing transactions
+      final transactions = await getTransactions();
+      print('📋 Existing transactions: ${transactions.length}');
+
+      // Add new top-up transaction at the beginning
+      transactions.insert(0, topUpTransaction);
+      print(
+        '➕ Top-up transaction added to list. New count: ${transactions.length}',
+      );
+
+      // Save to storage
+      final saved = await UserDataManager.saveTransactions(
+        userLogin,
+        transactions.map((t) => t.toMap()).toList(),
+      );
+
+      print('💾 Save result: $saved');
+
+      // Verify saved data
+      if (saved) {
+        final verifyTransactions = await UserDataManager.getTransactions(
+          userLogin,
+        );
+        print(
+          '✓ Verification - Transactions in storage: ${verifyTransactions.length}',
+        );
+
+        final savedTransaction = verifyTransactions.firstWhere(
+          (t) => t['id'] == transactionId,
+          orElse: () => <String, dynamic>{},
+        );
+        if (savedTransaction.isNotEmpty) {
+          print('✓ Saved top-up transaction ID: ${savedTransaction['id']}');
+          print('✓ Saved status: ${savedTransaction['status']}');
+          print('✓ Saved amount: ${savedTransaction['totalPrice']}');
+          print(
+            '✓ Saved metode pembayaran: ${savedTransaction['metodePembayaran']}',
+          );
+        }
+
+        // Trigger status update notification
+        _statusController.add(null);
+        statusNotifier.value = DateTime.now().toString();
+      }
+
+      print('✅ [TransactionManager] Top-up transaction saved successfully');
+      return saved;
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error creating top-up transaction: $e');
+      debugPrint('Stack trace: $stackTrace');
+      return false;
+    }
+  }
+
   // Ambil semua transaksi user
   static Future<List<Transaction>> getTransactions() async {
     try {
@@ -220,6 +324,9 @@ class TransactionManager {
       deliveryOption = 'xpress';
     } else if (category == 'Xtra') {
       deliveryOption = 'xtra';
+    } else if (category == 'Top-Up') {
+      // ✅ ADD
+      deliveryOption = 'topup';
     }
 
     if (deliveryOption == null) return transactions;
@@ -278,6 +385,9 @@ class TransactionManager {
         deliveryOption = 'xpress';
       } else if (category == 'Xtra') {
         deliveryOption = 'xtra';
+      } else if (category == 'Top-Up') {
+        // ✅ ADD
+        deliveryOption = 'topup';
       }
 
       if (deliveryOption != null) {

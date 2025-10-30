@@ -43,6 +43,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
     'Food',
     'Virtual',
     'Merchant',
+    'Top-Up',
   ];
 
   @override
@@ -147,6 +148,9 @@ class _TransaksiScreenState extends State<TransaksiScreen>
         deliveryOption = 'xpress';
       } else if (selectedKategori == 'Xtra') {
         deliveryOption = 'xtra';
+      } else if (selectedKategori == 'Top-Up') {
+        // ✅ ADD
+        deliveryOption = 'topup';
       }
 
       if (deliveryOption != null) {
@@ -588,7 +592,9 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                         const SizedBox(height: 14),
 
                         Text(
-                          currentTransaction.deliveryOption == 'xpress'
+                          currentTransaction.deliveryOption == 'topup'
+                              ? 'Top-Up Saldo Klik' // ✅ ADD
+                              : currentTransaction.deliveryOption == 'xpress'
                               ? 'Belanja Xpress'
                               : 'Belanja Xtra',
                           style: const TextStyle(
@@ -785,6 +791,50 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                                     ),
                                   ),
                                 ],
+                              ),
+                            ],
+                          )
+                        else if (currentTransaction.deliveryOption ==
+                            'topup') // ✅ ADD
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green[50],
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: Colors.green[200]!),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green[700],
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Berhasil',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.green[700],
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                'Total ${formatRupiah(currentTransaction.totalPrice)}',
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ],
                           )
@@ -1084,6 +1134,9 @@ class _TransaksiScreenState extends State<TransaksiScreen>
         break;
       case 'Merchant':
         icon = Icons.store_mall_directory_outlined;
+        break;
+      case 'Top-Up': // ✅ ADD
+        icon = Icons.account_balance_wallet;
         break;
       default:
         icon = null;
