@@ -210,8 +210,8 @@ class _TransaksiScreenState extends State<TransaksiScreen>
         return const Color.fromARGB(255, 232, 132, 9);
       case 'Pesanan telah sampai':
         return Colors.teal;
-      case 'selesai':
-        return Colors.green;
+      // case 'selesai':
+      //   return Colors.green;
       default:
         return Colors.grey;
     }
@@ -276,7 +276,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                           'Sedang dikirim',
                           'Hampir sampai',
                           'Pesanan telah sampai',
-                          'Selesai',
+                          // 'Selesai',
                         ],
                         (value) {
                           if (value != null && value != selectedStatus) {
@@ -844,8 +844,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                             children: [
                               OutlinedButton(
                                 onPressed: () {
-                                  if (currentTransaction.status == "Selesai" ||
-                                      currentTransaction.status == "Selesai") {
+                                  if (currentTransaction.status == "Selesai") {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -883,9 +882,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                                   ),
                                 ),
                                 child: Text(
-                                  (currentTransaction.status == "Selesai" ||
-                                          currentTransaction.status ==
-                                              "Selesai")
+                                  (currentTransaction.status == "Selesai")
                                       ? "Beli Lagi"
                                       : "Lacak",
                                   style: TextStyle(
