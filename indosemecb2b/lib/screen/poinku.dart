@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
+import 'package:indosemecb2b/screen/pin_poin.dart';
+import 'package:indosemecb2b/utils/pin_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/product_service.dart';
@@ -3041,7 +3043,14 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
             Icons.lock_outline,
             'Pengaturan Kode PIN',
             'Ubah atau reset PIN Poinku',
-            () {},
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PinSettingsScreen(),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 12),
 

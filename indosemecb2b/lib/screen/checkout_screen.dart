@@ -733,8 +733,38 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           );
 
                           if (selectedPayment != null && mounted) {
-                            print("✅ Metode dipilih: $selectedPayment");
-                            await _processCheckout(selectedPayment);
+                            // Cek apakah menggunakan kombinasi
+                            if (selectedPayment is Map) {
+                              final poinCashUsed =
+                                  selectedPayment['poinCashUsed'] ?? 0.0;
+                              final remaining =
+                                  selectedPayment['remaining'] ?? 0.0;
+
+                              if (remaining > 0) {
+                                // Masih ada sisa - perlu metode pembayaran tambahan
+                                final additionalPayment = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => PaymentMethodScreen(
+                                          totalPembayaran: remaining,
+                                        ),
+                                  ),
+                                );
+
+                                if (additionalPayment != null && mounted) {
+                                  await _processCheckout(
+                                    'Kombinasi: Poin Cash (Rp${poinCashUsed.toInt()}) + $additionalPayment',
+                                  );
+                                }
+                              } else {
+                                // Lunas dengan Poin Cash
+                                await _processCheckout('Poin Cash');
+                              }
+                            } else {
+                              // Metode pembayaran biasa
+                              await _processCheckout(selectedPayment);
+                            }
                           }
                         },
                 style: ElevatedButton.styleFrom(

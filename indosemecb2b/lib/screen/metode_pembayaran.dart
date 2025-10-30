@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:indosemecb2b/screen/pembayaran_berhasil.dart';
 import 'package:indosemecb2b/screen/input_pin.dart'; // ✅ ADD
+import 'package:indosemecb2b/screen/poinku.dart';
+import 'package:indosemecb2b/utils/pin_manager.dart';
+import 'package:indosemecb2b/utils/poin_cash_manager.dart';
+import 'package:indosemecb2b/utils/user_data_manager.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
 import 'package:indosemecb2b/utils/saldo_klik_manager.dart';
@@ -22,6 +26,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   bool _isLoadingSaldo = true;
   bool _isSaldoKlikActive = false;
   double _saldoKlik = 0.0;
+  double _poinCash = 0.0;
 
   static final _formatRupiah = NumberFormat.currency(
     locale: 'id_ID',
@@ -32,7 +37,15 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   @override
   void initState() {
     super.initState();
+    _loadPoinCash();
     _checkSaldoKlik();
+  }
+
+  Future<void> _loadPoinCash() async {
+    final poinCash = await PoinCashManager.getTotalPoinCash();
+    setState(() {
+      _poinCash = poinCash;
+    });
   }
 
   Future<void> _checkSaldoKlik() async {
@@ -140,6 +153,21 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             ),
             const SizedBox(height: 16),
           ],
+          _paymentItem(
+            context: context,
+            imageUrl:
+                "https://i.pinimg.com/736x/65/c4/1d/65c41db5a939f1e45c5f1ff1244689f5.jpg",
+            title: "Poin Cash",
+            subtitle: "Saldo: ${formatCurrency(_poinCash.toInt())}",
+            badge:
+                _poinCash >= widget.totalPembayaran
+                    ? "Tersedia"
+                    : "Tidak Cukup",
+            paymentType: "Poin Cash",
+            isEnabled:
+                _poinCash >
+                0, // Bisa dipakai meski tidak cukup (untuk potongan)
+          ),
 
           // E-Wallet Section
           _sectionHeader("E-Wallet"),
@@ -418,9 +446,341 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           onTap:
               isEnabled
                   ? () async {
-                    // ✅ UPDATED: HANDLE SALDO KLIK WITH PIN
-                    if (paymentType == "Saldo Klik") {
-                      // Step 1: Show confirmation dialog
+                    final userLogin =
+                        await UserDataManager.getCurrentUserLogin();
+                    if (userLogin == null) return;
+
+                    // ✅ Cek apakah PIN sudah diset untuk metode yang memerlukan PIN
+                    if (paymentType == "Poin Cash" ||
+                        paymentType == "Saldo Klik") {
+                      final isPinSet = await PinManager.isPinSet(userLogin);
+                      if (!isPinSet) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Anda belum mengatur PIN. Silakan atur PIN terlebih dahulu.',
+                            ),
+                            backgroundColor: Colors.orange,
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                        return;
+                      }
+                    }
+
+                    // ✅ Logika Pembayaran Poin Cash
+                    if (paymentType == "Poin Cash") {
+                      // Cek apakah PIN sudah diset
+                      final userLogin =
+                          await UserDataManager.getCurrentUserLogin();
+                      if (userLogin == null) return;
+
+                      final isPinSet = await PinManager.isPinSet(userLogin);
+
+                      if (!isPinSet) {
+                        // Redirect ke pengaturan untuk set PIN
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Anda belum mengatur PIN. Silakan atur PIN terlebih dahulu.',
+                            ),
+                            backgroundColor: Colors.orange,
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                        return;
+                      }
+                      final double amountToUse =
+                          _poinCash >= widget.totalPembayaran
+                              ? widget.totalPembayaran
+                              : _poinCash;
+
+                      final double remaining =
+                          widget.totalPembayaran - amountToUse;
+
+                      // Show confirmation dialog
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder:
+                            (context) => AlertDialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              title: Row(
+                                children: [
+                                  Icon(
+                                    Icons.account_balance_wallet,
+                                    color: Colors.green[700],
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text('Gunakan Poin Cash'),
+                                ],
+                              ),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue[50],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Total Belanja:'),
+                                            Text(
+                                              formatCurrency(
+                                                widget.totalPembayaran.toInt(),
+                                              ),
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const Divider(height: 16),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Poin Cash Digunakan:'),
+                                            Text(
+                                              formatCurrency(
+                                                amountToUse.toInt(),
+                                              ),
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.green[700],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (remaining > 0) ...[
+                                          const Divider(height: 16),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text(
+                                                'Sisa yang Harus Dibayar:',
+                                              ),
+                                              Text(
+                                                formatCurrency(
+                                                  remaining.toInt(),
+                                                ),
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.orange[700],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green[50],
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: Colors.green[200]!,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.info_outline,
+                                          color: Colors.green[700],
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            remaining > 0
+                                                ? 'Anda perlu memilih metode pembayaran lain untuk sisa pembayaran'
+                                                : 'Pembayaran akan lunas dengan Poin Cash',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.green[900],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed:
+                                      () => Navigator.pop(context, false),
+                                  child: const Text('Batal'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green[700],
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Lanjutkan',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                      );
+
+                      if (confirmed != true || !context.mounted) return;
+
+                      // Request PIN
+                      final pin = await Navigator.push<String>(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => const InputPinScreen(
+                                title: 'Masukkan PIN Poin Cash',
+                                subtitle: 'Konfirmasi penggunaan Poin Cash',
+                              ),
+                        ),
+                      );
+
+                      if (pin == null || !context.mounted) return;
+
+                      // Show loading
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder:
+                            (context) => Dialog(
+                              backgroundColor: Colors.transparent,
+                              elevation: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(32),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(20),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.green[400]!,
+                                            Colors.green[700]!,
+                                          ],
+                                        ),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.account_balance_wallet,
+                                        color: Colors.white,
+                                        size: 40,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    const CircularProgressIndicator(),
+                                    const SizedBox(height: 24),
+                                    const Text(
+                                      'Memproses Pembayaran',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Menggunakan Poin Cash...',
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                      );
+
+                      await Future.delayed(const Duration(seconds: 1));
+
+                      // Use Poin Cash
+                      final transactionId =
+                          'TRX${DateTime.now().millisecondsSinceEpoch}';
+                      final result = await PoinCashManager.usePoinCash(
+                        amount: amountToUse,
+                        pin: pin,
+                        transactionId: transactionId,
+                      );
+
+                      if (context.mounted) {
+                        Navigator.pop(context); // Close loading
+                      }
+
+                      if (result['success'] == true) {
+                        if (remaining > 0) {
+                          // Masih ada sisa, perlu metode pembayaran lain
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '✅ Poin Cash Rp${formatCurrency(amountToUse.toInt())} berhasil digunakan!\nSilakan pilih metode pembayaran untuk sisa Rp${formatCurrency(remaining.toInt())}',
+                                ),
+                                backgroundColor: Colors.green,
+                                duration: const Duration(seconds: 4),
+                              ),
+                            );
+
+                            // Return data kombinasi
+                            Navigator.pop(context, {
+                              'type': 'Kombinasi Poin Cash',
+                              'poinCashUsed': amountToUse,
+                              'remaining': remaining,
+                            });
+                          }
+                        } else {
+                          // Lunas dengan Poin Cash
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  '✅ Pembayaran lunas dengan Poin Cash!',
+                                ),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+
+                            Navigator.pop(context, {
+                              'type': 'Poin Cash',
+                              'poinCashUsed': amountToUse,
+                              'remaining': 0.0,
+                            });
+                          }
+                        }
+                      } else {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('❌ ${result['message']}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    }
+                    // ✅ Logika Pembayaran Saldo Klik
+                    else if (paymentType == "Saldo Klik") {
+                      // Step 1: Konfirmasi
                       final confirmed = await showDialog<bool>(
                         context: context,
                         builder:
@@ -492,12 +852,12 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                           size: 20,
                                         ),
                                         const SizedBox(width: 8),
-                                        Expanded(
+                                        const Expanded(
                                           child: Text(
                                             'Anda akan diminta memasukkan PIN untuk konfirmasi',
                                             style: TextStyle(
                                               fontSize: 12,
-                                              color: Colors.blue[900],
+                                              color: Colors.blue,
                                             ),
                                           ),
                                         ),
@@ -531,7 +891,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
 
                       if (confirmed != true || !context.mounted) return;
 
-                      // Step 2: Request PIN
+                      // Step 2: Input PIN
                       final pin = await Navigator.push<String>(
                         context,
                         MaterialPageRoute(
@@ -546,7 +906,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
 
                       if (pin == null || !context.mounted) return;
 
-                      // Step 3: Show loading
+                      // Step 3: Loading Dialog
                       showDialog(
                         context: context,
                         barrierDismissible: false,
@@ -646,28 +1006,20 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                             ),
                       );
 
-                      // Step 4: Verify PIN and process payment
+                      // Step 4: Proses Pembayaran
                       await Future.delayed(const Duration(seconds: 1));
-
                       final transactionId =
                           'TRX${DateTime.now().millisecondsSinceEpoch}';
-                      print('✅ Generated Transaction ID: $transactionId');
-
-                      // Step 5: Verify PIN and process payment
-                      await Future.delayed(const Duration(seconds: 1));
-
                       final success = await SaldoKlikManager.deductSaldo(
                         widget.totalPembayaran,
-                        'Pembayaran Transaksi $transactionId', // ✅ WITH TRANSACTION ID
+                        'Pembayaran Transaksi $transactionId',
                         pin,
                       );
 
-                      if (context.mounted) {
-                        Navigator.pop(context); // Close loading
-                      }
+                      if (context.mounted)
+                        Navigator.pop(context); // Tutup loading
 
                       if (success && context.mounted) {
-                        // ✅ Set flag untuk refresh poin
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.setBool('should_refresh_poin', true);
 
@@ -677,8 +1029,6 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                             backgroundColor: Colors.green,
                           ),
                         );
-
-                        // Return to checkout
                         Navigator.pop(context, paymentType);
                       } else if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -688,8 +1038,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                           ),
                         );
                       }
-                    } else {
-                      // Navigate to detail payment for other methods
+                    }
+                    // ✅ Metode Pembayaran Lain
+                    else {
                       final selectedMethod = await Navigator.push(
                         context,
                         MaterialPageRoute(
