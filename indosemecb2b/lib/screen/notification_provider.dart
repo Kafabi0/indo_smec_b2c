@@ -5,6 +5,8 @@ import '../utils/user_data_manager.dart';
 class NotificationProvider with ChangeNotifier {
   List<AppNotification> _notifications = [];
   String? _currentUser;
+  bool _isInitialized = false; // ✅ Track initialization status
+  bool _isInitializing = false; // ✅ Prevent concurrent initialization
 
   List<AppNotification> get notifications => _notifications;
 
@@ -19,23 +21,64 @@ class NotificationProvider with ChangeNotifier {
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
   NotificationProvider() {
+    // ✅ Call async initialization (tidak perlu await di constructor)
     _initializeForCurrentUser();
   }
 
   // ⭐ Initialize untuk user yang sedang login
   Future<void> _initializeForCurrentUser() async {
-    final user = await UserDataManager.getCurrentUserLogin();
-    print('🔔 [NotifProvider] Initialize for user: $user');
-
-    if (user != null) {
-      _currentUser = user;
-      await _loadNotifications();
-    } else {
-      print('⚠️ [NotifProvider] No user logged in');
-      _notifications = [];
-      _currentUser = null;
+    if (_isInitializing) {
+      print('⏳ [NotifProvider] Already initializing, skipping...');
+      return;
     }
-    notifyListeners();
+
+    _isInitializing = true;
+
+    try {
+      final user = await UserDataManager.getCurrentUserLogin();
+      print('🔔 [NotifProvider] Initialize for user: $user');
+
+      if (user != null) {
+        _currentUser = user;
+        await _loadNotifications();
+        _isInitialized = true;
+        print('✅ [NotifProvider] Initialization complete for: $user');
+      } else {
+        print('⚠️ [NotifProvider] No user logged in');
+        _notifications = [];
+        _currentUser = null;
+        _isInitialized = false;
+      }
+      notifyListeners();
+    } catch (e) {
+      print('❌ [NotifProvider] Initialization error: $e');
+      _isInitialized = false;
+    } finally {
+      _isInitializing = false;
+    }
+  }
+
+  // ✅ BARU: Ensure user is loaded (dengan timeout protection)
+  Future<void> ensureUserLoaded() async {
+    if (_isInitialized && _currentUser != null) {
+      print('✅ [NotifProvider] User already loaded: $_currentUser');
+      return;
+    }
+
+    if (_isInitializing) {
+      print('⏳ [NotifProvider] Waiting for initialization...');
+      // Wait for initialization to complete (max 5 seconds)
+      int attempts = 0;
+      while (_isInitializing && attempts < 50) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        attempts++;
+      }
+    }
+
+    if (_currentUser == null) {
+      print('🔄 [NotifProvider] Force reloading user...');
+      await _initializeForCurrentUser();
+    }
   }
 
   // ⭐ Load notifikasi untuk user tertentu
@@ -79,6 +122,7 @@ class NotificationProvider with ChangeNotifier {
   // ⭐ PENTING: Reload ketika user login/logout
   Future<void> reloadForCurrentUser() async {
     print('🔄 [NotifProvider] Reloading for current user...');
+    _isInitialized = false;
     await _initializeForCurrentUser();
   }
 
@@ -87,23 +131,28 @@ class NotificationProvider with ChangeNotifier {
     print('🚪 [NotifProvider] Clearing notifications on logout');
     _notifications = [];
     _currentUser = null;
+    _isInitialized = false;
     notifyListeners();
   }
 
-  // Tambah notifikasi baru
+  // ✅ PERBAIKAN: Tambah notifikasi baru dengan auto-load user
   Future<void> addNotification(AppNotification notification) async {
+    // ✅ Pastikan user sudah loaded
+    await ensureUserLoaded();
+
     if (_currentUser == null) {
-      print('❌ Cannot add notification: no user logged in');
+      print('❌ Cannot add notification: no user logged in after ensure');
       return;
     }
 
+    print('✅ [NotifProvider] Adding notification for user: $_currentUser');
     _notifications.insert(0, notification); // Add di awal list
     await _saveNotifications();
     notifyListeners();
-    print('✅ Notification added for user: $_currentUser');
+    print('✅ Notification added successfully');
   }
 
-  // Tambah notifikasi pembayaran berhasil
+  // ✅ PERBAIKAN: Tambah notifikasi pembayaran berhasil
   Future<void> addPaymentSuccessNotification({
     required String orderId,
     required String paymentMethod,
@@ -111,6 +160,11 @@ class NotificationProvider with ChangeNotifier {
     String? productImage,
     Map<String, dynamic>? transactionData,
   }) async {
+    print('💳 [NotifProvider] Creating payment notification...');
+    print('   Order ID: $orderId');
+    print('   Method: $paymentMethod');
+    print('   Total: $total');
+
     final notification = AppNotification(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       type: NotifType.transaksi,
@@ -127,6 +181,7 @@ class NotificationProvider with ChangeNotifier {
     );
 
     await addNotification(notification);
+    print('✅ [NotifProvider] Payment notification added');
   }
 
   // Tambah notifikasi pesanan dikirim

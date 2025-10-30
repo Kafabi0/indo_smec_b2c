@@ -231,6 +231,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           final firstProductImage =
               _cartItems.isNotEmpty ? _cartItems.first.imageUrl : null;
 
+          // ✅ PERBAIKAN: Ensure provider is ready
+          final notifProvider = Provider.of<NotificationProvider>(
+            context,
+            listen: false,
+          );
+
+          // ✅ Ensure user is loaded before adding notification
+          print('🔄 [CHECKOUT] Ensuring notification provider is ready...');
+          await notifProvider.ensureUserLoaded();
+
           // 1. Tampilkan Local Notification
           await NotificationService().showPaymentSuccessNotification(
             orderId: transactionId,
@@ -240,12 +250,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             transactionData: transactionData,
           );
 
-          // 2. Simpan ke NotificationProvider
-          final notifProvider = Provider.of<NotificationProvider>(
-            context,
-            listen: false,
-          );
-
+          // 2. Simpan ke NotificationProvider (user sudah pasti loaded)
+          print('💾 [CHECKOUT] Saving notification to provider...');
           await notifProvider.addPaymentSuccessNotification(
             orderId: transactionId,
             paymentMethod: paymentType,
@@ -254,7 +260,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             transactionData: transactionData,
           );
 
-          print('🔔 Notification sent with metode: "$paymentType"');
+          print('✅ [CHECKOUT] Notification saved with metode: "$paymentType"');
 
           // 3. Navigasi ke halaman sukses
           Navigator.of(context).pushAndRemoveUntil(
