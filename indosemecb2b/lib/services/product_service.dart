@@ -1,6 +1,7 @@
 import '../models/product_model.dart';
 import '../models/store_model.dart';
 import '../models/subcategory_model.dart';
+import '../services/flash_sale_service.dart';
 
 class ProductService {
   // ============ DATA STORES UMKM ============
@@ -1692,6 +1693,25 @@ List<Product> getFlashSalePaketan() {
   );
 
   return paketan;
+}
+
+List<Product> getActiveFlashSaleProducts() {
+  final currentSale = FlashSaleService.getCurrentFlashSale();
+  
+  if (currentSale != null && currentSale.isActive) {
+    // Ambil produk berdasarkan productIds dari schedule
+    return _allProducts
+        .where((p) => currentSale.productIds.contains(p.id))
+        .toList();
+  }
+  
+  // Jika tidak ada flash sale aktif, tampilkan semua paket
+  return getFlashSalePaketan();
+}
+
+// Get harga produk (otomatis cek flash sale)
+double getProductPrice(String productId, double originalPrice) {
+  return FlashSaleService.calculateFlashPrice(productId, originalPrice);
 }
 
 // Get paketan by category

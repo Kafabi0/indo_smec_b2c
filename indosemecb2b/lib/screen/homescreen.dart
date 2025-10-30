@@ -17,8 +17,11 @@ import 'favorit.dart';
 import 'package:indosemecb2b/screen/lengkapi_alamat_screen.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:indosemecb2b/models/transaction.dart';
-
 import 'notification_provider.dart';
+import 'dart:async'; 
+import 'package:indosemecb2b/models/flash_sale_model.dart';
+import 'package:indosemecb2b/services/flash_sale_service.dart';
+import 'package:indosemecb2b/widgets/flash_sale_timer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -55,6 +58,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _selectedAlamatIndex = 0;
   int _totalPoinUMKM = 0;
   int _totalPoinCash = 0;
+  FlashSaleSchedule? currentFlashSale;
+  FlashSaleSchedule? nextFlashSale;
+  Timer? _flashSaleCheckTimer;
 
   final List<Map<String, dynamic>> categories = [
     {'name': 'Semua', 'icon': Icons.apps},
@@ -75,12 +81,18 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _checkLoginStatus();
     _loadData();
     _loadPoinFromTransactions();
-  }
+    _updateFlashSaleStatus();
+
+    _flashSaleCheckTimer = Timer.periodic(Duration(seconds: 10), (_) {
+    _updateFlashSaleStatus();
+  });
+}
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this); // ⭐ TAMBAHKAN
     super.dispose();
+    _flashSaleCheckTimer?.cancel();
   }
 
   @override
@@ -96,6 +108,38 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
     }
   }
+
+  void _updateFlashSaleStatus() {
+    if (!mounted) return;
+    
+    setState(() {
+      currentFlashSale = FlashSaleService.getCurrentFlashSale();
+      nextFlashSale = FlashSaleService.getNextFlashSale();
+    });
+    
+    print('🔥 [FLASH SALE] Status update:');
+    print('   Current: ${currentFlashSale?.title ?? "None"}');
+    print('   Next: ${nextFlashSale?.title ?? "None"}');
+  }
+
+  void _onFlashSaleTimerEnd() {
+    print('⏰ Timer flash sale berakhir, reload data...');
+    _updateFlashSaleStatus();
+    _loadData(); // Reload produk
+  }
+
+  String _getFlashSaleTimeRange() {
+  FlashSaleSchedule? activeOrNext = currentFlashSale ?? nextFlashSale;
+  
+  if (activeOrNext == null) return '00.00 - 00.00';
+  
+  String startHour = activeOrNext.startTime.hour.toString().padLeft(2, '0');
+  String startMinute = activeOrNext.startTime.minute.toString().padLeft(2, '0');
+  String endHour = activeOrNext.endTime.hour.toString().padLeft(2, '0');
+  String endMinute = activeOrNext.endTime.minute.toString().padLeft(2, '0');
+  
+  return '$startHour.$startMinute - $endHour.$endMinute';
+}
 
   Future<void> _loadAlamat() async {
     if (isLoggedIn && userEmail.isNotEmpty) {
@@ -328,7 +372,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       );
     }
 
-    flashSaleProducts = _productService.getFlashSalePaketan();
+    flashSaleProducts = _productService.getActiveFlashSaleProducts();
     topRatedProducts = _productService.getTopRatedProducts();
     freshProducts = _productService.getFreshProducts();
     newestProducts = _productService.getNewestProducts();
@@ -626,7 +670,11 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 const SizedBox(height: 20),
               ],
 
-              _buildSectionHeader('FLASH SALE 11.00 - 13.00', hasTimer: true),
+              _buildSectionHeader(
+                'FLASH SALE ${_getFlashSaleTimeRange()}', 
+                hasTimer: true,
+              ),
+              
               _buildFlashSaleSection(),
               const SizedBox(height: 20),
               _buildPromoBanner(),
@@ -1812,87 +1860,70 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildFlashSaleCard(Product product) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProductDetailPage(product: product),
-          ),
-        );
-      },
-      child: Container(
-        width: 120,
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          // borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 12,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 100, // Dikurangi dari 110
-              decoration: BoxDecoration(
-                // borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-              ),
-              child: ClipRRect(
-                // borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                child: Image.network(
-                  product.imageUrl ?? '',
-                  width: double.infinity,
-                  height: 100,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[200],
-                      child: Center(
-                        child: Icon(
-                          Icons.image_rounded,
-                          size: 40,
-                          color: Colors.grey[400],
-                        ),
-                      ),
-                    );
-                  },
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: Colors.grey[200],
-                      child: Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            value:
-                                loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
+  // ⭐ HITUNG HARGA FLASH SALE OTOMATIS
+  final flashPrice = _productService.getProductPrice(product.id, product.originalPrice!);
+  final isFlashActive = currentFlashSale != null && 
+                        currentFlashSale!.isActive && 
+                        currentFlashSale!.productIds.contains(product.id);
 
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0), // Dikurangi dari 10
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProductDetailPage(product: product),
+        ),
+      );
+    },
+    child: Container(
+      width: 120,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 100,
+            child: ClipRRect(
+              child: Image.network(
+                product.imageUrl ?? '',
+                width: double.infinity,
+                height: 100,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[200],
+                    child: Center(
+                      child: Icon(
+                        Icons.image_rounded,
+                        size: 40,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Badge diskon
+                  if (isFlashActive)
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                       decoration: BoxDecoration(
@@ -1900,7 +1931,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        '${product.discountPercentage?.toInt() ?? 0}% OFF',
+                        '${currentFlashSale!.discountPercentage.toInt()}% OFF',
                         style: TextStyle(
                           color: Colors.red[700],
                           fontSize: 8,
@@ -1908,79 +1939,76 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Flexible(
-                      child: Text(
-                        product.name,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w600,
-                          height: 1.2,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                  const SizedBox(height: 4),
+                  
+                  Flexible(
+                    child: Text(
+                      product.name,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.star_rounded,
-                          color: Colors.amber[700],
-                          size: 10,
+                  ),
+                  const SizedBox(height: 2),
+                  
+                  Row(
+                    children: [
+                      Icon(Icons.star_rounded, color: Colors.amber[700], size: 10),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${product.rating}',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
                         ),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${product.rating}',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[700],
-                          ),
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        '(${product.reviewCount})',
+                        style: TextStyle(fontSize: 8, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  
+                  // ⭐ HARGA DINAMIS
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _formatPrice(flashPrice),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: isFlashActive ? Colors.red[700] : Colors.blue[700],
                         ),
-                        const SizedBox(width: 2),
+                      ),
+                      if (isFlashActive)
                         Text(
-                          '(${product.reviewCount})',
+                          _formatPrice(product.originalPrice!),
                           style: TextStyle(
-                            fontSize: 8,
+                            decoration: TextDecoration.lineThrough,
                             color: Colors.grey[500],
+                            fontSize: 8,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _formatPrice(product.price),
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            color: Colors.blue[700],
-                          ),
-                        ),
-                        if (product.originalPrice != null)
-                          Text(
-                            _formatPrice(product.originalPrice!),
-                            style: TextStyle(
-                              decoration: TextDecoration.lineThrough,
-                              color: Colors.grey[500],
-                              fontSize: 8,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   String _formatPrice(double price) {
     final priceInt = price.toInt();
@@ -2838,83 +2866,56 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildSectionHeader(
-    String title, {
-    bool hasTimer = false,
-    bool showSeeAll = true,
-    List<Product>? products,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
+  String title, {
+  bool hasTimer = false,
+  bool showSeeAll = true,
+  List<Product>? products,
+}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
             title,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 17,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),
           ),
-          if (hasTimer)
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.red[400]!, Colors.red[600]!],
+        ),
+        if (hasTimer && (currentFlashSale != null || nextFlashSale != null))
+          FlashSaleTimer(
+            schedule: currentFlashSale ?? nextFlashSale!,
+            onTimerEnd: _onFlashSaleTimerEnd,
+          )
+        else if (showSeeAll && products != null)
+          TextButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProductListScreen(
+                    title: title,
+                    products: products,
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.red.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.access_time_rounded,
-                    color: Colors.white,
-                    size: 14,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '00:45:32',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else if (showSeeAll && products != null)
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (context) =>
-                            ProductListScreen(title: title, products: products),
-                  ),
-                );
-              },
-              child: Text(
-                'Lihat Semua',
-                style: TextStyle(
-                  color: Colors.blue[700],
-                  fontWeight: FontWeight.w600,
-                ),
+              );
+            },
+            child: Text(
+              'Lihat Semua',
+              style: TextStyle(
+                color: Colors.blue[700],
+                fontWeight: FontWeight.w600,
               ),
             ),
-        ],
-      ),
-    );
-  }
+          ),
+      ],
+    ),
+  );
+}
 
   Widget _buildProductGrid(List<Product> products) {
     return Container(
