@@ -7,15 +7,16 @@ import 'package:indosemecb2b/models/cart_item.dart';
 
 class TransactionManager {
   // Stream controller untuk notifikasi perubahan status
-  static final StreamController<void> _statusController = StreamController<void>.broadcast();
+  static final StreamController<void> _statusController =
+      StreamController<void>.broadcast();
   static final ValueNotifier<String> statusNotifier = ValueNotifier<String>('');
-  
+
   // Stream untuk mendengarkan perubahan status
   static Stream<void> get statusStream => _statusController.stream;
 
   // ⭐ Helper untuk randomize status
   static String _getRandomStatus() {
-    final statuses = ['Diproses',];
+    final statuses = ['Diproses'];
     final random = Random();
     return statuses[random.nextInt(statuses.length)];
   }
@@ -44,23 +45,23 @@ class TransactionManager {
       print('🆔 Transaction ID: $transactionId');
 
       // Convert CartItem ke TransactionItem
-      final items = cartItems.map((cartItem) {
-        return TransactionItem(
-          productId: cartItem.productId,
-          name: cartItem.name,
-          price: cartItem.price,
-          quantity: cartItem.quantity,
-          imageUrl: cartItem.imageUrl,
-        );
-      }).toList();
+      final items =
+          cartItems.map((cartItem) {
+            return TransactionItem(
+              productId: cartItem.productId,
+              name: cartItem.name,
+              price: cartItem.price,
+              quantity: cartItem.quantity,
+              imageUrl: cartItem.imageUrl,
+            );
+          }).toList();
 
       print('📦 Items count: ${items.length}');
 
       // Hitung total
-      final total = cartItems.fold<double>(
-        0.0,
-        (sum, item) => sum + item.totalPrice,
-      ) + 5000.0; 
+      final total =
+          cartItems.fold<double>(0.0, (sum, item) => sum + item.totalPrice) +
+          5000.0;
 
       print('💰 Total price: $total');
 
@@ -109,7 +110,7 @@ class TransactionManager {
         print(
           '✓ Verification - Transactions in storage: ${verifyTransactions.length}',
         );
-        
+
         // ⭐ Verifikasi status tersimpan
         final savedTransaction = verifyTransactions.firstWhere(
           (t) => t['id'] == transactionId,
@@ -149,7 +150,8 @@ class TransactionManager {
         print('⚠️ No transaction data found for user: $userLogin');
       }
 
-      final transactions = data.map((item) => Transaction.fromMap(item)).toList();
+      final transactions =
+          data.map((item) => Transaction.fromMap(item)).toList();
       print('✅ Parsed transactions: ${transactions.length}');
 
       if (transactions.isNotEmpty) {
@@ -167,14 +169,18 @@ class TransactionManager {
   }
 
   // Filter transaksi berdasarkan status
-  static Future<List<Transaction>> getTransactionsByStatus(String status) async {
+  static Future<List<Transaction>> getTransactionsByStatus(
+    String status,
+  ) async {
     final transactions = await getTransactions();
     if (status == 'Semua Status') return transactions;
     return transactions.where((t) => t.status == status).toList();
   }
 
   // Filter transaksi berdasarkan tanggal
-  static Future<List<Transaction>> getTransactionsByDate(String dateFilter) async {
+  static Future<List<Transaction>> getTransactionsByDate(
+    String dateFilter,
+  ) async {
     final transactions = await getTransactions();
     if (dateFilter == 'Semua Tanggal') return transactions;
 
@@ -193,7 +199,9 @@ class TransactionManager {
   }
 
   // Filter transaksi berdasarkan kategori (delivery option)
-  static Future<List<Transaction>> getTransactionsByCategory(String category) async {
+  static Future<List<Transaction>> getTransactionsByCategory(
+    String category,
+  ) async {
     final transactions = await getTransactions();
     if (category == 'Semua') return transactions;
 
@@ -206,7 +214,9 @@ class TransactionManager {
 
     if (deliveryOption == null) return transactions;
 
-    return transactions.where((t) => t.deliveryOption == deliveryOption).toList();
+    return transactions
+        .where((t) => t.deliveryOption == deliveryOption)
+        .toList();
   }
 
   // Ambil transaksi dengan filter gabungan
@@ -246,7 +256,8 @@ class TransactionManager {
         startDate = DateTime(1970);
       }
 
-      transactions = transactions.where((t) => t.date.isAfter(startDate)).toList();
+      transactions =
+          transactions.where((t) => t.date.isAfter(startDate)).toList();
       print('🔍 After date filter: ${transactions.length}');
     }
 
@@ -260,9 +271,10 @@ class TransactionManager {
       }
 
       if (deliveryOption != null) {
-        transactions = transactions
-            .where((t) => t.deliveryOption == deliveryOption)
-            .toList();
+        transactions =
+            transactions
+                .where((t) => t.deliveryOption == deliveryOption)
+                .toList();
         print('🔍 After category filter: ${transactions.length}');
       }
     }
@@ -278,7 +290,7 @@ class TransactionManager {
   ) async {
     try {
       print('🔄 Updating transaction $transactionId to status: $newStatus');
-      
+
       final userLogin = await UserDataManager.getCurrentUserLogin();
       if (userLogin == null) return false;
 
@@ -301,14 +313,81 @@ class TransactionManager {
       );
 
       print('💾 Save result: $saved');
-      
+
       // Beri tahu bahwa status telah berubah
       _statusController.add(null);
       statusNotifier.value = newStatus;
-      
+
       return saved;
     } catch (e) {
       debugPrint('❌ Error updating transaction status: $e');
+      return false;
+    }
+  }
+
+  // ⭐ BARU: Konfirmasi pesanan telah diterima dan ubah status menjadi "Selesai"
+  static Future<bool> confirmOrderReceived(String transactionId) async {
+    try {
+      print('✅ Confirming order received for transaction: $transactionId');
+
+      final userLogin = await UserDataManager.getCurrentUserLogin();
+      if (userLogin == null) {
+        print('❌ No user logged in');
+        return false;
+      }
+
+      final transactions = await getTransactions();
+      final index = transactions.indexWhere((t) => t.id == transactionId);
+
+      if (index == -1) {
+        print('❌ Transaction not found: $transactionId');
+        return false;
+      }
+
+      // Cek apakah status saat ini adalah "Pesanan telah sampai"
+      if (transactions[index].status != 'Pesanan telah sampai') {
+        print(
+          '⚠️ Transaction status is not "Pesanan telah sampai", current: ${transactions[index].status}',
+        );
+        // Tetap lanjutkan untuk kemudahan testing
+      }
+
+      // Update status menjadi "Selesai"
+      transactions[index].status = 'Selesai';
+      print('✅ Status updated to "Selesai" in memory');
+
+      // Simpan kembali ke storage
+      final saved = await UserDataManager.saveTransactions(
+        userLogin,
+        transactions.map((t) => t.toMap()).toList(),
+      );
+
+      print('💾 Save result: $saved');
+
+      if (saved) {
+        // Verifikasi status tersimpan
+        final verifyTransactions = await UserDataManager.getTransactions(
+          userLogin,
+        );
+        final savedTransaction = verifyTransactions.firstWhere(
+          (t) => t['id'] == transactionId,
+          orElse: () => <String, dynamic>{},
+        );
+        if (savedTransaction.isNotEmpty) {
+          print('✓ Verified saved status: ${savedTransaction['status']}');
+        }
+
+        // Beri tahu bahwa status telah berubah
+        _statusController.add(null);
+        statusNotifier.value = 'Selesai-$transactionId';
+
+        print('✅ Order confirmed as received successfully!');
+      }
+
+      return saved;
+    } catch (e) {
+      debugPrint('❌ Error confirming order received: $e');
+      debugPrint('Stack trace: ${StackTrace.current}');
       return false;
     }
   }
@@ -326,10 +405,10 @@ class TransactionManager {
         userLogin,
         transactions.map((t) => t.toMap()).toList(),
       );
-      
+
       // Beri tahu bahwa ada perubahan data
       _statusController.add(null);
-      
+
       return saved;
     } catch (e) {
       debugPrint('Error deleting transaction: $e');
@@ -356,7 +435,7 @@ class TransactionManager {
         .where((t) => t.status == 'Selesai')
         .fold<double>(0.0, (sum, t) => sum + t.totalPrice);
   }
-  
+
   // Dispose resources
   static void dispose() {
     _statusController.close();

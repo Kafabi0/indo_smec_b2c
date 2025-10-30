@@ -36,9 +36,6 @@ class _TransaksiScreenState extends State<TransaksiScreen>
   List<Transaction> _transactions = [];
   List<Transaction> _allTransactions = [];
 
-  // ⭐ TIDAK LAGI LISTEN KE STREAM - Biar tidak reload semua
-  // StreamSubscription? _statusSubscription;
-
   final List<String> kategoriList = [
     'Semua',
     'Xtra',
@@ -53,17 +50,11 @@ class _TransaksiScreenState extends State<TransaksiScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadTransactions();
-
-    // ⭐ HAPUS LISTENER INI
-    // _statusSubscription = TransactionManager.statusStream.listen((_) {
-    //   _loadTransactions();
-    // });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    // _statusSubscription?.cancel();
     super.dispose();
   }
 
@@ -211,8 +202,8 @@ class _TransaksiScreenState extends State<TransaksiScreen>
         return Colors.blue;
       case 'Hampir sampai':
         return Colors.purple;
-        case 'Mendekati tujuan':
-        return Colors.amberAccent;
+      case 'Mendekati tujuan':
+        return const Color.fromARGB(255, 232, 132, 9);
       case 'Pesanan telah sampai':
         return Colors.teal;
       case 'selesai':
@@ -522,20 +513,16 @@ class _TransaksiScreenState extends State<TransaksiScreen>
     );
   }
 
-  // ⭐ OPTIMIZED: Card individual yang listen ke TransactionManager
   Widget _buildTransactionCard(Transaction transaction) {
     return FutureBuilder<List<Transaction>>(
-      // Rebuild card ini ketika ada perubahan
-      future: Future.value([transaction]), // Dummy future untuk trigger rebuild
+      future: Future.value([transaction]),
       builder: (context, snapshot) {
         return ValueListenableBuilder<String>(
           valueListenable: TransactionManager.statusNotifier,
           builder: (context, triggerValue, child) {
-            // ⭐ Re-fetch status terbaru dari storage untuk transaksi ini
             return FutureBuilder<Transaction?>(
               future: _getUpdatedTransaction(transaction.id),
               builder: (context, txSnapshot) {
-                // Gunakan transaksi terupdate jika ada, kalau tidak pakai yang lama
                 final currentTransaction = txSnapshot.data ?? transaction;
 
                 return GestureDetector(
@@ -686,73 +673,188 @@ class _TransaksiScreenState extends State<TransaksiScreen>
 
                         const SizedBox(height: 14),
 
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            OutlinedButton(
-                              onPressed: () {
-                                if (currentTransaction.status == "Selesai" ||
-                                    currentTransaction.status ==
-                                        "Selesai") {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => MainNavigation(),
+                        // ⭐ Jika status "Pesanan telah sampai", tampilkan tombol konfirmasi
+                        if (currentTransaction.status == "Pesanan telah sampai")
+                          Column(
+                            children: [
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.orange[200]!,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.info_outline,
+                                      color: Colors.orange[700],
+                                      size: 20,
                                     ),
-                                  );
-                                } else {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (_) => TrackingScreen(
-                                            trackingData: OrderTrackingModel(
-                                              transactionId:
-                                                  currentTransaction.id,
-                                              courierName: "Tryan Gumilar",
-                                              courierId: "D 4563 ADP",
-                                              statusMessage:
-                                                  currentTransaction.status,
-                                              statusDesc:
-                                                  "Pesananmu sedang diproses",
-                                              updatedAt:
-                                                  currentTransaction.date ??
-                                                  DateTime.now(),
-                                            ),
-                                          ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Pesanan sudah sampai? Konfirmasi penerimaan pesanan Anda',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.orange[900],
+                                        ),
+                                      ),
                                     ),
-                                  );
-                                }
-                              },
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: Colors.blue[700]!),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(6),
+                                  ],
                                 ),
                               ),
-                              child: Text(
-                                (currentTransaction.status == "Selesai" ||
-                                        currentTransaction.status ==
-                                            "Selesai")
-                                    ? "Beli Lagi"
-                                    : "Lacak",
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.blue[700],
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      onPressed:
+                                          () => _showConfirmDialog(
+                                            context,
+                                            currentTransaction,
+                                          ),
+                                      icon: const Icon(
+                                        Icons.check_circle_outline,
+                                        size: 18,
+                                      ),
+                                      label: const Text(
+                                        'Pesanan Diterima',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green[600],
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  OutlinedButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (_) => TrackingScreen(
+                                                trackingData: OrderTrackingModel(
+                                                  transactionId:
+                                                      currentTransaction.id,
+                                                  courierName: "Tryan Gumilar",
+                                                  courierId: "D 4563 ADP",
+                                                  statusMessage:
+                                                      currentTransaction.status,
+                                                  statusDesc:
+                                                      "Pesanan berhasil diantarkan",
+                                                  updatedAt:
+                                                      currentTransaction.date ??
+                                                      DateTime.now(),
+                                                ),
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      side: BorderSide(
+                                        color: Colors.blue[700]!,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                        horizontal: 16,
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.location_on_outlined,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          )
+                        else
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              OutlinedButton(
+                                onPressed: () {
+                                  if (currentTransaction.status == "Selesai" ||
+                                      currentTransaction.status == "Selesai") {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => MainNavigation(),
+                                      ),
+                                    );
+                                  } else {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => TrackingScreen(
+                                              trackingData: OrderTrackingModel(
+                                                transactionId:
+                                                    currentTransaction.id,
+                                                courierName: "Tryan Gumilar",
+                                                courierId: "D 4563 ADP",
+                                                statusMessage:
+                                                    currentTransaction.status,
+                                                statusDesc:
+                                                    "Pesananmu sedang diproses",
+                                                updatedAt:
+                                                    currentTransaction.date ??
+                                                    DateTime.now(),
+                                              ),
+                                            ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: Colors.blue[700]!),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                ),
+                                child: Text(
+                                  (currentTransaction.status == "Selesai" ||
+                                          currentTransaction.status ==
+                                              "Selesai")
+                                      ? "Beli Lagi"
+                                      : "Lacak",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.blue[700],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+
+                              Text(
+                                'Total ${formatRupiah(currentTransaction.totalPrice)}',
+                                style: const TextStyle(
+                                  fontSize: 15,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ),
-
-                            Text(
-                              'Total ${formatRupiah(currentTransaction.totalPrice)}',
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
                       ],
                     ),
                   ),
@@ -760,6 +862,162 @@ class _TransaksiScreenState extends State<TransaksiScreen>
               },
             );
           },
+        );
+      },
+    );
+  }
+
+  // ⭐ Method untuk menampilkan dialog konfirmasi
+  void _showConfirmDialog(BuildContext context, Transaction transaction) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check_circle,
+                  color: Colors.green[600],
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Konfirmasi Penerimaan',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Apakah Anda sudah menerima pesanan ini?',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'No. Transaksi',
+                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      transaction.id,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Dengan mengkonfirmasi, status pesanan akan berubah menjadi "Selesai".',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: Text(
+                'Batal',
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+
+                // Show loading
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder:
+                      (_) => const Center(child: CircularProgressIndicator()),
+                );
+
+                // Confirm order received
+                await TransactionManager.confirmOrderReceived(transaction.id);
+
+                // Wait a bit for update
+                await Future.delayed(const Duration(milliseconds: 500));
+
+                if (!mounted) return;
+                Navigator.of(context).pop(); // Close loading
+
+                // Reload transactions
+                await _loadTransactions();
+
+                // Show success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: const [
+                        Icon(Icons.check_circle, color: Colors.white),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Pesanan berhasil dikonfirmasi!',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                    backgroundColor: Colors.green[600],
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green[600],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Ya, Sudah Terima',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         );
       },
     );

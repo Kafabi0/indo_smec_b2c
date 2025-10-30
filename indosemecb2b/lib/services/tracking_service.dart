@@ -147,15 +147,12 @@ class TrackingServiceManager {
         return;
       }
 
-      // Cek apakah sudah hampir sampai tujuan
       final remainingDistance = distance(
         tracking.currentPosition,
         tracking.route.last,
       );
 
-      // 🚫 Jangan selesai kalau masih jauh
       if (remainingDistance > 50) {
-        // Geser ke titik berikutnya
         if (tracking.currentIndex < tracking.route.length - 1) {
           tracking.currentIndex++;
           tracking.currentPosition = tracking.route[tracking.currentIndex];
@@ -165,16 +162,20 @@ class TrackingServiceManager {
         tracking.notifier.value = tracking.currentPosition;
         tracking.statusNotifier.value = tracking.status;
       } else {
-        // ✅ Benar-benar sudah sampai
+        // ⭐ UBAH: Hanya set ke "Pesanan telah sampai", BUKAN "Selesai"
         tracking.status = "Pesanan telah sampai";
         tracking.statusDesc = "Pesanan berhasil diantarkan ke alamat tujuan";
         tracking.notifier.value = tracking.currentPosition;
         tracking.statusNotifier.value = tracking.status;
 
-        TransactionManager.updateTransactionStatus(transactionId, "Selesai");
+        // ⭐ Update status transaksi ke "Pesanan telah sampai"
+        TransactionManager.updateTransactionStatus(
+          transactionId,
+          "Pesanan telah sampai",
+        );
 
         timer.cancel();
-        print('✅ Kurir sampai di tujuan - Tracking selesai');
+        print('✅ Kurir sampai di tujuan - Menunggu konfirmasi penerimaan');
       }
     });
   }
