@@ -10,18 +10,19 @@ import '../utils/user_data_manager.dart';
 import '../utils/cart_manager.dart';
 
 class MainNavigation extends StatefulWidget {
-  const MainNavigation({Key? key}) : super(key: key);
+  final int initialIndex; // ✅ TAMBAHAN: Parameter untuk set tab awal
+  
+  const MainNavigation({Key? key, this.initialIndex = 0}) : super(key: key);
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
 }
 
 class _MainNavigationState extends State<MainNavigation> {
-  int _currentIndex = 0;
+  late int _currentIndex; // ✅ Ubah jadi late
   bool _isLoggedIn = false;
-  int _cartItemCount = 0; // ⭐ TAMBAHKAN untuk count cart
+  int _cartItemCount = 0;
 
-  // 🔑 Key untuk mengakses HomeScreen dan refresh-nya
   final GlobalKey<HomeScreenState> _homeScreenKey = GlobalKey<HomeScreenState>();
   final GlobalKey<CartScreenState> _cartScreenKey = GlobalKey<CartScreenState>();
 
@@ -30,8 +31,9 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialIndex; // ✅ Set dari parameter
     _checkLoginStatus();
-    _loadCartCount(); // ⭐ Load cart count saat init
+    _loadCartCount();
 
     _screens = [
       HomeScreen(key: _homeScreenKey),
@@ -48,14 +50,14 @@ class _MainNavigationState extends State<MainNavigation> {
   void didUpdateWidget(MainNavigation oldWidget) {
     super.didUpdateWidget(oldWidget);
     _checkLoginStatus();
-    _loadCartCount(); // ⭐ Reload saat widget update
+    _loadCartCount();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _checkLoginStatus();
-    _loadCartCount(); // ⭐ Reload saat dependencies change
+    _loadCartCount();
   }
 
   Future<void> _checkLoginStatus() async {
@@ -66,12 +68,10 @@ class _MainNavigationState extends State<MainNavigation> {
       setState(() {
         _isLoggedIn = loggedIn;
       });
-      // Reload cart count ketika status login berubah
       _loadCartCount();
     }
   }
 
-  // ⭐ Method untuk load jumlah item di cart
   Future<void> _loadCartCount() async {
     final count = await CartManager.getCartItemCount();
     if (mounted) {
@@ -81,12 +81,11 @@ class _MainNavigationState extends State<MainNavigation> {
     }
   }
 
-  // ⭐ Handler khusus untuk logout - refresh HomeScreen + pindah ke tab Beranda
   void _handleLogout() async {
     await _checkLoginStatus();
     _homeScreenKey.currentState?.refreshLoginStatus();
     _cartScreenKey.currentState?.refreshCart();
-    _loadCartCount(); // ⭐ Update cart count setelah logout
+    _loadCartCount();
 
     setState(() {
       _currentIndex = 0;
@@ -94,7 +93,6 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   void _onTabTapped(int index) {
-    // Jika user belum login dan ingin akses selain Beranda (0) dan Akun (4)
     if (!_isLoggedIn && index != 0 && index != 4) {
       _showLoginBottomSheet();
       return;
@@ -108,16 +106,14 @@ class _MainNavigationState extends State<MainNavigation> {
       return;
     }
 
-    // ⭐ Jika tab Beranda diklik berulang, refresh HomeScreen
     if (index == 0 && _currentIndex == 0) {
       _homeScreenKey.currentState?.refreshLoginStatus();
     }
     
     if (index == 1) {
-      // Refresh cart dan reload count
       Future.delayed(const Duration(milliseconds: 100), () {
         _cartScreenKey.currentState?.refreshCart();
-        _loadCartCount(); // ⭐ Update count saat buka tab cart
+        _loadCartCount();
       });
     }
 
@@ -192,7 +188,7 @@ class _MainNavigationState extends State<MainNavigation> {
                     await _checkLoginStatus();
                     _homeScreenKey.currentState?.refreshLoginStatus();
                     _cartScreenKey.currentState?.refreshCart();
-                    _loadCartCount(); // ⭐ Update count setelah login
+                    _loadCartCount();
                   },
                   child: const Text(
                     "Gabung Sekarang",
@@ -242,7 +238,6 @@ class _MainNavigationState extends State<MainNavigation> {
               activeIcon: Icon(Icons.home, size: 26),
               label: 'Beranda',
             ),
-            // ⭐ Keranjang dengan Badge
             BottomNavigationBarItem(
               icon: _buildCartIconWithBadge(false),
               activeIcon: _buildCartIconWithBadge(true),
@@ -289,7 +284,6 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 
-  // ⭐ Widget untuk icon cart dengan badge
   Widget _buildCartIconWithBadge(bool isActive) {
     return Stack(
       clipBehavior: Clip.none,

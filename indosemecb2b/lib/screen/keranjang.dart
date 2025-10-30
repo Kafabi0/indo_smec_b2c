@@ -27,6 +27,8 @@ class CartScreenState extends State<CartScreen> with RouteAware {
   String selectedDeliveryType = "antar";
   String selectedShipping = "reguler";
   String? selectedRegulerTime;
+  final ScrollController _scrollController = ScrollController();
+  bool _isScrolled = false;
 
   final NumberFormat _currencyFormatter = NumberFormat.currency(
     locale: 'id_ID',
@@ -42,6 +44,7 @@ class CartScreenState extends State<CartScreen> with RouteAware {
   void initState() {
     super.initState();
     _loadUserData();
+    _scrollController.addListener(_scrollListener);
   }
 
   static final RouteObserver<PageRoute> routeObserver =
@@ -65,6 +68,21 @@ class CartScreenState extends State<CartScreen> with RouteAware {
     // Dipanggil ketika screen di atasnya di-pop (kembali ke CartScreen)
     print('🔄 [CART] Screen resumed, reloading data...');
     _loadUserData();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.offset > 50 && !_isScrolled) {
+      setState(() => _isScrolled = true);
+    } else if (_scrollController.offset <= 50 && _isScrolled) {
+      setState(() => _isScrolled = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -359,31 +377,44 @@ class CartScreenState extends State<CartScreen> with RouteAware {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Keranjang Belanja',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+      // 🔹 AnimatedContainer memberi transisi halus pada warna AppBar
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          color: _isScrolled ? Colors.blue : Colors.white,
+          child: SafeArea(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(left: 16),
+                  child: Text(
+                    'Keranjang Belanja',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.favorite_sharp,
+                    color: _isScrolled ? Colors.white : Colors.red,
+                  ),
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const FavoritScreen()),
+                    );
+                    await _loadUserData();
+                  },
+                ),
+              ],
+            ),
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.favorite_sharp, color: Colors.grey[700]),
-            onPressed: () async {
-              // ⭐ Gunakan await untuk menunggu halaman favorit selesai
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => FavoritScreen()),
-              );
-              // ⭐ Setelah kembali dari Favorit, reload data
-              await _loadUserData();
-            },
-          ),
-        ],
       ),
       body:
           _isLoading

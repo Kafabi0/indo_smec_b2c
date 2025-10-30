@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:indosemecb2b/screen/keranjang.dart';
+import 'package:indosemecb2b/screen/main_navigasi.dart';
 import '../models/product_model.dart';
 import '../services/favorite_service.dart';
 import '../services/product_service.dart';
@@ -32,16 +32,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   void _loadSimilarProducts() {
-    // Ambil produk dari kategori yang sama
     final allProducts = _productService.getProductsByCategory(
       widget.product.category,
     );
 
-    // Filter: hapus produk saat ini dari list
     final filtered =
         allProducts.where((p) => p.id != widget.product.id).toList();
 
-    // Ambil maksimal 8 produk
     setState(() {
       similarProducts = filtered.take(8).toList();
     });
@@ -122,6 +119,32 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         );
       }
     }
+  }
+
+  // ✅ PERBAIKAN: Navigasi ke MainNavigation dengan tab Keranjang
+  void _navigateToCart() async {
+    final userLogin = await UserDataManager.getCurrentUserLogin();
+    if (userLogin == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Silakan login terlebih dahulu'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+
+    // ✅ Navigasi ke MainNavigation dan langsung ke tab Keranjang (index 1)
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const MainNavigationWithCart(),
+      ),
+      (route) => false,
+    );
   }
 
   @override
@@ -238,7 +261,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   onPressed: () async {
                     final product = widget.product;
 
-                    // ✅ Buat link produk (kamu bisa ganti sesuai format link sebenarnya)
                     final productUrl =
                         "https://indosemecb2b.com/product/${product.id}";
                     final message =
@@ -247,7 +269,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         "Harga: Rp${product.price.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}\n\n"
                         "Link: $productUrl";
 
-                    // ✅ Gunakan Share.share() untuk membuka menu share
                     await Share.share(message, subject: product.name);
                   },
                 ),
@@ -363,14 +384,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: OutlinedButton.icon(
-                      onPressed: () {
-                        // Implementasi cari toko
-                      },
-                      // icon: Icon(
-                      //   Icons.location_on_outlined,
-                      //   color: Colors.blue[600],
-                      //   size: 20,
-                      // ),
+                      onPressed: () {},
                       label: Text(
                         'Koperasi Merah Putih',
                         style: TextStyle(
@@ -418,9 +432,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         ),
                         const SizedBox(height: 8),
                         GestureDetector(
-                          onTap: () {
-                            // Implementasi lihat selengkapnya
-                          },
+                          onTap: () {},
                           child: Text(
                             'Selengkapnya',
                             style: TextStyle(
@@ -459,7 +471,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 final product = similarProducts[index];
                                 return GestureDetector(
                                   onTap: () {
-                                    // Navigate ke detail produk yang diklik
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
@@ -598,7 +609,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       ),
                     ),
 
-                  const SizedBox(height: 100), // Space for bottom buttons
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
@@ -621,7 +632,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ),
         child: Row(
           children: [
-            // Tombol Keranjang (Icon saja) - Menampilkan badge quantity
+            // Tombol Keranjang (Icon saja)
             Container(
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey[300]!),
@@ -630,15 +641,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               child: Stack(
                 children: [
                   IconButton(
-                    onPressed: () {
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder:
-                      //         (context) => CartScreen(),
-                      //   ),
-                      // );
-                    },
+                    onPressed: _navigateToCart, // ✅ Navigasi ke MainNavigation
                     icon: const Icon(
                       Icons.shopping_cart_outlined,
                       color: Colors.black87,
@@ -702,5 +705,30 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ),
       ),
     );
+  }
+}
+
+// TAMBAHAN: Widget helper untuk buka MainNavigation langsung ke tab Keranjang
+class MainNavigationWithCart extends StatefulWidget {
+  const MainNavigationWithCart({Key? key}) : super(key: key);
+
+  @override
+  State<MainNavigationWithCart> createState() => _MainNavigationWithCartState();
+}
+
+class _MainNavigationWithCartState extends State<MainNavigationWithCart> {
+  @override
+  void initState() {
+    super.initState();
+    // Langsung pindah ke tab Keranjang setelah widget build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Ini akan trigger setelah MainNavigation selesai build
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Return MainNavigation biasa, tapi nanti kita akan modifikasi main_navigasi.dart
+    return const MainNavigation(initialIndex: 1);
   }
 }
