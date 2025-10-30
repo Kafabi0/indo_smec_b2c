@@ -80,7 +80,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final success = await CartManager.addToCart(
       productId: widget.product.id,
       name: widget.product.name,
-      price: widget.product.price,
+      price: _productService.getProductPrice(widget.product.id, widget.product.price),
       originalPrice: widget.product.originalPrice,
       discountPercentage: widget.product.discountPercentage,
       imageUrl: widget.product.imageUrl,
@@ -121,7 +121,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
 
-  // ✅ PERBAIKAN: Navigasi ke MainNavigation dengan tab Keranjang
   void _navigateToCart() async {
     final userLogin = await UserDataManager.getCurrentUserLogin();
     if (userLogin == null) {
@@ -137,7 +136,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       return;
     }
 
-    // ✅ Navigasi ke MainNavigation dan langsung ke tab Keranjang (index 1)
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
@@ -149,11 +147,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ HITUNG HARGA FLASH SALE
+    final displayPrice = _productService.getProductPrice(
+      widget.product.id, 
+      widget.product.price
+    );
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
-          // App Bar dengan gambar produk
           SliverAppBar(
             expandedHeight: 350,
             pinned: true,
@@ -178,7 +181,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ),
             ),
             actions: [
-              // Tombol Favorite
               Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -260,13 +262,18 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   icon: const Icon(Icons.share, color: Colors.black87),
                   onPressed: () async {
                     final product = widget.product;
+                    // ✅ FIX 1: Share dengan harga flash sale
+                    final sharePrice = _productService.getProductPrice(
+                      product.id, 
+                      product.price
+                    );
 
                     final productUrl =
                         "https://indosemecb2b.com/product/${product.id}";
                     final message =
                         "Lihat produk ini di IndoSemec!\n\n"
                         "${product.name}\n"
-                        "Harga: Rp${product.price.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}\n\n"
+                        "Harga: Rp${sharePrice.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}\n\n"
                         "Link: $productUrl";
 
                     await Share.share(message, subject: product.name);
@@ -301,7 +308,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ),
           ),
 
-          // Konten produk
           SliverToBoxAdapter(
             child: Container(
               decoration: const BoxDecoration(
@@ -316,7 +322,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 children: [
                   const SizedBox(height: 20),
 
-                  // Nama & Harga
+                  // ✅ FIX 2: Display harga utama dengan flash sale
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
@@ -333,7 +339,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         Row(
                           children: [
                             Text(
-                              'Rp${widget.product.price.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
+                              'Rp${displayPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
@@ -380,7 +386,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
                   const SizedBox(height: 20),
 
-                  // Tombol Cari Toko
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: OutlinedButton.icon(
@@ -407,7 +412,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
                   const SizedBox(height: 24),
 
-                  // Deskripsi Produk
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
@@ -447,7 +451,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
                   const SizedBox(height: 24),
 
-                  // Produk Serupa
+                  // ✅ FIX 3: Produk serupa dengan harga flash sale
                   if (similarProducts.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -469,6 +473,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               itemCount: similarProducts.length,
                               itemBuilder: (context, index) {
                                 final product = similarProducts[index];
+                                final productPrice = _productService.getProductPrice(
+                                  product.id, 
+                                  product.price
+                                );
+                                
                                 return GestureDetector(
                                   onTap: () {
                                     Navigator.pushReplacement(
@@ -581,7 +590,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          'Rp${product.price.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
+                                          'Rp${productPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
                                           style: TextStyle(
                                             fontSize: 13,
                                             color: Colors.blue[700],
@@ -617,7 +626,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ],
       ),
 
-      // Bottom Navigation Bar
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -632,7 +640,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ),
         child: Row(
           children: [
-            // Tombol Keranjang (Icon saja)
             Container(
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey[300]!),
@@ -641,7 +648,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               child: Stack(
                 children: [
                   IconButton(
-                    onPressed: _navigateToCart, // ✅ Navigasi ke MainNavigation
+                    onPressed: _navigateToCart,
                     icon: const Icon(
                       Icons.shopping_cart_outlined,
                       color: Colors.black87,
@@ -677,7 +684,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ),
             ),
             const SizedBox(width: 12),
-            // Tombol Keranjang dengan text
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: _addToCart,
@@ -708,7 +714,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 }
 
-// TAMBAHAN: Widget helper untuk buka MainNavigation langsung ke tab Keranjang
 class MainNavigationWithCart extends StatefulWidget {
   const MainNavigationWithCart({Key? key}) : super(key: key);
 
@@ -720,7 +725,6 @@ class _MainNavigationWithCartState extends State<MainNavigationWithCart> {
   @override
   void initState() {
     super.initState();
-    // Langsung pindah ke tab Keranjang setelah widget build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Ini akan trigger setelah MainNavigation selesai build
     });
@@ -728,7 +732,6 @@ class _MainNavigationWithCartState extends State<MainNavigationWithCart> {
 
   @override
   Widget build(BuildContext context) {
-    // Return MainNavigation biasa, tapi nanti kita akan modifikasi main_navigasi.dart
     return const MainNavigation(initialIndex: 1);
   }
 }
