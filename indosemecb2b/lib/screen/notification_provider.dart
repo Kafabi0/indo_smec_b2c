@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/notification_model.dart';
 import '../utils/user_data_manager.dart';
+import 'package:intl/intl.dart';
 
 class NotificationProvider with ChangeNotifier {
   List<AppNotification> _notifications = [];
@@ -215,6 +216,42 @@ class NotificationProvider with ChangeNotifier {
       await _saveNotifications();
       notifyListeners();
     }
+  }
+
+  // ✅ ADD THIS METHOD after addPaymentSuccessNotification
+  Future<void> addTopUpSuccessNotification({
+    required double amount,
+    required String paymentMethod,
+  }) async {
+    print('💰 [NotifProvider] Creating top-up notification...');
+    print('   Amount: $amount');
+    print('   Method: $paymentMethod');
+
+    final transactionId = 'TOPUP${DateTime.now().millisecondsSinceEpoch}';
+
+    final notification = AppNotification(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      type: NotifType.transaksi,
+      title: 'Top Up Berhasil!',
+      message:
+          'Saldo Klik kamu berhasil ditambah Rp ${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(amount)} via $paymentMethod',
+      date: DateTime.now(),
+      isRead: false,
+      total: amount,
+      orderId: transactionId,
+      transactionData: {
+        'id': transactionId,
+        'no_transaksi': transactionId,
+        'type': 'topup',
+        'amount': amount,
+        'payment_method': paymentMethod,
+        'date': DateTime.now().toIso8601String(),
+        'status': 'success',
+      },
+    );
+
+    await addNotification(notification);
+    print('✅ [NotifProvider] Top-up notification added');
   }
 
   // Mark all as read

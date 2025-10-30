@@ -32,7 +32,9 @@ class NotificationService {
     tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
 
     // Android settings
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
 
     // iOS settings
     const iosSettings = DarwinInitializationSettings(
@@ -58,20 +60,29 @@ class NotificationService {
   Future<bool> requestPermission() async {
     if (!_initialized) await initialize();
 
-    final androidPlugin = _notifications.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    final iosPlugin = _notifications.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
+    final androidPlugin =
+        _notifications
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+    final iosPlugin =
+        _notifications
+            .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin
+            >();
 
     // Request Android 13+ permission
-    final androidGranted = await androidPlugin?.requestNotificationsPermission() ?? true;
-    
+    final androidGranted =
+        await androidPlugin?.requestNotificationsPermission() ?? true;
+
     // Request iOS permission
-    final iosGranted = await iosPlugin?.requestPermissions(
-      alert: true,
-      badge: true,
-      sound: true,
-    ) ?? true;
+    final iosGranted =
+        await iosPlugin?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        ) ??
+        true;
 
     return androidGranted && iosGranted;
   }
@@ -79,7 +90,7 @@ class NotificationService {
   // ✅ Handle ketika notifikasi di-tap dengan navigation
   void _onNotificationTap(NotificationResponse response) {
     debugPrint('🔔 Notification tapped: ${response.payload}');
-    
+
     if (response.payload == null || response.payload!.isEmpty) {
       debugPrint('❌ No payload data');
       return;
@@ -88,7 +99,7 @@ class NotificationService {
     try {
       // Parse payload (berisi data transaksi dalam format JSON)
       final Map<String, dynamic> payloadData = json.decode(response.payload!);
-      
+
       debugPrint('📦 Payload data keys: ${payloadData.keys}');
 
       // ✅ Navigate ke DetailPembayaranScreen
@@ -158,8 +169,86 @@ class NotificationService {
       details,
       payload: payload, // ✅ Transaction data untuk navigation
     );
-    
+
     debugPrint('🔔 Payment notification shown for order: $orderId');
+  }
+
+  // ✅ ADD THIS METHOD after showOrderShippedNotification
+
+  // Tampilkan notifikasi top-up berhasil
+  Future<void> showTopUpSuccessNotification({
+    required double amount,
+    required String paymentMethod,
+    required String transactionId,
+    Map<String, dynamic>? transactionData, // ✅ Pass transaction data
+  }) async {
+    if (!_initialized) await initialize();
+
+    const androidDetails = AndroidNotificationDetails(
+      'topup_channel',
+      'Top-Up Notifications',
+      channelDescription: 'Notifikasi untuk top-up saldo',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      styleInformation: BigTextStyleInformation(''),
+      enableVibration: true,
+      playSound: true,
+      color: Color(0xFF4CAF50), // Green color for top-up
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    // ✅ Format amount to Rupiah
+    final formattedAmount = _formatRupiah(amount);
+
+    // ✅ Encode transaction data sebagai payload
+    String payload;
+    if (transactionData != null) {
+      payload = json.encode(transactionData);
+      debugPrint(
+        '📦 Top-up notification payload created with transaction data',
+      );
+    } else {
+      payload = json.encode({
+        'id': transactionId,
+        'type': 'topup',
+        'amount': amount,
+        'payment_method': paymentMethod,
+      });
+      debugPrint('⚠️ No transaction data, using basic topup info');
+    }
+
+    await _notifications.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000, // Unique ID
+      '💰 Top-Up Berhasil!',
+      'Saldo kamu berhasil ditambah $formattedAmount via $paymentMethod',
+      details,
+      payload: payload, // ✅ Transaction data untuk navigation
+    );
+
+    debugPrint('🔔 Top-up notification shown: $transactionId');
+  }
+
+  // ✅ Helper method untuk format Rupiah
+  String _formatRupiah(double amount) {
+    if (amount >= 1000000) {
+      return 'Rp ${(amount / 1000000).toStringAsFixed(amount % 1000000 == 0 ? 0 : 1)}jt';
+    } else if (amount >= 1000) {
+      return 'Rp ${(amount / 1000).toStringAsFixed(amount % 1000 == 0 ? 0 : 0)}rb';
+    } else {
+      return 'Rp ${amount.toStringAsFixed(0)}';
+    }
   }
 
   // Tampilkan notifikasi pesanan sedang dikirim
@@ -207,7 +296,7 @@ class NotificationService {
       details,
       payload: payload,
     );
-    
+
     debugPrint('🔔 Shipping notification shown for order: $orderId');
   }
 

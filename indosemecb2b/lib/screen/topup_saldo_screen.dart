@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:indosemecb2b/screen/notification_provider.dart';
+import 'package:indosemecb2b/services/notifikasi.dart';
 import 'package:intl/intl.dart';
 import 'package:indosemecb2b/utils/saldo_klik_manager.dart';
+import 'package:provider/provider.dart';
 
 class TopUpSaldoScreen extends StatefulWidget {
   const TopUpSaldoScreen({Key? key}) : super(key: key);
@@ -103,6 +106,42 @@ class _TopUpSaldoScreenState extends State<TopUpSaldoScreen> {
     setState(() => _isProcessing = false);
 
     if (success && mounted) {
+      // ✅ Generate transaction ID
+      final transactionId = 'TOPUP${DateTime.now().millisecondsSinceEpoch}';
+
+      // ✅ Prepare transaction data
+      final transactionData = {
+        'id': transactionId,
+        'no_transaksi': transactionId,
+        'type': 'topup',
+        'amount': nominal,
+        'payment_method': _selectedPayment!,
+        'date': DateTime.now().toIso8601String(),
+        'status': 'success',
+        'description': 'Isi Saldo via $_selectedPayment',
+      };
+
+      // ✅ 1. Tampilkan Local Notification
+      await NotificationService().showTopUpSuccessNotification(
+        amount: nominal,
+        paymentMethod: _selectedPayment!,
+        transactionId: transactionId,
+        transactionData: transactionData,
+      );
+
+      // ✅ 2. Simpan ke NotificationProvider
+      final notifProvider = Provider.of<NotificationProvider>(
+        context,
+        listen: false,
+      );
+
+      await notifProvider.addTopUpSuccessNotification(
+        amount: nominal,
+        paymentMethod: _selectedPayment!,
+      );
+
+      print('✅ Top-up notifications triggered (Local + Provider)');
+
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -136,6 +175,33 @@ class _TopUpSaldoScreenState extends State<TopUpSaldoScreen> {
                     'Saldo ${_formatRupiah.format(nominal)} berhasil ditambahkan',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.notifications_active,
+                          color: Colors.blue[700],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Notifikasi telah dikirim',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue[900],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

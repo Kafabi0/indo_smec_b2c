@@ -160,6 +160,7 @@ class SaldoKlikManager {
   }
 
   // Top up saldo untuk user tertentu
+  // Top up saldo untuk user tertentu
   static Future<bool> topUp(double amount, String paymentMethod) async {
     if (amount <= 0) return false;
 
@@ -175,15 +176,20 @@ class SaldoKlikManager {
 
     await prefs.setDouble(_getSaldoKey(userLogin), newSaldo);
 
+    // ✅ Generate transaction ID untuk top-up
+    final transactionId = 'TOPUP${DateTime.now().millisecondsSinceEpoch}';
+
     print(
       '💵 [SaldoKlik] Top up for $userLogin: +Rp ${amount.toStringAsFixed(0)} (New: Rp ${newSaldo.toStringAsFixed(0)})',
     );
+    print('   Transaction ID: $transactionId');
 
     await _addHistory(
       userLogin: userLogin,
       type: 'topup',
       amount: amount,
-      description: 'Isi Saldo via $paymentMethod',
+      description:
+          'Isi Saldo via $paymentMethod - $transactionId', // ✅ ADD TRANSACTION ID
       status: 'success',
     );
 
