@@ -80,7 +80,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final success = await CartManager.addToCart(
       productId: widget.product.id,
       name: widget.product.name,
-      price: _productService.getProductPrice(widget.product.id, widget.product.price),
+      price: _productService.getProductPrice(widget.product.id),
       originalPrice: widget.product.originalPrice,
       discountPercentage: widget.product.discountPercentage,
       imageUrl: widget.product.imageUrl,
@@ -149,8 +149,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   Widget build(BuildContext context) {
     // ✅ HITUNG HARGA FLASH SALE
     final displayPrice = _productService.getProductPrice(
-      widget.product.id, 
-      widget.product.price
+      widget.product.id
     );
 
     return Scaffold(
@@ -264,8 +263,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     final product = widget.product;
                     // ✅ FIX 1: Share dengan harga flash sale
                     final sharePrice = _productService.getProductPrice(
-                      product.id, 
-                      product.price
+                      product.id
                     );
 
                     final productUrl =
@@ -474,8 +472,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               itemBuilder: (context, index) {
                                 final product = similarProducts[index];
                                 final productPrice = _productService.getProductPrice(
-                                  product.id, 
-                                  product.price
+                                  product.id
                                 );
                                 
                                 return GestureDetector(
