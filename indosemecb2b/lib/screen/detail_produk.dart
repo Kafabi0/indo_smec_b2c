@@ -6,6 +6,8 @@ import '../services/product_service.dart';
 import '../utils/cart_manager.dart';
 import '../utils/user_data_manager.dart';
 import 'package:share_plus/share_plus.dart';
+import '../models/koperasi_model.dart';
+import '../services/koperasi_service.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
@@ -61,6 +63,110 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       });
     }
   }
+
+  Future<Koperasi?> _getProductKoperasi() async {
+    final allKoperasi = KoperasiService.getAllKoperasi();
+    
+    for (var koperasi in allKoperasi) {
+      if (koperasi.productIds.contains(widget.product.id)) {
+        return koperasi;
+      }
+    }
+    
+    return null;
+  }
+
+  void _showKoperasiDetail(Koperasi koperasi) {
+  showModalBottomSheet(
+    context: context,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return Container(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.store, color: Colors.blue[700], size: 28),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        koperasi.name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.star, color: Colors.amber, size: 16),
+                          SizedBox(width: 4),
+                          Text(
+                            '${koperasi.rating}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Divider(),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Icon(Icons.location_on, color: Colors.grey[600], size: 20),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    koperasi.fullAddress,
+                    style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                  ),
+                ),
+              ],
+            ),
+            if (koperasi.description != null) ...[
+              SizedBox(height: 12),
+              Text(
+                koperasi.description!,
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              ),
+            ],
+            SizedBox(height: 16),
+            Text(
+              koperasi.info,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.blue[700],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
 
   Future<void> _addToCart() async {
     final userLogin = await UserDataManager.getCurrentUserLogin();
@@ -386,25 +492,41 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: OutlinedButton.icon(
-                      onPressed: () {},
-                      label: Text(
-                        'Koperasi Merah Putih',
-                        style: TextStyle(
-                          color: Colors.blue[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                          horizontal: 16,
-                        ),
-                        side: BorderSide(color: Colors.blue[600]!),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
+                    child: FutureBuilder<Koperasi?>(
+                      future: _getProductKoperasi(),
+                      builder: (context, snapshot) {
+                        final koperasiName = snapshot.data?.name ?? 'Koperasi Merah Putih';
+                        
+                        return OutlinedButton.icon(
+                          onPressed: () {
+                            if (snapshot.data != null) {
+                              _showKoperasiDetail(snapshot.data!);
+                            }
+                          },
+                          icon: Icon(
+                            Icons.store,
+                            color: Colors.blue[600],
+                            size: 18,
+                          ),
+                          label: Text(
+                            koperasiName,
+                            style: TextStyle(
+                              color: Colors.blue[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 16,
+                            ),
+                            side: BorderSide(color: Colors.blue[600]!),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
 

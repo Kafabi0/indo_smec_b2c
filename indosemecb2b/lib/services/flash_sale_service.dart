@@ -115,14 +115,28 @@ class FlashSaleService {
     return upcoming.first;
   }
 
+  static bool isLocationBasedProduct(String productId) {
+  // Produk ID 121-125 adalah produk buah/sayur lokasi
+  // Atau cek dari KoperasiService
+    final id = int.tryParse(productId);
+    if (id != null && id >= 121) {
+      return true; // Produk lokal tidak kena flash sale
+    }
+    return false;
+}
+
   // ⭐ HITUNG HARGA FLASH SALE (OTOMATIS)
   static double calculateFlashPrice(String productId, double originalPrice) {
+  // Skip flash sale untuk produk lokasi
+    if (isLocationBasedProduct(productId)) {
+      return originalPrice;
+    }
+
     final currentSale = getCurrentFlashSale();
     
     if (currentSale != null && 
         currentSale.isActive && 
         currentSale.productIds.contains(productId)) {
-      // Hitung diskon dari originalPrice
       final discount = currentSale.discountPercentage / 100;
       final flashPrice = originalPrice * (1 - discount);
       
@@ -134,11 +148,14 @@ class FlashSaleService {
       return flashPrice;
     }
     
-    // Jika tidak ada flash sale, return null (gunakan price normal)
-    return originalPrice; // ⬅️ Kembalikan originalPrice sebagai fallback
+    return originalPrice;
   }
 
   static bool isProductOnFlashSale(String productId) {
+    if (isLocationBasedProduct(productId)) {
+      return false; // Produk lokasi tidak kena flash sale
+    }
+    
     final currentSale = getCurrentFlashSale();
     return currentSale != null && 
           currentSale.isActive && 

@@ -25,6 +25,9 @@ import 'package:indosemecb2b/models/flash_sale_model.dart';
 import 'package:indosemecb2b/services/flash_sale_service.dart';
 import 'package:indosemecb2b/widgets/flash_sale_timer.dart';
 import 'package:indosemecb2b/services/notifikasi.dart';
+import '../services/location_service.dart';
+import '../services/koperasi_service.dart';
+import '../models/koperasi_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -46,14 +49,14 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String? selectedSubCategory;
 
   // Data produk & stores
-  late List<Product> displayedProducts;
-  late List<Product> flashSaleProducts;
-  late List<Product> topRatedProducts;
-  late List<Product> freshProducts;
-  late List<Product> newestProducts;
-  late List<Product> fruitAndVeggies;
-  late List<Store> categoryStores;
-  late List<SubCategory> subCategories;
+  List<Product> displayedProducts = [];
+  List<Product> flashSaleProducts = [];
+  List<Product> topRatedProducts = [];
+  List<Product> freshProducts = [];
+  List<Product> newestProducts = [];
+  List<Product> fruitAndVeggies = [];
+  List<Store> categoryStores = [];
+  List<SubCategory> subCategories = [];
   Store? flagshipStore;
   Map<String, bool> favoriteStatus = {};
   Map<String, dynamic>? _savedAlamat;
@@ -65,6 +68,15 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   FlashSaleSchedule? nextFlashSale;
   Timer? _flashSaleCheckTimer;
   bool _flashSaleNotifScheduled = false;
+  Map<String, dynamic>? _userLocation;
+  List<Koperasi> _nearbyKoperasi = [];
+  bool _isLocationInitialized = false;
+
+  // Flags untuk mencegah pemanggilan berulang
+  bool _isLoadingLocation = true;
+  bool _isLoadingData = false;
+  bool _isLoadingPoin = false; // TAMBAHKAN FLAG INI
+  Timer? _debounceTimer;
 
   final List<Map<String, dynamic>> categories = [
     {'name': 'Semua', 'icon': Icons.apps},
@@ -80,24 +92,66 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this); // ⭐ TAMBAHKAN
+    WidgetsBinding.instance.addObserver(this);
 
-    _checkLoginStatus();
-    _loadData();
-    _loadPoinFromTransactions();
-    _updateFlashSaleStatus();
-    _scheduleFlashSaleNotifications();
+    // Gunakan microtask untuk memastikan semua inisialisasi berjalan berurutan
+    Future.microtask(() async {
+      print('🚀 [HOME] Starting initialization...');
+      await _checkLoginStatus();
+      print('✅ [HOME] Login status checked');
+
+      if (!_isLocationInitialized) {
+        await _loadUserLocation();
+        _isLocationInitialized = true;
+        print('✅ [HOME] User location loaded');
+      }
+
+      await _loadUserLocation();
+      print('✅ [HOME] User location loaded');
+
+      await _loadPoinFromTransactions();
+      print('✅ [HOME] Poin data loaded');
+
+      _updateFlashSaleStatus();
+      print('✅ [HOME] Flash sale status updated');
+
+      _scheduleFlashSaleNotifications();
+      print('✅ [HOME] Flash sale notifications scheduled');
+
+      _refreshData();
+      print('✅ [HOME] Initial data loaded');
+      print('🎉 [HOME] Initialization complete');
+    });
 
     _flashSaleCheckTimer = Timer.periodic(Duration(seconds: 10), (_) {
       _updateFlashSaleStatus();
     });
   }
 
+  void _refreshData() {
+    if (_isLoadingData) {
+      print('⚠️ [HOME] Data already loading, skipping refresh...');
+      return;
+    }
+
+    // Hapus timer sebelumnya jika ada (debounce)
+    _debounceTimer?.cancel();
+
+    // Set timer baru untuk mencegah pemanggilan terlalu cepat
+    _debounceTimer = Timer(Duration(milliseconds: 300), () {
+      if (mounted && !_isLoadingData) {
+        print('🔄 [HOME] Refreshing data...');
+        _loadData();
+      }
+    });
+  }
+
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this); // ⭐ TAMBAHKAN
-    super.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     _flashSaleCheckTimer?.cancel();
+    _debounceTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -110,25 +164,28 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         print('🔄 [HOME] Refreshing poin after payment...');
         await _loadPoinFromTransactions();
         await prefs.setBool('should_refresh_poin', false);
+        _refreshData();
       }
     }
   }
 
   Future<void> _scheduleFlashSaleNotifications() async {
-  if (_flashSaleNotifScheduled) return;
+    if (_flashSaleNotifScheduled) return;
 
-  try {
-    debugPrint('🔔 [HOME] Scheduling flash sale notifications...');
-    
-    final notifProvider = context.read<NotificationProvider>();
-    await NotificationService().scheduleAllFlashSaleNotifications(notifProvider);
-    
-    _flashSaleNotifScheduled = true;
-    debugPrint('✅ [HOME] Flash sale notifications scheduled!');
-  } catch (e) {
-    debugPrint('❌ [HOME] Error: $e');
+    try {
+      debugPrint('🔔 [HOME] Scheduling flash sale notifications...');
+
+      final notifProvider = context.read<NotificationProvider>();
+      await NotificationService().scheduleAllFlashSaleNotifications(
+        notifProvider,
+      );
+
+      _flashSaleNotifScheduled = true;
+      debugPrint('✅ [HOME] Flash sale notifications scheduled!');
+    } catch (e) {
+      debugPrint('❌ [HOME] Error: $e');
+    }
   }
-}
 
   void _updateFlashSaleStatus() {
     if (!mounted) return;
@@ -146,7 +203,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _onFlashSaleTimerEnd() {
     print('⏰ Timer flash sale berakhir, reload data...');
     _updateFlashSaleStatus();
-    _loadData(); // Reload produk
+    _loadData();
   }
 
   String _getFlashSaleTimeRange() {
@@ -175,6 +232,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _checkLoginStatus() async {
+    print('🔐 [HOME] Checking login status...');
+
     final prefs = await SharedPreferences.getInstance();
     final currentUser = await UserDataManager.getCurrentUserLogin();
 
@@ -188,17 +247,62 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     print('   userEmail: $userEmail');
 
     if (isLoggedIn && userEmail.isNotEmpty) {
+      print('✅ [HOME] User is logged in, loading data...');
       _loadFavoriteStatus();
       await _loadAlamatData();
-      // ⭐ TAMBAHKAN INI JIKA BELUM ADA
       await _loadPoinFromTransactions();
     } else {
+      print('❌ [HOME] User is not logged in');
       setState(() {
         favoriteStatus = {};
         _savedAlamat = null;
-        _totalPoinUMKM = 0; // ⬅️ TAMBAHKAN
-        _totalPoinCash = 0; // ⬅️ TAMBAHKAN
+        _totalPoinUMKM = 0;
+        _totalPoinCash = 0;
       });
+    }
+  }
+
+  Future<void> _loadUserLocation() async {
+    print('📍 [HOME] _loadUserLocation() called');
+
+    if (_isLoadingLocation) {
+      print('⚠️ [HOME] Location already loading, skipping...');
+      return;
+    }
+
+    setState(() {
+      _isLoadingLocation = true;
+    });
+
+    try {
+      print('🔄 [HOME] Getting user location...');
+      final location = await LocationService.getUserLocation();
+      print('🔄 [HOME] Getting koperasi list...');
+      final koperasiList = await KoperasiService.getKoperasiByLocation();
+
+      if (mounted) {
+        setState(() {
+          _userLocation = location;
+          _nearbyKoperasi = koperasiList;
+          _isLoadingLocation = false;
+        });
+      }
+
+      if (location != null) {
+        print(
+          '✅ [HOME] Location loaded: ${location?['kelurahan'] ?? 'Unknown'}',
+        );
+      } else {
+        print('❌ [HOME] Failed to get location');
+      }
+      print('✅ [HOME] Koperasi found: ${koperasiList.length}');
+    } catch (e) {
+      print('❌ [HOME] Error loading location: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingLocation = false;
+        });
+      }
     }
   }
 
@@ -218,7 +322,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       print('🎯 [HOME] Selected index: $selectedIndex');
 
       if (alamatList.isNotEmpty) {
-        // Pastikan selected index valid
         final validIndex =
             selectedIndex < alamatList.length ? selectedIndex : 0;
         print('✅ [HOME] Alamat terpilih: ${alamatList[validIndex]['label']}');
@@ -261,41 +364,55 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
 
-    final transactions = await TransactionManager.getFilteredTransactions(
-      status: 'Selesai',
-      dateFilter: 'Semua Tanggal',
-      category: 'Semua',
-    );
+    // Tambahkan pengecekan flag untuk mencegah pemanggilan berulang
+    if (_isLoadingPoin) {
+      print('⚠️ [HOME] Poin already loading, skipping...');
+      return;
+    }
 
-    int stampCount = 0;
+    setState(() {
+      _isLoadingPoin = true;
+    });
 
-    for (var transaction in transactions) {
-      // Skip transaksi penggunaan Poin Cash dan Top-Up
-      if (transaction.deliveryOption == 'poin_cash_usage' ||
-          transaction.deliveryOption == 'topup') {
-        continue;
+    try {
+      final transactions = await TransactionManager.getFilteredTransactions(
+        status: 'Selesai',
+        dateFilter: 'Semua Tanggal',
+        category: 'Semua',
+      );
+
+      int stampCount = 0;
+
+      for (var transaction in transactions) {
+        if (transaction.deliveryOption == 'poin_cash_usage' ||
+            transaction.deliveryOption == 'topup') {
+          continue;
+        }
+        stampCount++;
       }
 
-      // Hitung poin
-      stampCount++;
-    }
+      final prefs = await SharedPreferences.getInstance();
+      final isFirstTime = prefs.getBool('poin_welcome_given') ?? false;
+      if (!isFirstTime) {
+        await prefs.setBool('poin_welcome_given', true);
+      }
+      final poinUMKM = await VoucherManager.getUserPoinUMKM();
+      final poinCashValue = await PoinCashManager.getTotalPoinCash();
 
-    // Bonus welcome hanya 1000 UMKM poin
-    final prefs = await SharedPreferences.getInstance();
-    final isFirstTime = prefs.getBool('poin_welcome_given') ?? false;
-    if (!isFirstTime) {
-      await prefs.setBool('poin_welcome_given', true);
-    }
-    final poinUMKM = await VoucherManager.getUserPoinUMKM();
-
-    // Gunakan nilai Poin Cash yang benar dari manager
-    final poinCashValue = await PoinCashManager.getTotalPoinCash();
-
-    if (mounted) {
-      setState(() {
-        _totalPoinUMKM = poinUMKM.toInt();
-        _totalPoinCash = poinCashValue.toInt();
-      });
+      if (mounted) {
+        setState(() {
+          _totalPoinUMKM = poinUMKM.toInt();
+          _totalPoinCash = poinCashValue.toInt();
+        });
+      }
+    } catch (e) {
+      print('❌ Error loading poin: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingPoin = false;
+        });
+      }
     }
   }
 
@@ -357,44 +474,94 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> refreshLoginStatus() async {
     print('🔄 [HOME] refreshLoginStatus() dipanggil');
     await _checkLoginStatus();
-    _loadData();
-    await _loadPoinFromTransactions(); // ⭐ Ubah jadi await
-
-    if (mounted) {
-      setState(() {});
-    }
+    _refreshData(); // Gunakan _refreshData() instead of _loadData()
   }
 
-  void _loadData() {
-    if (selectedCategory == 'Semua') {
-      displayedProducts = _productService.getAllProducts();
-    } else {
-      displayedProducts = _productService.getProductsByCategory(
-        selectedCategory,
-      );
+  void _loadData() async {
+    if (_isLoadingData) {
+      print('⚠️ [HOME] Data already loading, skipping...');
+      return;
     }
 
-    flashSaleProducts = _productService.getActiveFlashSaleProducts();
-    topRatedProducts = _productService.getTopRatedProducts();
-    freshProducts = _productService.getFreshProducts();
-    newestProducts = _productService.getNewestProducts();
-    fruitAndVeggies = _productService.getFruitAndVeggies();
+    setState(() {
+      _isLoadingData = true;
+    });
 
-    categoryStores = _productService.getStoresByCategory(selectedCategory);
-    subCategories = _productService.getSubCategories(selectedCategory);
-    flagshipStore = _productService.getFlagshipStore(selectedCategory);
+    try {
+      print('🔄 [HOME] Loading data...');
+
+      // Gunakan produk berdasarkan lokasi
+      if (selectedCategory == 'Semua') {
+        displayedProducts = await KoperasiService.getProductsByLocation();
+      } else {
+        displayedProducts =
+            await KoperasiService.getProductsByCategoryAndLocation(
+              selectedCategory,
+            );
+      }
+
+      flashSaleProducts = _productService.getActiveFlashSaleProducts();
+
+      // Filter produk lain juga berdasarkan lokasi
+      final locationProducts = await KoperasiService.getProductsByLocation();
+
+      topRatedProducts = List<Product>.from(locationProducts)
+        ..sort((a, b) => b.rating.compareTo(a.rating));
+      topRatedProducts = topRatedProducts.take(8).toList();
+
+      freshProducts =
+          _productService
+              .getFreshProducts()
+              .where((p) => locationProducts.any((lp) => lp.id == p.id))
+              .take(8)
+              .toList();
+
+      newestProducts = List<Product>.from(locationProducts).take(8).toList();
+
+      fruitAndVeggies =
+          _productService
+              .getFruitAndVeggies()
+              .where((p) => locationProducts.any((lp) => lp.id == p.id))
+              .take(8)
+              .toList();
+
+      categoryStores = _productService.getStoresByCategory(selectedCategory);
+      subCategories = _productService.getSubCategories(selectedCategory);
+      flagshipStore = _productService.getFlagshipStore(selectedCategory);
+
+      print('✅ [HOME] Data loaded successfully');
+
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      print('❌ Error loading data: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingData = false;
+        });
+      }
+    }
   }
 
   void _onCategorySelected(String category) {
+    // Cegah pemanggilan untuk kategori yang sama
+    if (selectedCategory == category) return;
+
     setState(() {
       selectedCategory = category;
       selectedSubCategory = null;
       showCategoryFilter = false;
-      _loadData();
     });
+
+    _refreshData();
   }
 
   void _onSubCategorySelected(String subCategory) {
+    // Cegah pemanggilan untuk subkategori yang sama
+    if (selectedSubCategory == subCategory) return;
+
     setState(() {
       selectedSubCategory = subCategory;
 
@@ -634,7 +801,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .where((p) => p.name.toLowerCase().contains('clay'))
                 .toList();
       } else {
-        // Fallback: gunakan method dari service
         displayedProducts = _productService.getProductsBySubCategory(
           subCategory,
         );
@@ -647,6 +813,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         );
       }
     });
+
+    // HAPUS pemanggilan _refreshData() di akhir method ini untuk mencegah loop
+    // _refreshData(); // HAPUS BARIS INI
   }
 
   @override
@@ -706,17 +875,10 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               if (subCategories.isNotEmpty) ...[
                 _buildCategoryShoppingSection(),
                 const SizedBox(height: 8),
-                _buildSubCategoryIndicator(), // TAMBAHKAN INI
+                _buildSubCategoryIndicator(),
                 const SizedBox(height: 12),
               ],
 
-              // if (categoryStores.isNotEmpty) ...[
-              //   _buildStoreList(),
-              //   const SizedBox(height: 20),
-              // ],
-
-              // _buildLiveShopping(),
-              // const SizedBox(height: 20),
               _buildSectionHeader('Nikmati Promonya!'),
               _buildProductGrid(displayedProducts.take(6).toList()),
               const SizedBox(height: 20),
@@ -843,7 +1005,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               ),
                             ),
 
-                            // Badge untuk unread count
                             if (unreadCount > 0)
                               Positioned(
                                 right: -2,
@@ -894,7 +1055,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
             ),
 
-            // Search bar (tetap sama)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: GestureDetector(
@@ -1097,44 +1257,92 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             Text('|', style: TextStyle(color: Colors.grey[400], fontSize: 15)),
             const SizedBox(width: 4),
           ],
-          GestureDetector(
-            onTap: () {
-              _showLocationModal();
-            },
-            child: Row(
-              children: [
-                if (isLoggedIn) ...[
+
+          if (isLoggedIn && _savedAlamat != null) ...[
+            GestureDetector(
+              onTap: () {
+                _showLocationModal();
+              },
+              child: Row(
+                children: [
                   Text(
                     'Dikirim ke',
                     style: TextStyle(
                       color: Colors.grey[600],
-                      fontSize: 14,
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(width: 4),
+                  Text(
+                    _savedAlamat!['label'] ?? 'Rumah',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: Colors.grey[600],
+                    size: 14,
+                  ),
                 ],
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text('|', style: TextStyle(color: Colors.grey[400], fontSize: 15)),
+            const SizedBox(width: 4),
+          ],
+
+          GestureDetector(
+            onTap: () {
+              // Bisa buka modal atau refresh lokasi
+            },
+            child: Row(
+              children: [
                 Text(
-                  // ⭐ UBAH JADI DINAMIS
-                  isLoggedIn && _savedAlamat != null
-                      ? _savedAlamat!['label'] ?? 'rumah'
-                      : 'Area Antapani Kidul',
+                  'Lokasi Anda',
                   style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(width: 4),
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: Colors.grey[600],
-                  size: 18,
-                ),
+                _isLoadingLocation
+                    ? SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.blue[700]!,
+                        ),
+                      ),
+                    )
+                    : Row(
+                      children: [
+                        Text(
+                          _userLocation != null
+                              ? _userLocation!['kelurahan'] ?? 'Tidak Dikenal'
+                              : 'Tidak Dikenal',
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                      ],
+                    ),
               ],
             ),
           ),
+
           Spacer(),
+
           GestureDetector(
             onTap: () async {
               await Navigator.push(
@@ -1166,7 +1374,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ),
       isScrollControlled: true,
       builder: (context) {
-        // ⭐ HAPUS Container wrapper, langsung return modal
         return isLoggedIn
             ? _buildLoggedInLocationModal()
             : _buildGuestLocationModal();
@@ -1180,7 +1387,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       '📍 [HOME] _savedAlamat saat build: ${_savedAlamat != null ? "ADA" : "NULL"}',
     );
 
-    // ⭐ PAKAI StatefulBuilder supaya modal bisa rebuild
     return StatefulBuilder(
       builder: (BuildContext context, StateSetter setModalState) {
         return Container(
@@ -1193,7 +1399,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header - Compact
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -1215,7 +1420,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
               const SizedBox(height: 12),
 
-              // Tipe Pemesanan - Simplified
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
@@ -1247,7 +1451,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               Divider(height: 1, color: Colors.grey[200]),
               const SizedBox(height: 16),
 
-              // Header Pilih Alamat
               Text(
                 'Pilih Alamat',
                 style: TextStyle(
@@ -1258,7 +1461,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
               const SizedBox(height: 12),
 
-              // List Alamat - Bisa lebih dari satu
               if (_listAlamat.isNotEmpty) ...[
                 ...(_listAlamat.asMap().entries.map((entry) {
                   final index = entry.key;
@@ -1269,7 +1471,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     padding: EdgeInsets.only(bottom: 8),
                     child: InkWell(
                       onTap: () async {
-                        // ⭐ PAKAI setModalState + setState BIAR KEDUANYA UPDATE
                         setModalState(() {
                           _selectedAlamatIndex = index;
                           _savedAlamat = alamat;
@@ -1279,7 +1480,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           _savedAlamat = alamat;
                         });
 
-                        // ⭐ SIMPAN KE UserDataManager
                         if (userEmail.isNotEmpty) {
                           await UserDataManager.setSelectedAlamatIndex(
                             userEmail,
@@ -1369,7 +1569,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 }).toList()),
               ],
 
-              // Tombol Tambah Alamat - Simplified
               InkWell(
                 onTap: () async {
                   print('➕ [HOME] Tombol Tambah Alamat ditekan');
@@ -1586,131 +1785,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildOrderTypeCard({
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-  }) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-      decoration: BoxDecoration(
-        color: isSelected ? Colors.blue[700] : Colors.white,
-        border: Border.all(
-          color: isSelected ? Colors.blue[700]! : Colors.grey[300]!,
-          width: 2,
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? Colors.white : Colors.grey[700],
-            size: 32,
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : Colors.black87,
-                ),
-              ),
-              if (isSelected) ...[
-                const SizedBox(width: 4),
-                Icon(Icons.check_rounded, color: Colors.white, size: 16),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDeliveryOption({
-    required bool isSelected,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required List<Color> colors,
-    required VoidCallback onTap,
-    required bool isLeft,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            gradient: isSelected ? LinearGradient(colors: colors) : null,
-            color: isSelected ? null : Colors.grey[200],
-            borderRadius:
-                isLeft
-                    ? BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      bottomLeft: Radius.circular(12),
-                    )
-                    : BorderRadius.only(
-                      topRight: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
-                    ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color:
-                      isSelected ? Colors.white.withOpacity(0.2) : Colors.white,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(
-                  icon,
-                  color: isSelected ? Colors.white : Colors.grey[700],
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black87,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color:
-                            isSelected
-                                ? Colors.white.withOpacity(0.9)
-                                : Colors.grey[600],
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildLoyaltyPoints() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1736,14 +1810,14 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   _buildPointCard(
                     Icons.stars_rounded,
                     'Poin UMKM',
-                    _formatPoinNumber(_totalPoinUMKM), // ⬅️ DINAMIS
+                    _formatPoinNumber(_totalPoinUMKM),
                     Colors.blue[700]!,
                   ),
                   Container(width: 1, height: 30, color: Colors.grey[200]),
                   _buildPointCard(
                     Icons.account_balance_wallet_rounded,
                     'Poin Cash',
-                    _formatPoinNumber(_totalPoinCash), // ⬅️ DINAMIS
+                    _formatPoinNumber(_totalPoinCash),
                     Colors.green[700]!,
                   ),
                 ],
@@ -1848,8 +1922,16 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildFlashSaleSection() {
+    // PERBAIKAN: Ubah pengecekan null ke empty karena sekarang bukan nullable
+    if (flashSaleProducts.isEmpty) {
+      return Container(
+        height: 210,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Container(
-      height: 210, // Dikurangi dari 230
+      height: 210,
       margin: const EdgeInsets.only(left: 16),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -1862,13 +1944,11 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildFlashSaleCard(Product product) {
-    // ⭐ CEK STATUS FLASH SALE
     final isFlashActive = FlashSaleService.isProductOnFlashSale(product.id);
     final flashDiscountPercent = FlashSaleService.getFlashDiscountPercentage(
       product.id,
     );
 
-    // ⭐ HITUNG HARGA
     final displayPrice =
         isFlashActive
             ? FlashSaleService.calculateFlashPrice(
@@ -1904,7 +1984,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // IMAGE
             Stack(
               children: [
                 Container(
@@ -1931,7 +2010,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ),
                 ),
 
-                // ⭐ BADGE FLASH SALE (pojok kiri atas)
                 if (isFlashActive)
                   Positioned(
                     top: 4,
@@ -1975,7 +2053,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ],
             ),
 
-            // DETAIL
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
@@ -1983,7 +2060,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Nama Produk
                     Flexible(
                       child: Text(
                         product.name,
@@ -1999,7 +2075,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     ),
                     const SizedBox(height: 4),
 
-                    // Rating
                     Row(
                       children: [
                         Icon(
@@ -2028,11 +2103,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     ),
                     const SizedBox(height: 4),
 
-                    // ⭐ HARGA DINAMIS
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Harga Flash Sale / Normal
                         Text(
                           _formatPrice(displayPrice),
                           style: TextStyle(
@@ -2045,7 +2118,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           ),
                         ),
 
-                        // Harga Original (coret)
                         if (displayPrice < originalPrice)
                           Row(
                             children: [
@@ -2126,7 +2198,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ],
         image: DecorationImage(
           image: NetworkImage(
-            'https://www.klikindomaret.com/assets-klikidmcore/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F2e8dd8a3-cdd5-4123-9805-5b3d7d49c57b.png&w=1080&q=75', // Ganti dengan gambar kamu
+            'https://www.klikindomaret.com/assets-klikidmcore/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F2e8dd8a3-cdd5-4123-9805-5b3d7d49c57b.png&w=1080&q=75',
           ),
           fit: BoxFit.cover,
         ),
@@ -2306,206 +2378,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ),
     );
   }
-
-  // Widget _buildStoreList() {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(horizontal: 16),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Text(
-  //           'UMKM ${selectedCategory} Terdekat',
-  //           style: TextStyle(
-  //             fontSize: 16,
-  //             fontWeight: FontWeight.bold,
-  //             color: Colors.black87,
-  //           ),
-  //         ),
-  //         const SizedBox(height: 12),
-  //         if (flagshipStore != null) ...[
-  //           _buildStoreCard(flagshipStore!, isFlagship: true),
-  //           const SizedBox(height: 12),
-  //         ],
-  //         ...categoryStores
-  //             .where((s) => !s.isFlagship)
-  //             .take(3)
-  //             .map(
-  //               (store) => Padding(
-  //                 padding: const EdgeInsets.only(bottom: 12),
-  //                 child: _buildStoreCard(store),
-  //               ),
-  //             )
-  //             .toList(),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  // Widget _buildStoreCard(Store store, {bool isFlagship = false}) {
-  //   return Container(
-  //     padding: EdgeInsets.all(16),
-  //     decoration: BoxDecoration(
-  //       color: Colors.white,
-  //       borderRadius: BorderRadius.circular(12),
-  //       border:
-  //           isFlagship ? Border.all(color: Colors.amber[600]!, width: 2) : null,
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: Colors.black.withOpacity(0.06),
-  //           blurRadius: 10,
-  //           offset: Offset(0, 3),
-  //         ),
-  //       ],
-  //     ),
-  //     child: Row(
-  //       children: [
-  //         Container(
-  //           width: 50,
-  //           height: 50,
-  //           decoration: BoxDecoration(
-  //             color: isFlagship ? Colors.amber[50] : Colors.blue[50],
-  //             borderRadius: BorderRadius.circular(10),
-  //           ),
-  //           child: Icon(
-  //             isFlagship ? Icons.stars_rounded : Icons.store,
-  //             color: isFlagship ? Colors.amber[700] : Colors.blue[700],
-  //             size: 28,
-  //           ),
-  //         ),
-  //         const SizedBox(width: 12),
-  //         Expanded(
-  //           child: Column(
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               Row(
-  //                 children: [
-  //                   if (isFlagship) ...[
-  //                     Icon(Icons.verified, color: Colors.amber[700], size: 14),
-  //                     const SizedBox(width: 4),
-  //                   ],
-  //                   Expanded(
-  //                     child: Text(
-  //                       store.name,
-  //                       style: TextStyle(
-  //                         fontWeight: FontWeight.bold,
-  //                         fontSize: 14,
-  //                       ),
-  //                       maxLines: 1,
-  //                       overflow: TextOverflow.ellipsis,
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //               const SizedBox(height: 4),
-  //               Row(
-  //                 children: [
-  //                   Icon(
-  //                     Icons.star_rounded,
-  //                     color: Colors.amber[700],
-  //                     size: 14,
-  //                   ),
-  //                   const SizedBox(width: 4),
-  //                   Text(
-  //                     '${store.rating}',
-  //                     style: TextStyle(
-  //                       fontSize: 12,
-  //                       fontWeight: FontWeight.w600,
-  //                       color: Colors.grey[700],
-  //                     ),
-  //                   ),
-  //                   const SizedBox(width: 8),
-  //                   Text(
-  //                     '${store.distanceText} • ${store.openHours}',
-  //                     style: TextStyle(color: Colors.grey[600], fontSize: 12),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //         Icon(Icons.chevron_right, color: Colors.grey[400]),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  // Widget _buildLiveShopping() {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(horizontal: 16),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Text(
-  //           'Live Shopping',
-  //           style: TextStyle(
-  //             fontSize: 16,
-  //             fontWeight: FontWeight.bold,
-  //             color: Colors.black87,
-  //           ),
-  //         ),
-  //         const SizedBox(height: 12),
-  //         Row(
-  //           children: [
-  //             Expanded(child: _buildLiveShoppingCard('10.00 - 11.00 WIB')),
-  //             const SizedBox(width: 12),
-  //             Expanded(child: _buildLiveShoppingCard('18.00 - 19.00 WIB')),
-  //           ],
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  // Widget _buildLiveShoppingCard(String time) {
-  //   return Container(
-  //     height: 180,
-  //     decoration: BoxDecoration(
-  //       gradient: LinearGradient(
-  //         colors: [Colors.purple[700]!, Colors.purple[900]!],
-  //         begin: Alignment.topLeft,
-  //         end: Alignment.bottomRight,
-  //       ),
-  //       borderRadius: BorderRadius.circular(12),
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: Colors.purple.withOpacity(0.3),
-  //           blurRadius: 10,
-  //           offset: Offset(0, 4),
-  //         ),
-  //       ],
-  //     ),
-  //     child: Column(
-  //       mainAxisAlignment: MainAxisAlignment.center,
-  //       children: [
-  //         Container(
-  //           padding: EdgeInsets.all(12),
-  //           decoration: BoxDecoration(
-  //             color: Colors.white,
-  //             borderRadius: BorderRadius.circular(8),
-  //           ),
-  //           child: Icon(Icons.live_tv, color: Colors.purple[700], size: 40),
-  //         ),
-  //         const SizedBox(height: 12),
-  //         Text(
-  //           time,
-  //           style: TextStyle(
-  //             color: Colors.white,
-  //             fontSize: 14,
-  //             fontWeight: FontWeight.bold,
-  //           ),
-  //         ),
-  //         const SizedBox(height: 4),
-  //         Text(
-  //           'Segera Live',
-  //           style: TextStyle(
-  //             color: Colors.white.withOpacity(0.8),
-  //             fontSize: 12,
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   Widget _buildRecommendationList(List<Product> products) {
     return Padding(
@@ -2973,7 +2845,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               schedule: currentFlashSale ?? nextFlashSale!,
               onTimerEnd: _onFlashSaleTimerEnd,
             )
-          else if (showSeeAll && products != null)
+          else if (showSeeAll && products != null && products.isNotEmpty)
             TextButton(
               onPressed: () {
                 Navigator.push(
@@ -3000,7 +2872,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _buildProductGrid(List<Product> products) {
     return Container(
-      height: 260, // Dikurangi dari 280
+      height: 260,
       margin: const EdgeInsets.only(left: 16),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -3032,7 +2904,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
               color: Colors.white,
-              // borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.08),
@@ -3047,7 +2918,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 Stack(
                   children: [
                     Container(
-                      height: 140, // Dikurangi dari 160
+                      height: 140,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [Colors.grey[200]!, Colors.grey[100]!],
@@ -3150,8 +3021,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                     }
                                   },
                                   child: Container(
-                                    width: 32, // Diperkecil dari 36
-                                    height: 32, // Diperkecil dari 36
+                                    width: 32,
+                                    height: 32,
                                     decoration: BoxDecoration(
                                       color: Colors.blue,
                                       shape: BoxShape.circle,
@@ -3166,7 +3037,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                     child: const Icon(
                                       Icons.add,
                                       color: Colors.white,
-                                      size: 18, // Diperkecil dari 22
+                                      size: 18,
                                     ),
                                   ),
                                 )
@@ -3256,21 +3127,21 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(8.0), // Dikurangi dari 12
+                    padding: const EdgeInsets.all(8.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           product.name,
                           style: const TextStyle(
-                            fontSize: 12, // Diperkecil dari 13
+                            fontSize: 12,
                             color: Colors.black87,
                             fontWeight: FontWeight.w600,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 2), // Dikurangi dari 4
+                        const SizedBox(height: 2),
 
                         Row(
                           children: [
@@ -3283,7 +3154,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             Text(
                               '${product.rating}',
                               style: TextStyle(
-                                fontSize: 12, // Diperkecil dari 12
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.grey[700],
                               ),
@@ -3292,14 +3163,14 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             Text(
                               '(${product.reviewCount})',
                               style: TextStyle(
-                                fontSize: 11, // Diperkecil dari 11
+                                fontSize: 11,
                                 color: Colors.grey[500],
                               ),
                             ),
                           ],
                         ),
 
-                        const SizedBox(height: 4), // Dikurangi dari 6
+                        const SizedBox(height: 4),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
@@ -3311,24 +3182,24 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 color: Colors.blue[700],
                               ),
                             ),
-                            const SizedBox(width: 4), // Dikurangi dari 6
+                            const SizedBox(width: 4),
                             if (product.originalPrice != null)
                               Text(
                                 _formatPrice(product.originalPrice!),
                                 style: TextStyle(
                                   decoration: TextDecoration.lineThrough,
                                   color: Colors.grey[400],
-                                  fontSize: 10, // Diperkecil dari 12
+                                  fontSize: 10,
                                 ),
                               ),
                           ],
                         ),
-                        const SizedBox(height: 2), // Dikurangi dari 4
+                        const SizedBox(height: 2),
                         if (product.discountPercentage != null)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 4, // Dikurangi dari 6
-                              vertical: 1, // Dikurangi dari 2
+                              horizontal: 4,
+                              vertical: 1,
                             ),
                             decoration: BoxDecoration(
                               color: Colors.red[50],
@@ -3339,7 +3210,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               style: const TextStyle(
                                 color: Colors.red,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 9, // Diperkecil dari 11
+                                fontSize: 9,
                               ),
                             ),
                           ),

@@ -1625,6 +1625,73 @@ class ProductService {
       storeDistance: '2.3 km',
       imageUrl: 'https://i.pinimg.com/1200x/82/b3/ee/82b3ee7ca7de98c0912f14000495873b.jpg'
     ),
+
+    // ============ TAMBAHAN PRODUK BUAH & SAYUR ANTAPANI KIDUL ============
+    Product(
+      id: '121',
+      name: 'Paket Buah Segar Harian',
+      description: 'Pisang, Apel, Jeruk - Total 2kg',
+      price: 45000,
+      originalPrice: 60000,
+      category: 'Pertanian',
+      rating: 4.8,
+      reviewCount: 234,
+      storeName: 'Buah Segar Pak Joko',
+      storeDistance: '1.2 km',
+      imageUrl: 'https://i.pinimg.com/1200x/9b/34/d6/9b34d6c11454df471aaf4a4016a0e643.jpg'
+    ),
+    Product(
+      id: '122',
+      name: 'Paket Sayur Segar Harian',
+      description: 'Bayam, Kangkung, Wortel, Tomat - Total 2kg',
+      price: 30000,
+      originalPrice: 40000,
+      category: 'Pertanian',
+      rating: 4.7,
+      reviewCount: 189,
+      storeName: 'Kebun Segar',
+      storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/736x/fc/20/c3/fc20c344d55b0d934bc96c329fdeeede.jpg'
+    ),
+    Product(
+      id: '123',
+      name: 'Paket Buah Tropis Mini',
+      description: 'Mangga, Pepaya, Pisang - Total 2kg',
+      price: 50000,
+      originalPrice: 65000,
+      category: 'Pertanian',
+      rating: 4.9,
+      reviewCount: 267,
+      storeName: 'Buah Segar Pak Joko',
+      storeDistance: '1.2 km',
+      imageUrl: 'https://i.pinimg.com/1200x/24/fd/4b/24fd4b6fbe068137f447498948902328.jpg'
+    ),
+    Product(
+      id: '124',
+      name: 'Sayur Organik Mix 2kg',
+      description: 'Brokoli, Wortel, Kentang, Cabai',
+      price: 35000,
+      originalPrice: 45000,
+      category: 'Pertanian',
+      rating: 4.8,
+      reviewCount: 198,
+      storeName: 'Kebun Segar',
+      storeDistance: '2.1 km',
+      imageUrl: 'https://i.pinimg.com/1200x/50/37/8a/50378a38123d6fbfee9c293f7901d9a2.jpg'
+    ),
+    Product(
+      id: '125',
+      name: 'Jeruk Manis Premium 2kg',
+      description: 'Jeruk manis segar pilihan',
+      price: 40000,
+      originalPrice: 50000,
+      category: 'Pertanian',
+      rating: 4.9,
+      reviewCount: 312,
+      storeName: 'Buah Segar Pak Joko',
+      storeDistance: '1.2 km',
+      imageUrl: 'https://i.pinimg.com/736x/30/cf/92/30cf924f97b8a30adc4e9c4382e95b64.jpg'
+    ),
   ];
 
   // ============ METHOD UNTUK GET DATA ============
