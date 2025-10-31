@@ -8,12 +8,14 @@ class PaymentSuccessScreen extends StatelessWidget {
   final double totalPembayaran;
   final String metodePembayaran;
   final DateTime tanggal;
+  final double? voucherDiscount; // ✅ TAMBAHKAN
 
   const PaymentSuccessScreen({
     Key? key,
     required this.totalPembayaran,
     required this.metodePembayaran,
     required this.tanggal,
+    this.voucherDiscount,
   }) : super(key: key);
 
   String formatRupiah(double value) {
@@ -42,7 +44,7 @@ class PaymentSuccessScreen extends StatelessWidget {
               (route) => false,
             );
           },
-      ),
+        ),
 
         title: const Text(
           "Pembayaran Berhasil",
@@ -93,13 +95,25 @@ class PaymentSuccessScreen extends StatelessWidget {
                   if (transactions.isNotEmpty) {
                     final latestTransaction = transactions.first;
 
-                    // Konversi Transaction ke Map dengan property yang benar
+                    // ✅ KONVERSI Transaction ke Map DENGAN VOUCHER
                     final transaksiMap = {
                       'no_transaksi': latestTransaction.id,
+                      'id': latestTransaction.id, // ✅ TAMBAHKAN id juga
                       'tanggal': latestTransaction.date,
+                      'date': latestTransaction.date, // ✅ TAMBAHKAN date juga
                       'status': latestTransaction.status,
-                      'metode_pembayaran':
-                          metodePembayaran, // dari parameter class
+                      'metode_pembayaran': metodePembayaran,
+                      'metodePembayaran': metodePembayaran, // ✅ Both variants
+                      'total_pembayaran': totalPembayaran,
+                      'totalPrice': latestTransaction.totalPrice, // ✅ TAMBAHKAN
+                      // ✅ VOUCHER FIELDS (PALING PENTING!)
+                      'voucher_code': latestTransaction.voucherCode,
+                      'voucherCode':
+                          latestTransaction.voucherCode, // Both variants
+                      'voucher_discount': latestTransaction.voucherDiscount,
+                      'voucherDiscount':
+                          latestTransaction.voucherDiscount, // Both variants
+
                       'items':
                           latestTransaction.items
                               .map(
@@ -108,7 +122,9 @@ class PaymentSuccessScreen extends StatelessWidget {
                                   'name': item.name,
                                   'quantity': item.quantity,
                                   'harga': item.price,
+                                  'price': item.price, // ✅ TAMBAHKAN
                                   'image': item.imageUrl,
+                                  'imageUrl': item.imageUrl, // ✅ TAMBAHKAN
                                 },
                               )
                               .toList(),
@@ -117,19 +133,29 @@ class PaymentSuccessScreen extends StatelessWidget {
                           latestTransaction.alamat?['nama'] ??
                           'N/A',
                       'alamat':
-                          latestTransaction.alamat?['alamat_lengkap'] ??
-                          latestTransaction.alamat?['alamat'] ??
-                          'N/A',
+                          latestTransaction.alamat, // ✅ KIRIM FULL ALAMAT MAP
                       'metode_pengiriman':
                           latestTransaction.deliveryOption == 'xpress'
                               ? 'Xpress (Rp5.000)'
                               : 'Reguler (Rp5.000)',
+                      'deliveryOption':
+                          latestTransaction.deliveryOption, // ✅ TAMBAHKAN
                       'jadwal_pengiriman':
                           'Dikirim : ${DateFormat('EEEE, d MMM yyyy, HH:mm').format(latestTransaction.date)}',
                       'biaya_pengiriman': 5000.0,
                       'biaya_admin': 0.0,
                       'catatan_pengiriman': latestTransaction.catatanPengiriman,
+                      'catatanPengiriman':
+                          latestTransaction
+                              .catatanPengiriman, // ✅ Both variants
                     };
+
+                    // ✅ DEBUG: Print untuk verifikasi
+                    print('🎟️ [PaymentSuccess] Sending to DetailPembayaran:');
+                    print('   - voucher_code: ${transaksiMap['voucher_code']}');
+                    print(
+                      '   - voucher_discount: ${transaksiMap['voucher_discount']}',
+                    );
 
                     // Cek apakah context masih valid sebelum navigation
                     if (context.mounted) {
@@ -138,7 +164,6 @@ class PaymentSuccessScreen extends StatelessWidget {
                           builder:
                               (_) => DetailPembayaranScreen(
                                 transaksi: transaksiMap,
-                                
                               ),
                         ),
                         (route) => false,
@@ -153,7 +178,6 @@ class PaymentSuccessScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-
                 child: const Text(
                   "Lihat Detail Pembayaran",
                   style: TextStyle(
@@ -164,6 +188,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                 ),
               ),
             ),
+
             // SizedBox(height: 12),
             // SizedBox(
             //   width: double.infinity,
@@ -195,7 +220,6 @@ class PaymentSuccessScreen extends StatelessWidget {
             //     ),
             //   ),
             // ),
-
             const SizedBox(height: 24),
           ],
         ),
@@ -204,6 +228,8 @@ class PaymentSuccessScreen extends StatelessWidget {
   }
 
   Widget _buildSectionDetail() {
+    final subtotal = totalPembayaran - 5000; // Total - Ongkir
+    final discount = voucherDiscount ?? 0.0;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -225,8 +251,18 @@ class PaymentSuccessScreen extends StatelessWidget {
           _buildDetailRow("Tanggal", DateFormat("d MMM yyyy").format(tanggal)),
           _buildDetailRow("Waktu", DateFormat("HH:mm").format(tanggal)),
           _buildDetailRow("Metode Pemesanan", "Reguler"),
-          _buildDetailRow("Subtotal Produk", formatRupiah(totalPembayaran - 5000)), // ✅ TAMBAHKAN
+          _buildDetailRow(
+            "Subtotal Produk",
+            formatRupiah(totalPembayaran - 5000),
+          ), // ✅ TAMBAHKAN
           _buildDetailRow("Biaya Pengiriman", "Rp5.000"), // ✅ TAMBAHKAN
+          if (discount > 0) ...[
+            _buildDetailRow(
+              "Diskon Voucher",
+              "- ${formatRupiah(discount)}",
+              color: Colors.green[700],
+            ),
+          ],
           _buildDetailRow("Metode Pembayaran", metodePembayaran),
           _buildDetailRow(
             "Total Pembayaran",

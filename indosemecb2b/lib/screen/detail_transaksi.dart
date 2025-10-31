@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:indosemecb2b/models/tracking.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 import 'lacak.dart';
+import 'package:indosemecb2b/models/tracking.dart';
 
 class TransactionDetailScreen extends StatelessWidget {
   final Transaction transaction;
@@ -33,9 +33,29 @@ class TransactionDetailScreen extends StatelessWidget {
     return formatCurrency.format(number);
   }
 
+  // ✅ HITUNG SUBTOTAL PRODUK (SEBELUM ONGKIR & DISKON)
+  double _getSubtotal() {
+    return transaction.items.fold(
+      0.0,
+      (sum, item) => sum + (item.price * item.quantity),
+    );
+  }
+
+  // ✅ HITUNG TOTAL SETELAH DISKON (YANG BENAR-BENAR DIBAYAR)
+  double _getFinalTotal() {
+    final subtotal = _getSubtotal();
+    final shipping = 5000.0;
+    final discount = transaction.voucherDiscount ?? 0.0;
+    return subtotal + shipping - discount;
+  }
+
   @override
   Widget build(BuildContext context) {
     final alamat = transaction.alamat ?? {};
+    final subtotal = _getSubtotal();
+    final shipping = 5000.0;
+    final discount = transaction.voucherDiscount ?? 0.0;
+    final finalTotal = _getFinalTotal();
 
     return Scaffold(
       appBar: AppBar(
@@ -44,7 +64,6 @@ class TransactionDetailScreen extends StatelessWidget {
         elevation: 0.5,
         foregroundColor: Colors.black,
       ),
-
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -65,6 +84,7 @@ class TransactionDetailScreen extends StatelessWidget {
                         builder:
                             (_) => TrackingScreen(
                               trackingData: OrderTrackingModel(
+                                transactionId: transaction.id,
                                 courierName: "Tryan Gumilar",
                                 courierId: "D 4563 ADP",
                                 statusMessage: transaction.status,
@@ -91,7 +111,6 @@ class TransactionDetailScreen extends StatelessWidget {
           ],
         ),
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -135,7 +154,6 @@ class TransactionDetailScreen extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             const SizedBox(height: 10),
-
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -151,8 +169,8 @@ class TransactionDetailScreen extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerRight,
                     child: Text(
-                      'Total ${formatRupiah(transaction.totalPrice)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      'Subtotal ${formatRupiah(subtotal)}',
+                      style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
@@ -161,7 +179,69 @@ class TransactionDetailScreen extends StatelessWidget {
 
             const SizedBox(height: 18),
 
-            // ===== DETAIL PEMGIRIMAN =====
+            // ===== VOUCHER INFO (JIKA ADA) =====
+            if (transaction.voucherCode != null && discount > 0) ...[
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.local_offer, color: Colors.green[700], size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Voucher Digunakan',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          Text(
+                            transaction.voucherCode!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green[900],
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Hemat',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        Text(
+                          formatRupiah(discount),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+            ],
+
+            // ===== DETAIL PENGIRIMAN =====
             const Text(
               'Detail Pengiriman',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -222,22 +302,72 @@ class TransactionDetailScreen extends StatelessWidget {
 
             const SizedBox(height: 18),
 
-            // ===== DETAIL PEMBAYARAN =====
+            // ===== RINCIAN PEMBAYARAN (UPDATED) =====
             const Text(
               'Rincian Belanja',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             const SizedBox(height: 10),
-            _buildDetailRow(
-              "Belanja Xpress",
-              formatRupiah(transaction.totalPrice),
-            ),
-            _buildDetailRow("Biaya Pengiriman", "Rp5.000"),
-            const Divider(),
-            _buildDetailRow(
-              "Total Pembayaran",
-              formatRupiah(transaction.totalPrice + 5000),
-              isBold: true,
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: Column(
+                children: [
+                  _buildDetailRow("Subtotal Produk", formatRupiah(subtotal)),
+                  const SizedBox(height: 8),
+                  _buildDetailRow("Biaya Pengiriman", formatRupiah(shipping)),
+
+                  // ✅ TAMPILKAN DISKON VOUCHER
+                  if (discount > 0) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.local_offer,
+                              size: 16,
+                              color: Colors.green[700],
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              "Diskon Voucher",
+                              style: TextStyle(
+                                color: Colors.green[700],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          "- ${formatRupiah(discount)}",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    child: Divider(height: 1),
+                  ),
+
+                  // ✅ TOTAL AKHIR (SETELAH DISKON)
+                  _buildDetailRow(
+                    "Total Pembayaran",
+                    formatRupiah(finalTotal),
+                    isBold: true,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -282,13 +412,20 @@ class TransactionDetailScreen extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title),
+        Text(
+          title,
+          style: TextStyle(
+            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
         Flexible(
           child: Text(
             value,
             textAlign: TextAlign.right,
             style: TextStyle(
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              color: isBold ? Colors.blue[700] : Colors.black,
+              fontSize: isBold ? 16 : 14,
             ),
           ),
         ),

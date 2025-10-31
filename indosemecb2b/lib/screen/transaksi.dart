@@ -830,7 +830,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                                 ),
                               ),
                               Text(
-                                'Total ${formatRupiah(currentTransaction.totalPrice)}',
+                                'Total ${formatRupiah(currentTransaction.finalTotal)}',
                                 style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
@@ -894,7 +894,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                               ),
 
                               Text(
-                                'Total ${formatRupiah(currentTransaction.totalPrice)}',
+                                'Total ${formatRupiah(_calculateFinalTotal(currentTransaction))}',
                                 style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
@@ -912,6 +912,11 @@ class _TransaksiScreenState extends State<TransaksiScreen>
         );
       },
     );
+  }
+
+  double _calculateFinalTotal(Transaction transaction) {
+    final discount = transaction.voucherDiscount ?? 0.0;
+    return transaction.totalPrice - discount;
   }
 
   // ⭐ Method untuk menampilkan dialog konfirmasi

@@ -319,6 +319,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     totalPembayaran: getTotal(),
                     metodePembayaran: paymentType,
                     tanggal: DateTime.now(),
+                    voucherDiscount: getVoucherDiscount(), // ✅ TAMBAHKAN INI
                   ),
             ),
             (route) => false,

@@ -28,7 +28,7 @@ class TransactionManager {
     Map<String, dynamic>? alamat,
     String? initialStatus,
     String? catatanPengiriman,
-    String? metodePembayaran, // ✅ TAMBAHKAN PARAMETER
+    String? metodePembayaran,
   }) async {
     try {
       print('📦 Creating transaction...');
@@ -74,6 +74,19 @@ class TransactionManager {
       final finalMetodePembayaran =
           metodePembayaran ?? alamat?['metode_pembayaran'] ?? 'Tidak Diketahui';
 
+      // ✅ AMBIL DATA VOUCHER DARI ALAMAT
+      final voucherCode = alamat?['voucher_code'] as String?;
+      final voucherDiscountRaw = alamat?['voucher_discount'];
+      final voucherDiscount =
+          voucherDiscountRaw != null
+              ? (voucherDiscountRaw is int
+                  ? voucherDiscountRaw.toDouble()
+                  : voucherDiscountRaw as double)
+              : null;
+
+      print('🎟️ Voucher Code: $voucherCode');
+      print('💰 Voucher Discount: $voucherDiscount');
+
       // Buat objek transaksi
       final transaction = Transaction(
         id: transactionId,
@@ -84,11 +97,18 @@ class TransactionManager {
         items: items,
         totalPrice: total,
         catatanPengiriman: catatanPengiriman,
-        metodePembayaran: finalMetodePembayaran, // ✅ SIMPAN METODE PEMBAYARAN
+        metodePembayaran: finalMetodePembayaran,
+        voucherCode: voucherCode, // ✅ SIMPAN VOUCHER CODE
+        voucherDiscount: voucherDiscount, // ✅ SIMPAN VOUCHER DISCOUNT
       );
 
       print('✅ Transaction object created with status: $status');
       print('💳 Metode pembayaran: $finalMetodePembayaran');
+      if (voucherCode != null) {
+        print(
+          '🎟️ Voucher applied: $voucherCode (Discount: Rp${voucherDiscount?.toStringAsFixed(0)})',
+        );
+      }
       if (catatanPengiriman != null && catatanPengiriman.isNotEmpty) {
         print('📝 Catatan pengiriman: $catatanPengiriman');
       }
@@ -118,7 +138,7 @@ class TransactionManager {
           '✓ Verification - Transactions in storage: ${verifyTransactions.length}',
         );
 
-        // ⭐ Verifikasi status tersimpan
+        // ⭐ Verifikasi status & voucher tersimpan
         final savedTransaction = verifyTransactions.firstWhere(
           (t) => t['id'] == transactionId,
           orElse: () => <String, dynamic>{},
@@ -127,6 +147,10 @@ class TransactionManager {
           print('✓ Saved transaction status: ${savedTransaction['status']}');
           print(
             '✓ Saved metode pembayaran: ${savedTransaction['metodePembayaran']}',
+          );
+          print('✓ Saved voucher code: ${savedTransaction['voucher_code']}');
+          print(
+            '✓ Saved voucher discount: ${savedTransaction['voucher_discount']}',
           );
         }
       }
@@ -545,15 +569,22 @@ class TransactionManager {
   // Hitung total pengeluaran
   static Future<double> getTotalSpending() async {
     final transactions = await getTransactions();
-    return transactions.fold<double>(0.0, (sum, t) => sum + t.totalPrice);
+    return transactions.fold<double>(0.0, (sum, t) {
+      // Gunakan finalTotal yang sudah dikurangi diskon
+      return sum + t.finalTotal;
+    });
   }
 
   // ⭐ TAMBAHAN: Hitung total dari transaksi yang selesai saja
   static Future<double> getTotalSpendingCompleted() async {
     final transactions = await getTransactions();
-    return transactions
-        .where((t) => t.status == 'Selesai')
-        .fold<double>(0.0, (sum, t) => sum + t.totalPrice);
+    return transactions.where((t) => t.status == 'Selesai').fold<double>(0.0, (
+      sum,
+      t,
+    ) {
+      // Gunakan finalTotal yang sudah dikurangi diskon
+      return sum + t.finalTotal;
+    });
   }
 
   // Dispose resources

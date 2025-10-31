@@ -18,6 +18,30 @@ class DetailPembayaranScreen extends StatelessWidget {
     return format.format(value);
   }
 
+  double _hitungVoucherDiscount() {
+    final voucherDiscountRaw = transaksi['voucher_discount'];
+    if (voucherDiscountRaw == null) return 0.0;
+
+    return voucherDiscountRaw is int
+        ? voucherDiscountRaw.toDouble()
+        : voucherDiscountRaw as double;
+  }
+
+  double _hitungTotalFinal() {
+    final subtotal = _hitungSubtotal();
+    final biayaPengiriman =
+        (transaksi['biaya_pengiriman'] ?? 5000.0) is int
+            ? ((transaksi['biaya_pengiriman'] ?? 5000.0) as int).toDouble()
+            : (transaksi['biaya_pengiriman'] ?? 5000.0);
+    final biayaAdmin =
+        (transaksi['biaya_admin'] ?? 0.0) is int
+            ? ((transaksi['biaya_admin'] ?? 0.0) as int).toDouble()
+            : (transaksi['biaya_admin'] ?? 0.0);
+    final voucherDiscount = _hitungVoucherDiscount();
+
+    return subtotal + biayaPengiriman + biayaAdmin - voucherDiscount;
+  }
+
   String formatTanggal(dynamic tanggal) {
     DateTime dateTime;
     if (tanggal is String) {
@@ -414,12 +438,47 @@ class DetailPembayaranScreen extends StatelessWidget {
                     'Biaya Admin',
                     formatRupiah(transaksi['biaya_admin'] ?? 0.0),
                   ),
+                  if (transaksi['voucher_code'] != null &&
+                      _hitungVoucherDiscount() > 0) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.local_offer,
+                              size: 16,
+                              color: Colors.green[700],
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              "Diskon Voucher",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.green[700],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          "- ${formatRupiah(_hitungVoucherDiscount())}",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   const Divider(height: 1),
                   const SizedBox(height: 12),
                   _buildRincianRow(
                     'Total Pembayaran',
-                    formatRupiah(total),
+                    formatRupiah(_hitungTotalFinal()),
                     isBold: true,
                   ),
                 ],
