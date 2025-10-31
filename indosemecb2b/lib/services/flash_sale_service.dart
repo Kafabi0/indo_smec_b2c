@@ -29,7 +29,7 @@ class FlashSaleService {
     FlashSaleSchedule(
       id: 'fs2',
       title: 'FLASH SALE SIANG',
-      startTime: DateTime(today.year, today.month, today.day, 12, 0),
+      startTime: DateTime(today.year, today.month, today.day, 10, 40),
       endTime: DateTime(today.year, today.month, today.day, 13, 0),
       productIds: [
         '102', // Paket Sayur Asem

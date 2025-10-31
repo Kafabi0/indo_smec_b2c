@@ -24,6 +24,7 @@ import 'dart:async';
 import 'package:indosemecb2b/models/flash_sale_model.dart';
 import 'package:indosemecb2b/services/flash_sale_service.dart';
 import 'package:indosemecb2b/widgets/flash_sale_timer.dart';
+import 'package:indosemecb2b/services/notifikasi.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -63,6 +64,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   FlashSaleSchedule? currentFlashSale;
   FlashSaleSchedule? nextFlashSale;
   Timer? _flashSaleCheckTimer;
+  bool _flashSaleNotifScheduled = false;
 
   final List<Map<String, dynamic>> categories = [
     {'name': 'Semua', 'icon': Icons.apps},
@@ -84,6 +86,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _loadData();
     _loadPoinFromTransactions();
     _updateFlashSaleStatus();
+    _scheduleFlashSaleNotifications();
 
     _flashSaleCheckTimer = Timer.periodic(Duration(seconds: 10), (_) {
       _updateFlashSaleStatus();
@@ -110,6 +113,22 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
     }
   }
+
+  Future<void> _scheduleFlashSaleNotifications() async {
+  if (_flashSaleNotifScheduled) return;
+
+  try {
+    debugPrint('🔔 [HOME] Scheduling flash sale notifications...');
+    
+    final notifProvider = context.read<NotificationProvider>();
+    await NotificationService().scheduleAllFlashSaleNotifications(notifProvider);
+    
+    _flashSaleNotifScheduled = true;
+    debugPrint('✅ [HOME] Flash sale notifications scheduled!');
+  } catch (e) {
+    debugPrint('❌ [HOME] Error: $e');
+  }
+}
 
   void _updateFlashSaleStatus() {
     if (!mounted) return;

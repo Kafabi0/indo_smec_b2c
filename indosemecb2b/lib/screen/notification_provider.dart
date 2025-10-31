@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/notification_model.dart';
 import '../utils/user_data_manager.dart';
 import 'package:intl/intl.dart';
+import '../services/flash_sale_notification_service.dart';
 
 class NotificationProvider with ChangeNotifier {
   List<AppNotification> _notifications = [];
@@ -274,5 +275,31 @@ class NotificationProvider with ChangeNotifier {
     _notifications.clear();
     await _saveNotifications();
     notifyListeners();
+  }
+
+  Future<void> scheduleFlashSaleNotifications() async {
+    try {
+      print('📅 [NotifProvider] Scheduling flash sale notifications...');
+      
+      final flashSaleNotifService = FlashSaleNotificationService();
+      await flashSaleNotifService.scheduleAllFlashSaleNotifications(this);
+      
+      print('✅ [NotifProvider] Flash sale notifications scheduled');
+    } catch (e) {
+      print('❌ [NotifProvider] Error scheduling flash sales: $e');
+    }
+  }
+
+  Future<void> cancelFlashSaleNotifications() async {
+    try {
+      print('🗑️ [NotifProvider] Cancelling flash sale notifications...');
+      
+      final flashSaleNotifService = FlashSaleNotificationService();
+      await flashSaleNotifService.cancelAllFlashSaleNotifications();
+      
+      print('✅ [NotifProvider] Flash sale notifications cancelled');
+    } catch (e) {
+      print('❌ [NotifProvider] Error cancelling flash sales: $e');
+    }
   }
 }
