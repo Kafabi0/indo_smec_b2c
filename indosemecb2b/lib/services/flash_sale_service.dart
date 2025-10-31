@@ -3,50 +3,82 @@ import '../models/flash_sale_model.dart';
 class FlashSaleService {
   // ⭐ DATA JADWAL FLASH SALE (disesuaikan dengan produk ID 100-120)
   static List<FlashSaleSchedule> getFlashSaleSchedules() {
-    final today = DateTime.now();
+  final today = DateTime.now();
+  
+  return [
+    // FLASH SALE PAGI (09:00 - 11:00) - Diskon 35%
+    // Fokus: Sembako & Breakfast
+    FlashSaleSchedule(
+      id: 'fs1',
+      title: 'FLASH SALE PAGI',
+      startTime: DateTime(today.year, today.month, today.day, 9, 0),
+      endTime: DateTime(today.year, today.month, today.day, 10, 0),
+      productIds: [
+        '100', // Paket Sembako Hemat A
+        '101', // Paket Sembako Lengkap E
+        '104', // Paket Lauk Ayam Lengkap
+        '107', // Paket Snack Keluarga
+        '109', // Paket Buah Segar Mix
+        '117', // Paket Nasi Box
+      ], 
+      discountPercentage: 35,
+    ),
     
-    return [
-      // FLASH SALE PAGI (09:00 - 11:00)
-      FlashSaleSchedule(
-        id: 'fs1',
-        title: 'FLASH SALE PAGI',
-        startTime: DateTime(today.year, today.month, today.day, 9, 0),
-        endTime: DateTime(today.year, today.month, today.day, 11, 0),
-        productIds: ['100', '101', '104', '107', '109'], // Paket Sembako & Lauk
-        discountPercentage: 40,
-      ),
-      
-      // FLASH SALE SIANG (11:00 - 13:00)
-      FlashSaleSchedule(
-        id: 'fs2',
-        title: 'FLASH SALE SIANG',
-        startTime: DateTime(today.year, today.month, today.day, 11, 0),
-        endTime: DateTime(today.year, today.month, today.day, 13, 0),
-        productIds: ['102', '105', '108', '110', '112'], // Sayur Asem, Seafood, dll
-        discountPercentage: 35,
-      ),
-      
-      // FLASH SALE SORE (15:00 - 17:00)
-      FlashSaleSchedule(
-        id: 'fs3',
-        title: 'FLASH SALE SORE',
-        startTime: DateTime(today.year, today.month, today.day, 15, 0),
-        endTime: DateTime(today.year, today.month, today.day, 17, 0),
-        productIds: ['103', '106', '111', '113', '115'], // Paket Ramadhan, Buah, Herbal
-        discountPercentage: 45,
-      ),
-      
-      // FLASH SALE MALAM (18:00 - 20:00)
-      FlashSaleSchedule(
-        id: 'fs4',
-        title: 'FLASH SALE MALAM',
-        startTime: DateTime(today.year, today.month, today.day, 18, 0),
-        endTime: DateTime(today.year, today.month, today.day, 20, 0),
-        productIds: ['114', '116', '117', '119', '120'], // Bumbu, Hampers, Fashion
-        discountPercentage: 50,
-      ),
-    ];
-  }
+    // FLASH SALE SIANG (12:00 - 13:00) - Diskon 45%
+    // Fokus: Lunch & Sayur
+    FlashSaleSchedule(
+      id: 'fs2',
+      title: 'FLASH SALE SIANG',
+      startTime: DateTime(today.year, today.month, today.day, 12, 0),
+      endTime: DateTime(today.year, today.month, today.day, 13, 0),
+      productIds: [
+        '102', // Paket Sayur Asem
+        '105', // Paket Lauk Seafood
+        '106', // Paket Tumis Kangkung
+        '108', // Paket Minuman Segar
+        '110', // Paket Sayuran Organik
+        '118', // Paket Tumpeng Mini
+      ], 
+      discountPercentage: 45,
+    ),
+    
+    // FLASH SALE SORE (15:00 - 17:00) - Diskon 50% (GEDE!)
+    // Fokus: Premium & Herbal
+    FlashSaleSchedule(
+      id: 'fs3',
+      title: 'FLASH SALE SORE',
+      startTime: DateTime(today.year, today.month, today.day, 16, 0),
+      endTime: DateTime(today.year, today.month, today.day, 17, 0),
+      productIds: [
+        '103', // Paket Sembako Ramadhan
+        '111', // Paket Buah Tropis Premium
+        '112', // Paket Jamu Sehat Lengkap
+        '113', // Paket Madu & Herbal
+        '115', // Paket Rempah Nusantara
+        '119', // Paket Hijab 5 Warna
+      ], 
+      discountPercentage: 50,
+    ),
+    
+    // FLASH SALE MALAM (18:00 - 20:00) - Diskon 40%
+    // Fokus: Fashion & Kebutuhan Rumah
+    FlashSaleSchedule(
+      id: 'fs4',
+      title: 'FLASH SALE MALAM',
+      startTime: DateTime(today.year, today.month, today.day, 19, 0),
+      endTime: DateTime(today.year, today.month, today.day, 20, 0),
+      productIds: [
+        '114', // Paket Bumbu Dapur Lengkap
+        '116', // Paket Hampers Bayi Newborn
+        '120', // Paket Batik Couple
+        '100', // Paket Sembako Hemat A (repeat strategis)
+        '109', // Paket Buah Segar Mix (repeat untuk promo malam)
+        '107', // Paket Snack Keluarga (cocok untuk ngemil malam)
+      ], 
+      discountPercentage: 40,
+    ),
+  ];
+}
 
   // Ambil flash sale yang aktif sekarang
   static FlashSaleSchedule? getCurrentFlashSale() {
@@ -71,7 +103,7 @@ class FlashSaleService {
           id: 'fs1_tomorrow',
           title: 'FLASH SALE PAGI',
           startTime: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 9, 0),
-          endTime: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 11, 0),
+          endTime: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 10, 0),
           productIds: ['100', '101', '104', '107', '109'],
           discountPercentage: 40,
         ),
@@ -87,13 +119,39 @@ class FlashSaleService {
   static double calculateFlashPrice(String productId, double originalPrice) {
     final currentSale = getCurrentFlashSale();
     
-    // Jika ada flash sale aktif dan produk termasuk di dalamnya
-    if (currentSale != null && currentSale.productIds.contains(productId)) {
+    if (currentSale != null && 
+        currentSale.isActive && 
+        currentSale.productIds.contains(productId)) {
+      // Hitung diskon dari originalPrice
       final discount = currentSale.discountPercentage / 100;
-      return originalPrice * (1 - discount);
+      final flashPrice = originalPrice * (1 - discount);
+      
+      print('💰 [FLASH] Product $productId:');
+      print('   Original: ${originalPrice.toInt()}');
+      print('   Diskon: ${currentSale.discountPercentage}%');
+      print('   Flash Price: ${flashPrice.toInt()}');
+      
+      return flashPrice;
     }
     
-    // Jika tidak flash sale, kembalikan harga normal
-    return originalPrice;
+    // Jika tidak ada flash sale, return null (gunakan price normal)
+    return originalPrice; // ⬅️ Kembalikan originalPrice sebagai fallback
+  }
+
+  static bool isProductOnFlashSale(String productId) {
+    final currentSale = getCurrentFlashSale();
+    return currentSale != null && 
+          currentSale.isActive && 
+          currentSale.productIds.contains(productId);
+  }
+
+  static int? getFlashDiscountPercentage(String productId) {
+    final currentSale = getCurrentFlashSale();
+    if (currentSale != null && 
+        currentSale.isActive && 
+        currentSale.productIds.contains(productId)) {
+      return currentSale.discountPercentage.toInt();
+    }
+    return null;
   }
 }

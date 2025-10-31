@@ -1710,8 +1710,39 @@ List<Product> getActiveFlashSaleProducts() {
 }
 
 // Get harga produk (otomatis cek flash sale)
-double getProductPrice(String productId, double originalPrice) {
-  return FlashSaleService.calculateFlashPrice(productId, originalPrice);
+double getProductPrice(String productId) {
+  // Cari produk dulu
+  final product = _allProducts.firstWhere(
+    (p) => p.id == productId,
+    orElse: () => _allProducts.first,
+  );
+  
+  // Cek apakah sedang flash sale
+  if (FlashSaleService.isProductOnFlashSale(productId)) {
+    return FlashSaleService.calculateFlashPrice(
+      productId, 
+      product.originalPrice ?? product.price,
+    );
+  }
+  
+  // Jika tidak flash sale, return harga normal
+  return product.price;
+}
+
+double getProductDiscountPercentage(String productId) {
+  final product = _allProducts.firstWhere(
+    (p) => p.id == productId,
+    orElse: () => _allProducts.first,
+  );
+  
+  // Cek flash sale dulu
+  final flashDiscount = FlashSaleService.getFlashDiscountPercentage(productId);
+  if (flashDiscount != null) {
+    return flashDiscount.toDouble();
+  }
+  
+  // ⬅️ FIX: Cast ke double langsung
+  return product.discountPercentage?.toDouble() ?? 0.0;
 }
 
 // Get paketan by category
