@@ -3,7 +3,11 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:indosemecb2b/screen/detail_pembayaran.dart'; // ✅ Import detail screen
+import 'package:indosemecb2b/screen/detail_pembayaran.dart';
+import '../models/flash_sale_model.dart';
+import '../services/flash_sale_service.dart';
+import '../screen/notification_provider.dart';
+import '../models/notification_model.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -124,7 +128,7 @@ class NotificationService {
     required String paymentMethod,
     required double totalAmount,
     String? productImage,
-    Map<String, dynamic>? transactionData, // ✅ Pass transaction data
+    Map<String, dynamic>? transactionData,
   }) async {
     if (!_initialized) await initialize();
 
@@ -152,7 +156,6 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    // ✅ Encode transaction data sebagai payload untuk navigation
     String payload;
     if (transactionData != null) {
       payload = json.encode(transactionData);
@@ -163,24 +166,22 @@ class NotificationService {
     }
 
     await _notifications.show(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000, // Unique ID
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
       '✅ Pembayaran Berhasil!',
       'Order #$orderId - $paymentMethod telah terkonfirmasi',
       details,
-      payload: payload, // ✅ Transaction data untuk navigation
+      payload: payload,
     );
 
     debugPrint('🔔 Payment notification shown for order: $orderId');
   }
-
-  // ✅ ADD THIS METHOD after showOrderShippedNotification
 
   // Tampilkan notifikasi top-up berhasil
   Future<void> showTopUpSuccessNotification({
     required double amount,
     required String paymentMethod,
     required String transactionId,
-    Map<String, dynamic>? transactionData, // ✅ Pass transaction data
+    Map<String, dynamic>? transactionData,
   }) async {
     if (!_initialized) await initialize();
 
@@ -195,7 +196,7 @@ class NotificationService {
       styleInformation: BigTextStyleInformation(''),
       enableVibration: true,
       playSound: true,
-      color: Color(0xFF4CAF50), // Green color for top-up
+      color: Color(0xFF4CAF50),
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -209,10 +210,8 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    // ✅ Format amount to Rupiah
     final formattedAmount = _formatRupiah(amount);
 
-    // ✅ Encode transaction data sebagai payload
     String payload;
     if (transactionData != null) {
       payload = json.encode(transactionData);
@@ -230,11 +229,11 @@ class NotificationService {
     }
 
     await _notifications.show(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000, // Unique ID
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
       '💰 Top-Up Berhasil!',
       'Saldo kamu berhasil ditambah $formattedAmount via $paymentMethod',
       details,
-      payload: payload, // ✅ Transaction data untuk navigation
+      payload: payload,
     );
 
     debugPrint('🔔 Top-up notification shown: $transactionId');
@@ -255,7 +254,7 @@ class NotificationService {
   Future<void> showOrderShippedNotification({
     required String orderId,
     required String deliveryTime,
-    Map<String, dynamic>? transactionData, // ✅ Pass transaction data
+    Map<String, dynamic>? transactionData,
   }) async {
     if (!_initialized) await initialize();
 
@@ -281,7 +280,6 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    // ✅ Encode transaction data sebagai payload
     String payload;
     if (transactionData != null) {
       payload = json.encode(transactionData);
@@ -298,6 +296,202 @@ class NotificationService {
     );
 
     debugPrint('🔔 Shipping notification shown for order: $orderId');
+  }
+
+  // ========================================
+  // ⭐ FLASH SALE NOTIFICATIONS
+  // ========================================
+
+  // ✅ Schedule semua flash sale notifications untuk hari ini
+  Future<void> scheduleAllFlashSaleNotifications(
+    NotificationProvider notifProvider,
+  ) async {
+    if (!_initialized) await initialize();
+
+    final schedules = FlashSaleService.getFlashSaleSchedules();
+    
+    debugPrint('📅 [FlashSale] Scheduling ${schedules.length} flash sales');
+    
+    for (var schedule in schedules) {
+      await _scheduleFlashSaleNotifications(schedule, notifProvider);
+    }
+    
+    debugPrint('✅ [FlashSale] All notifications scheduled');
+  }
+
+  // ✅ Schedule notifikasi untuk 1 flash sale (mulai + hampir berakhir)
+  Future<void> _scheduleFlashSaleNotifications(
+    FlashSaleSchedule schedule,
+    NotificationProvider notifProvider,
+  ) async {
+    final now = DateTime.now();
+    
+    // ⭐ 1. NOTIFIKASI FLASH SALE DIMULAI
+    if (schedule.startTime.isAfter(now)) {
+      await _scheduleFlashSaleStartNotification(schedule, notifProvider);
+    } else {
+      debugPrint('⏭️ [FlashSale] ${schedule.title} already started, skipping');
+    }
+    
+    // ⭐ 2. NOTIFIKASI HAMPIR BERAKHIR (10 menit sebelum selesai)
+    final almostEndTime = schedule.endTime.subtract(const Duration(minutes: 10));
+    if (almostEndTime.isAfter(now)) {
+      await _scheduleFlashSaleEndingSoonNotification(schedule, notifProvider);
+    } else {
+      debugPrint('⏭️ [FlashSale] ${schedule.title} ending time passed');
+    }
+  }
+
+  // 📢 Notifikasi: Flash Sale DIMULAI
+  Future<void> _scheduleFlashSaleStartNotification(
+    FlashSaleSchedule schedule,
+    NotificationProvider notifProvider,
+  ) async {
+    final scheduledTime = tz.TZDateTime.from(schedule.startTime, tz.local);
+    
+    final androidDetails = AndroidNotificationDetails(
+      'flash_sale_channel',
+      'Flash Sale Notifications',
+      channelDescription: 'Notifikasi untuk flash sale',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      color: const Color(0xFFFF6B35),
+      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      styleInformation: const BigTextStyleInformation(''),
+      enableVibration: true,
+      playSound: true,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    final details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    final notificationId = schedule.id.hashCode + 1;
+
+    await _notifications.zonedSchedule(
+      notificationId,
+      '🔥 ${schedule.title} DIMULAI!',
+      'Diskon ${schedule.discountPercentage}% untuk ${schedule.productIds.length} produk pilihan! Buruan cek sekarang!',
+      scheduledTime,
+      details,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    );
+
+    // ✅ Tambahkan ke NotificationProvider
+    _scheduleInAppNotification(schedule, notifProvider, isStarting: true);
+
+    debugPrint('🔔 [FlashSale] START notification scheduled for ${schedule.title} at ${schedule.startTime}');
+  }
+
+  // 📢 Notifikasi: Flash Sale HAMPIR BERAKHIR
+  Future<void> _scheduleFlashSaleEndingSoonNotification(
+    FlashSaleSchedule schedule,
+    NotificationProvider notifProvider,
+  ) async {
+    final endingSoonTime = schedule.endTime.subtract(const Duration(minutes: 10));
+    final scheduledTime = tz.TZDateTime.from(endingSoonTime, tz.local);
+    
+    final androidDetails = AndroidNotificationDetails(
+      'flash_sale_channel',
+      'Flash Sale Notifications',
+      channelDescription: 'Notifikasi untuk flash sale',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      color: const Color(0xFFFF3B30),
+      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      styleInformation: const BigTextStyleInformation(''),
+      enableVibration: true,
+      playSound: true,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    final details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    final notificationId = schedule.id.hashCode + 2;
+
+    await _notifications.zonedSchedule(
+      notificationId,
+      '⏰ ${schedule.title} HAMPIR BERAKHIR!',
+      'Tinggal 10 menit! Jangan sampai ketinggalan diskon ${schedule.discountPercentage}%',
+      scheduledTime,
+      details,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    );
+
+    // ✅ Tambahkan ke NotificationProvider
+    _scheduleInAppNotification(schedule, notifProvider, isStarting: false);
+
+    debugPrint('🔔 [FlashSale] ENDING notification scheduled for ${schedule.title} at $endingSoonTime');
+  }
+
+  // ✅ Tambahkan notifikasi ke in-app notification list
+  Future<void> _scheduleInAppNotification(
+    FlashSaleSchedule schedule,
+    NotificationProvider notifProvider,
+    {required bool isStarting}
+  ) async {
+    final triggerTime = isStarting 
+        ? schedule.startTime 
+        : schedule.endTime.subtract(const Duration(minutes: 10));
+
+    final now = DateTime.now();
+    final delay = triggerTime.difference(now);
+
+    if (delay.isNegative) {
+      debugPrint('⏭️ [FlashSale] Time passed, skipping in-app notification');
+      return;
+    }
+
+    // Schedule dengan Future.delayed
+    Future.delayed(delay, () async {
+      final notification = AppNotification(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        type: NotifType.informasi,
+        title: isStarting 
+            ? '🔥 ${schedule.title} DIMULAI!' 
+            : '⏰ ${schedule.title} HAMPIR BERAKHIR!',
+        message: isStarting
+            ? 'Diskon ${schedule.discountPercentage}% untuk ${schedule.productIds.length} produk pilihan! Buruan cek sekarang!'
+            : 'Tinggal 10 menit! Jangan sampai ketinggalan diskon ${schedule.discountPercentage}%',
+        date: DateTime.now(),
+        isRead: false,
+        detailButtonText: 'Lihat Produk',
+      );
+
+      await notifProvider.addNotification(notification);
+      debugPrint('✅ [FlashSale] In-app notification added: ${notification.title}');
+    });
+
+    debugPrint('📅 [FlashSale] In-app notification scheduled in ${delay.inMinutes} minutes');
+  }
+
+  // ✅ Cancel semua flash sale notifications
+  Future<void> cancelAllFlashSaleNotifications() async {
+    final schedules = FlashSaleService.getFlashSaleSchedules();
+    
+    for (var schedule in schedules) {
+      await _notifications.cancel(schedule.id.hashCode + 1);
+      await _notifications.cancel(schedule.id.hashCode + 2);
+    }
+    
+    debugPrint('🗑️ [FlashSale] All flash sale notifications cancelled');
   }
 
   // Cancel semua notifikasi
