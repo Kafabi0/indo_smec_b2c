@@ -298,6 +298,53 @@ class NotificationService {
     debugPrint('🔔 Shipping notification shown for order: $orderId');
   }
 
+  Future<void> showOrderArrivedNotification({
+    required String orderId,
+    Map<String, dynamic>? transactionData,
+  }) async {
+    if (!_initialized) await initialize();
+
+    const androidDetails = AndroidNotificationDetails(
+      'order_channel',
+      'Order Notifications',
+      channelDescription: 'Notifikasi untuk status pesanan',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      enableVibration: true,
+      playSound: true,
+      color: Color(0xFF4CAF50),
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    String payload;
+    if (transactionData != null) {
+      payload = json.encode(transactionData);
+    } else {
+      payload = json.encode({'no_transaksi': orderId});
+    }
+
+    await _notifications.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      '✅ Pesanan Telah Sampai!',
+      'Order #$orderId telah tiba di lokasi tujuan. Mohon konfirmasi penerimaan pesanan Anda.',
+      details,
+      payload: payload,
+    );
+
+    debugPrint('🔔 Arrival notification shown for order: $orderId');
+  }
+
   // ========================================
   // ⭐ FLASH SALE NOTIFICATIONS
   // ========================================
@@ -309,13 +356,13 @@ class NotificationService {
     if (!_initialized) await initialize();
 
     final schedules = FlashSaleService.getFlashSaleSchedules();
-    
+
     debugPrint('📅 [FlashSale] Scheduling ${schedules.length} flash sales');
-    
+
     for (var schedule in schedules) {
       await _scheduleFlashSaleNotifications(schedule, notifProvider);
     }
-    
+
     debugPrint('✅ [FlashSale] All notifications scheduled');
   }
 
@@ -325,16 +372,18 @@ class NotificationService {
     NotificationProvider notifProvider,
   ) async {
     final now = DateTime.now();
-    
+
     // ⭐ 1. NOTIFIKASI FLASH SALE DIMULAI
     if (schedule.startTime.isAfter(now)) {
       await _scheduleFlashSaleStartNotification(schedule, notifProvider);
     } else {
       debugPrint('⏭️ [FlashSale] ${schedule.title} already started, skipping');
     }
-    
+
     // ⭐ 2. NOTIFIKASI HAMPIR BERAKHIR (10 menit sebelum selesai)
-    final almostEndTime = schedule.endTime.subtract(const Duration(minutes: 10));
+    final almostEndTime = schedule.endTime.subtract(
+      const Duration(minutes: 10),
+    );
     if (almostEndTime.isAfter(now)) {
       await _scheduleFlashSaleEndingSoonNotification(schedule, notifProvider);
     } else {
@@ -348,7 +397,7 @@ class NotificationService {
     NotificationProvider notifProvider,
   ) async {
     final scheduledTime = tz.TZDateTime.from(schedule.startTime, tz.local);
-    
+
     final androidDetails = AndroidNotificationDetails(
       'flash_sale_channel',
       'Flash Sale Notifications',
@@ -388,7 +437,9 @@ class NotificationService {
     // ✅ Tambahkan ke NotificationProvider
     _scheduleInAppNotification(schedule, notifProvider, isStarting: true);
 
-    debugPrint('🔔 [FlashSale] START notification scheduled for ${schedule.title} at ${schedule.startTime}');
+    debugPrint(
+      '🔔 [FlashSale] START notification scheduled for ${schedule.title} at ${schedule.startTime}',
+    );
   }
 
   // 📢 Notifikasi: Flash Sale HAMPIR BERAKHIR
@@ -396,9 +447,11 @@ class NotificationService {
     FlashSaleSchedule schedule,
     NotificationProvider notifProvider,
   ) async {
-    final endingSoonTime = schedule.endTime.subtract(const Duration(minutes: 10));
+    final endingSoonTime = schedule.endTime.subtract(
+      const Duration(minutes: 10),
+    );
     final scheduledTime = tz.TZDateTime.from(endingSoonTime, tz.local);
-    
+
     final androidDetails = AndroidNotificationDetails(
       'flash_sale_channel',
       'Flash Sale Notifications',
@@ -438,18 +491,21 @@ class NotificationService {
     // ✅ Tambahkan ke NotificationProvider
     _scheduleInAppNotification(schedule, notifProvider, isStarting: false);
 
-    debugPrint('🔔 [FlashSale] ENDING notification scheduled for ${schedule.title} at $endingSoonTime');
+    debugPrint(
+      '🔔 [FlashSale] ENDING notification scheduled for ${schedule.title} at $endingSoonTime',
+    );
   }
 
   // ✅ Tambahkan notifikasi ke in-app notification list
   Future<void> _scheduleInAppNotification(
     FlashSaleSchedule schedule,
-    NotificationProvider notifProvider,
-    {required bool isStarting}
-  ) async {
-    final triggerTime = isStarting 
-        ? schedule.startTime 
-        : schedule.endTime.subtract(const Duration(minutes: 10));
+    NotificationProvider notifProvider, {
+    required bool isStarting,
+  }) async {
+    final triggerTime =
+        isStarting
+            ? schedule.startTime
+            : schedule.endTime.subtract(const Duration(minutes: 10));
 
     final now = DateTime.now();
     final delay = triggerTime.difference(now);
@@ -464,33 +520,39 @@ class NotificationService {
       final notification = AppNotification(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         type: NotifType.informasi,
-        title: isStarting 
-            ? '🔥 ${schedule.title} DIMULAI!' 
-            : '⏰ ${schedule.title} HAMPIR BERAKHIR!',
-        message: isStarting
-            ? 'Diskon ${schedule.discountPercentage}% untuk ${schedule.productIds.length} produk pilihan! Buruan cek sekarang!'
-            : 'Tinggal 10 menit! Jangan sampai ketinggalan diskon ${schedule.discountPercentage}%',
+        title:
+            isStarting
+                ? '🔥 ${schedule.title} DIMULAI!'
+                : '⏰ ${schedule.title} HAMPIR BERAKHIR!',
+        message:
+            isStarting
+                ? 'Diskon ${schedule.discountPercentage}% untuk ${schedule.productIds.length} produk pilihan! Buruan cek sekarang!'
+                : 'Tinggal 10 menit! Jangan sampai ketinggalan diskon ${schedule.discountPercentage}%',
         date: DateTime.now(),
         isRead: false,
         detailButtonText: 'Lihat Produk',
       );
 
       await notifProvider.addNotification(notification);
-      debugPrint('✅ [FlashSale] In-app notification added: ${notification.title}');
+      debugPrint(
+        '✅ [FlashSale] In-app notification added: ${notification.title}',
+      );
     });
 
-    debugPrint('📅 [FlashSale] In-app notification scheduled in ${delay.inMinutes} minutes');
+    debugPrint(
+      '📅 [FlashSale] In-app notification scheduled in ${delay.inMinutes} minutes',
+    );
   }
 
   // ✅ Cancel semua flash sale notifications
   Future<void> cancelAllFlashSaleNotifications() async {
     final schedules = FlashSaleService.getFlashSaleSchedules();
-    
+
     for (var schedule in schedules) {
       await _notifications.cancel(schedule.id.hashCode + 1);
       await _notifications.cancel(schedule.id.hashCode + 2);
     }
-    
+
     debugPrint('🗑️ [FlashSale] All flash sale notifications cancelled');
   }
 

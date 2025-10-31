@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
+import 'package:indosemecb2b/screen/notification_provider.dart'; // ✅ TAMBAHAN
+import 'package:indosemecb2b/services/notifikasi.dart'; // ✅ TAMBAHAN
 
 class TrackingServiceManager {
   static final TrackingServiceManager _instance =
@@ -13,6 +15,20 @@ class TrackingServiceManager {
   TrackingServiceManager._internal();
 
   final Map<String, TrackingData> _trackings = {};
+
+  // ✅ TAMBAHAN - Untuk akses NotificationProvider dan NotificationService
+  NotificationProvider? _notificationProvider;
+  NotificationService? _notificationService;
+
+  // ✅ TAMBAHAN - Method untuk set providers
+  void setNotificationProviders({
+    required NotificationProvider notificationProvider,
+    required NotificationService notificationService,
+  }) {
+    _notificationProvider = notificationProvider;
+    _notificationService = notificationService;
+    print('✅ Notification providers set in TrackingServiceManager');
+  }
 
   Future<void> startTracking(String transactionId) async {
     if (_trackings.containsKey(transactionId)) {
@@ -79,7 +95,6 @@ class TrackingServiceManager {
 
     List<Map<String, String>> history = [];
 
-    // Tambahkan semua status yang sudah dilewati
     if (progress >= 0.0) {
       history.add({
         "title": "Menyiapkan pesanan",
@@ -118,7 +133,6 @@ class TrackingServiceManager {
       });
     }
 
-    // 🔹 Tambahkan status aktif kalau belum ada di daftar
     if (!history.any((h) => h["title"] == tracking.status)) {
       history.add({
         "title": tracking.status,
@@ -156,19 +170,36 @@ class TrackingServiceManager {
         if (tracking.currentIndex < tracking.route.length - 1) {
           tracking.currentIndex++;
           tracking.currentPosition = tracking.route[tracking.currentIndex];
+
+          // ✅ SIMPAN STATUS SEBELUMNYA
+          final previousStatus = tracking.status;
+
           _updateStatus(tracking);
+
+          // ✅ CEK PERUBAHAN STATUS DAN KIRIM NOTIFIKASI
+          if (previousStatus != tracking.status) {
+            _sendStatusChangeNotification(transactionId, tracking.status);
+          }
         }
 
         tracking.notifier.value = tracking.currentPosition;
         tracking.statusNotifier.value = tracking.status;
       } else {
-        // ⭐ UBAH: Hanya set ke "Pesanan telah sampai", BUKAN "Selesai"
+        // ⭐ SIMPAN STATUS SEBELUMNYA
+        final previousStatus = tracking.status;
+
+        // Set ke "Pesanan telah sampai"
         tracking.status = "Pesanan telah sampai";
         tracking.statusDesc = "Pesanan berhasil diantarkan ke alamat tujuan";
         tracking.notifier.value = tracking.currentPosition;
         tracking.statusNotifier.value = tracking.status;
 
-        // ⭐ Update status transaksi ke "Pesanan telah sampai"
+        // ✅ KIRIM NOTIFIKASI PESANAN TELAH SAMPAI (jika belum pernah dikirim)
+        if (previousStatus != "Pesanan telah sampai") {
+          _sendStatusChangeNotification(transactionId, tracking.status);
+        }
+
+        // Update status transaksi
         TransactionManager.updateTransactionStatus(
           transactionId,
           "Pesanan telah sampai",
@@ -203,6 +234,99 @@ class TrackingServiceManager {
       tracking.transactionId,
       newStatus,
     );
+  }
+
+  // ✅ METHOD BARU - Kirim notifikasi saat status berubah
+  Future<void> _sendStatusChangeNotification(
+    String transactionId,
+    String newStatus,
+  ) async {
+    try {
+      print('🔔 Sending notification for status change: $newStatus');
+
+      // Ambil data transaksi untuk notifikasi
+      final transactions = await TransactionManager.getTransactions();
+      final transaction = transactions.firstWhere(
+        (t) => t.id == transactionId,
+        orElse: () => throw Exception('Transaction not found'),
+      );
+
+      final transactionData = {
+        'id': transaction.id,
+        'no_transaksi': transaction.id,
+        'status': newStatus,
+        'date': transaction.date.toIso8601String(),
+        'totalPrice': transaction.totalPrice,
+        'items':
+            transaction.items
+                .map(
+                  (item) => {
+                    'productId': item.productId,
+                    'name': item.name,
+                    'price': item.price,
+                    'quantity': item.quantity,
+                    'imageUrl': item.imageUrl,
+                  },
+                )
+                .toList(),
+        'deliveryOption': transaction.deliveryOption,
+        'alamat': transaction.alamat,
+        'metodePembayaran': transaction.metodePembayaran,
+        'voucherCode': transaction.voucherCode,
+        'voucherDiscount': transaction.voucherDiscount,
+      };
+
+      // Kirim notifikasi berdasarkan status
+      if (newStatus == "Sedang dikirim") {
+        // 📱 Push Notification
+        if (_notificationService != null) {
+          await _notificationService!.showOrderShippedNotification(
+            orderId: transactionId,
+            deliveryTime: "30-45 menit",
+            transactionData: transactionData,
+          );
+        }
+
+        // 🔔 In-App Notification
+        if (_notificationProvider != null) {
+          await _notificationProvider!.addOrderShippedNotification(
+            orderId: transactionId,
+            deliveryTime: "30-45 menit",
+            productImage:
+                transaction.items.isNotEmpty
+                    ? transaction.items.first.imageUrl
+                    : null,
+            transactionData: transactionData,
+          );
+        }
+
+        print('✅ Notification sent: Sedang dikirim');
+      } else if (newStatus == "Pesanan telah sampai") {
+        // 📱 Push Notification
+        if (_notificationService != null) {
+          await _notificationService!.showOrderArrivedNotification(
+            orderId: transactionId,
+            transactionData: transactionData,
+          );
+        }
+
+        // 🔔 In-App Notification
+        if (_notificationProvider != null) {
+          await _notificationProvider!.addOrderArrivedNotification(
+            orderId: transactionId,
+            productImage:
+                transaction.items.isNotEmpty
+                    ? transaction.items.first.imageUrl
+                    : null,
+            transactionData: transactionData,
+          );
+        }
+
+        print('✅ Notification sent: Pesanan telah sampai');
+      }
+    } catch (e) {
+      print('❌ Error sending notification: $e');
+    }
   }
 
   Future<List<LatLng>> _getRouteFromOSRM(LatLng start, LatLng end) async {
@@ -241,7 +365,7 @@ class TrackingData {
   String statusDesc;
   Timer? timer;
   final ValueNotifier<LatLng> notifier;
-  final ValueNotifier<String> statusNotifier; // ⭐ TAMBAHAN untuk status
+  final ValueNotifier<String> statusNotifier;
 
   TrackingData({
     required this.transactionId,
@@ -251,5 +375,5 @@ class TrackingData {
     required this.status,
     required this.statusDesc,
   }) : notifier = ValueNotifier<LatLng>(currentPosition),
-       statusNotifier = ValueNotifier<String>(status); // ⭐ INIT status notifier
+       statusNotifier = ValueNotifier<String>(status);
 }

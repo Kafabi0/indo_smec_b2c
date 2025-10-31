@@ -187,17 +187,23 @@ class NotificationProvider with ChangeNotifier {
   }
 
   // Tambah notifikasi pesanan dikirim
+  // ✅ TAMBAHAN - Notifikasi pesanan sedang dikirim
   Future<void> addOrderShippedNotification({
     required String orderId,
     required String deliveryTime,
     String? productImage,
     Map<String, dynamic>? transactionData,
   }) async {
+    print('🚚 [NotifProvider] Creating order shipped notification...');
+    print('   Order ID: $orderId');
+    print('   Delivery time: $deliveryTime');
+
     final notification = AppNotification(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       type: NotifType.transaksi,
-      title: 'Pesanan Sedang Dikirim',
-      message: 'Order #$orderId akan tiba pada $deliveryTime',
+      title: '🚚 Pesanan Sedang Dikirim',
+      message:
+          'Order #$orderId sedang dalam perjalanan. Estimasi tiba: $deliveryTime',
       date: DateTime.now(),
       isRead: false,
       image: productImage,
@@ -207,7 +213,35 @@ class NotificationProvider with ChangeNotifier {
     );
 
     await addNotification(notification);
+    print('✅ [NotifProvider] Order shipped notification added');
   }
+
+  Future<void> addOrderArrivedNotification({
+    required String orderId,
+    String? productImage,
+    Map<String, dynamic>? transactionData,
+  }) async {
+    print('✅ [NotifProvider] Creating order arrived notification...');
+    print('   Order ID: $orderId');
+
+    final notification = AppNotification(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      type: NotifType.transaksi,
+      title: '✅ Pesanan Telah Sampai!',
+      message:
+          'Order #$orderId telah tiba di lokasi tujuan. Mohon konfirmasi penerimaan pesanan Anda.',
+      date: DateTime.now(),
+      isRead: false,
+      image: productImage,
+      detailButtonText: 'Konfirmasi Penerimaan',
+      orderId: orderId,
+      transactionData: transactionData,
+    );
+
+    await addNotification(notification);
+    print('✅ [NotifProvider] Order arrived notification added');
+  }
+  
 
   // Mark notification as read
   Future<void> markAsRead(String notifId) async {
@@ -280,10 +314,10 @@ class NotificationProvider with ChangeNotifier {
   Future<void> scheduleFlashSaleNotifications() async {
     try {
       print('📅 [NotifProvider] Scheduling flash sale notifications...');
-      
+
       final flashSaleNotifService = FlashSaleNotificationService();
       await flashSaleNotifService.scheduleAllFlashSaleNotifications(this);
-      
+
       print('✅ [NotifProvider] Flash sale notifications scheduled');
     } catch (e) {
       print('❌ [NotifProvider] Error scheduling flash sales: $e');
@@ -293,10 +327,10 @@ class NotificationProvider with ChangeNotifier {
   Future<void> cancelFlashSaleNotifications() async {
     try {
       print('🗑️ [NotifProvider] Cancelling flash sale notifications...');
-      
+
       final flashSaleNotifService = FlashSaleNotificationService();
       await flashSaleNotifService.cancelAllFlashSaleNotifications();
-      
+
       print('✅ [NotifProvider] Flash sale notifications cancelled');
     } catch (e) {
       print('❌ [NotifProvider] Error cancelling flash sales: $e');

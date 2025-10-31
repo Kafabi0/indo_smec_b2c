@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:indosemecb2b/screen/notification_provider.dart';
+import 'package:indosemecb2b/services/notifikasi.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 import '../models/tracking.dart';
 import '../services/tracking_service.dart';
 
@@ -36,6 +39,16 @@ class _TrackingScreenState extends State<TrackingScreen> {
   void initState() {
     super.initState();
     _initTracking();
+    final notificationProvider = Provider.of<NotificationProvider>(
+      context,
+      listen: false,
+    );
+    final notificationService = NotificationService();
+    TrackingServiceManager().setNotificationProviders(
+      notificationProvider: notificationProvider,
+      notificationService: notificationService,
+    );
+    TrackingServiceManager().startTracking(widget.trackingData.transactionId!);
   }
 
   Future<void> _initTracking() async {
