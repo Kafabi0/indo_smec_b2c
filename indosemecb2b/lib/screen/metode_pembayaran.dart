@@ -715,13 +715,14 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                       await Future.delayed(const Duration(seconds: 1));
 
                       // Use Poin Cash
-                      final transactionId =
                           'TRX${DateTime.now().millisecondsSinceEpoch}';
-                      final result = await PoinCashManager.usePoinCash(
-                        amount: amountToUse,
-                        pin: pin,
-                        transactionId: transactionId,
-                      );
+                      // ✅ SIMPLIFIED: Hanya validasi PIN & saldo
+                      // Transaction save akan dilakukan di checkout.dart
+                      final result =
+                          await PoinCashManager.validatePoinCashUsage(
+                            amount: amountToUse,
+                            pin: pin,
+                          );
 
                       if (context.mounted) {
                         Navigator.pop(context); // Close loading

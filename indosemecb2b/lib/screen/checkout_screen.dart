@@ -2,7 +2,10 @@
 // UPDATED: screen/checkout.dart dengan Voucher (FIXED)
 // ============================================
 
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/models/transaction.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:indosemecb2b/screen/metode_pembayaran.dart';
 import 'package:indosemecb2b/screen/notification_provider.dart';
@@ -13,6 +16,7 @@ import 'package:indosemecb2b/utils/cart_manager.dart';
 import 'package:indosemecb2b/utils/saldo_klik_manager.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:indosemecb2b/models/cart_item.dart';
+import 'package:indosemecb2b/utils/user_data_manager.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -151,6 +155,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return subtotal + shipping - discount;
   }
 
+  // ============================================
+  // FIXED: screen/checkout.dart - Payment Logic
+  // ============================================
+
+  // Di CheckoutScreen, ubah method _processCheckout:
+
   Future<void> _processCheckout(String paymentType) async {
     if (_isProcessing) return;
 
@@ -206,6 +216,102 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         }
       }
 
+      // ✅ PENTING: Jangan simpan transaksi jika sudah dihandle oleh PoinCashManager
+      // Cek apakah paymentType adalah Poin Cash
+      bool isPoinCashOnly = paymentType == 'Poin Cash';
+      bool isKombinasi = paymentType.startsWith('Kombinasi');
+
+      // ✅ JIKA POIN CASH SAJA - Transaksi sudah disimpan, tidak perlu lagi
+      if (isPoinCashOnly) {
+        print(
+          '✅ Payment with Poin Cash only - saving transaction with product data',
+        );
+
+        // ✅ Prepare alamat data
+        // ✅ Prepare alamat data dengan flag Poin Cash
+        final alamatData = {
+          'nama_penerima': penerimaName,
+          'nomor_hp': nomorHP,
+          'alamat_lengkap': alamatLengkap,
+          'kelurahan': widget.alamat?['kelurahan'],
+          'kecamatan': widget.alamat?['kecamatan'],
+          'kota': widget.alamat?['kota'],
+          'provinsi': widget.alamat?['provinsi'],
+          'kodepos': widget.alamat?['kodepos'],
+          'metode_pembayaran': 'Poin Cash',
+          'voucher_code': _selectedVoucher?.code,
+          'voucher_discount': getVoucherDiscount(),
+          // ⭐ TAMBAHKAN FLAGS INI
+          'isPoinCashUsage': true, // Flag untuk penghitungan
+          'amount': getTotal(), // Jumlah yang digunakan
+        };
+
+        // ✅ SAVE TRANSACTION untuk Poin Cash dengan data produk
+        final success = await TransactionManager.createTransaction(
+          cartItems: _cartItems,
+          deliveryOption: 'poin_cash_usage', // Special delivery option
+          alamat: alamatData,
+          catatanPengiriman:
+              widget.catatanPengiriman ?? 'Pembayaran menggunakan Poin Cash',
+          metodePembayaran: paymentType,
+          initialStatus: 'Selesai', // Langsung selesai
+        );
+
+        if (!success) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Gagal menyimpan transaksi'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+
+        print('✅ Poin Cash transaction saved with product data');
+
+        // ⭐ TAMBAHKAN DEBUG PRINT INI
+        final verifyTransactions = await TransactionManager.getTransactions();
+        final savedTx = verifyTransactions.firstWhere(
+          (t) => t.id == transactionId,
+          orElse:
+              () => Transaction(
+                id: '',
+                date: DateTime.now(),
+                status: '',
+                items: [],
+                deliveryOption: '',
+                totalPrice: 0,
+              ),
+        );
+
+        print('🔍 DEBUG - Saved transaction:');
+        print('  - ID: ${savedTx.id}');
+        print('  - deliveryOption: ${savedTx.deliveryOption}');
+        print('  - alamat: ${savedTx.alamat}');
+
+        // Cek raw data
+        final userLogin = await UserDataManager.getCurrentUserLogin();
+        if (userLogin != null) {
+          final rawTransactions = await UserDataManager.getTransactions(
+            userLogin,
+          );
+          final rawTx = rawTransactions.firstWhere(
+            (t) => t['id'] == transactionId,
+            orElse: () => {},
+          );
+          print('🔍 DEBUG - Raw saved data:');
+          print('  - isPoinCashUsage: ${rawTx['isPoinCashUsage']}');
+          print('  - amount: ${rawTx['amount']}');
+          print('  - deliveryOption: ${rawTx['deliveryOption']}');
+        }
+
+        print('✅ Poin Cash transaction saved with product data');
+        // ✅ END JIKA POIN CASH SAJA
+      }
+
+      // ✅ UNTUK METODE PEMBAYARAN LAIN (bukan Poin Cash)
       final alamatData = {
         'nama_penerima': penerimaName,
         'nomor_hp': nomorHP,
@@ -216,11 +322,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'provinsi': widget.alamat?['provinsi'],
         'kodepos': widget.alamat?['kodepos'],
         'metode_pembayaran': paymentType,
-        'voucher_code': _selectedVoucher?.code, // ✅ SIMPAN VOUCHER CODE
-        'voucher_discount': getVoucherDiscount(), // ✅ SIMPAN DISKON
+        'voucher_code': _selectedVoucher?.code,
+        'voucher_discount': getVoucherDiscount(),
       };
 
-      // ✅ SAVE TRANSACTION
+      // ✅ SAVE TRANSACTION (untuk metode selain Poin Cash)
       final success = await TransactionManager.createTransaction(
         cartItems: _cartItems,
         deliveryOption: widget.deliveryOption,
@@ -250,7 +356,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           'date': DateTime.now().toIso8601String(),
           'status': 'Diproses',
           'metode_pembayaran': paymentType,
-          'voucher_code': _selectedVoucher?.code, // ✅ ADD VOUCHER INFO
+          'voucher_code': _selectedVoucher?.code,
           'voucher_discount': getVoucherDiscount(),
           'items':
               _cartItems
@@ -319,7 +425,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     totalPembayaran: getTotal(),
                     metodePembayaran: paymentType,
                     tanggal: DateTime.now(),
-                    voucherDiscount: getVoucherDiscount(), // ✅ TAMBAHKAN INI
+                    voucherDiscount: getVoucherDiscount(),
                   ),
             ),
             (route) => false,

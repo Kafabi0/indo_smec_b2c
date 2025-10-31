@@ -121,10 +121,29 @@ class TransactionManager {
       transactions.insert(0, transaction);
       print('➕ Transaction added to list. New count: ${transactions.length}');
 
+      // ✅ Convert ke Map dan tambahkan flags jika Poin Cash
+      final transactionMaps =
+          transactions.map((t) {
+            final tMap = t.toMap();
+
+            // ⭐ TAMBAHKAN FLAGS DARI ALAMAT (jika ada)
+            if (t.deliveryOption == 'poin_cash_usage' && t.alamat != null) {
+              if (t.alamat!['isPoinCashUsage'] == true) {
+                tMap['isPoinCashUsage'] = true;
+                tMap['amount'] = t.alamat!['amount'] ?? t.totalPrice;
+                print(
+                  '✅ Added Poin Cash flags: isPoinCashUsage=true, amount=${tMap['amount']}',
+                );
+              }
+            }
+
+            return tMap;
+          }).toList();
+
       // Simpan ke storage
       final saved = await UserDataManager.saveTransactions(
         userLogin,
-        transactions.map((t) => t.toMap()).toList(),
+        transactionMaps,
       );
 
       print('💾 Save result: $saved');
