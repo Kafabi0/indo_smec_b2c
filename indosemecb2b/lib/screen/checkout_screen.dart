@@ -1,3 +1,7 @@
+// ============================================
+// UPDATED: screen/checkout.dart dengan Voucher (FIXED)
+// ============================================
+
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:indosemecb2b/screen/metode_pembayaran.dart';
@@ -11,6 +15,11 @@ import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:indosemecb2b/models/cart_item.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+// ✅ IMPORT VOUCHER
+import 'package:indosemecb2b/models/voucher_model.dart';
+import 'package:indosemecb2b/utils/voucher_manager.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final Map<String, dynamic>? alamat;
@@ -32,6 +41,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _isLoading = true;
   bool _isProcessing = false;
 
+  // ✅ TAMBAH STATE UNTUK VOUCHER
+  UserVoucher? _selectedVoucher;
+  List<UserVoucher> _availableVouchers = [];
+
+  // ✅ TAMBAH STATE UNTUK POIN UMKM
+  int _userPoinUMKM = 0;
+
   String formatRupiah(double value) {
     final format = NumberFormat.currency(
       locale: 'id_ID',
@@ -45,9 +61,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void initState() {
     super.initState();
     loadData();
-
-    // ✅ DEBUG: Verifikasi catatan diterima
-    print('📝 [CHECKOUT INIT] Catatan diterima: "${widget.catatanPengiriman}"');
+    _loadAvailableVouchers();
+    _loadUserPoints(); // ✅ LOAD POIN UMKM
   }
 
   Future<void> loadData() async {
@@ -58,49 +73,60 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
   }
 
-  Future<String?> _showPinDialog() async {
-    final pinController = TextEditingController();
+  // ✅ LOAD POIN UMKM USER
+  Future<void> _loadUserPoints() async {
+    final points = await VoucherManager.getUserPoinUMKM();
+    setState(() {
+      _userPoinUMKM = points;
+    });
+  }
 
-    return showDialog<String>(
+  // ✅ LOAD VOUCHER YANG TERSEDIA
+  Future<void> _loadAvailableVouchers() async {
+    final vouchers = await VoucherManager.getUserVouchers(onlyValid: true);
+
+    // Filter voucher yang bisa dipakai untuk transaksi ini
+    final category =
+        _cartItems.isNotEmpty ? _cartItems.first.category : 'Semua';
+    final usableVouchers =
+        vouchers.where((v) {
+          // Cek minimal pembelian
+          if (getSubtotal() < v.minPurchase) return false;
+
+          // Cek kategori
+          if (v.category != 'Semua' && v.category != category) return false;
+
+          return true;
+        }).toList();
+
+    setState(() {
+      _availableVouchers = usableVouchers;
+    });
+  }
+
+  // ✅ SHOW VOUCHER SELECTOR (DENGAN 2 TAB)
+  Future<void> _showVoucherSelector() async {
+    final selectedVoucher = await showModalBottomSheet<dynamic>(
       context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Masukkan PIN Saldo Klik'),
-          content: TextField(
-            controller: pinController,
-            keyboardType: TextInputType.number,
-            maxLength: 6,
-            obscureText: true,
-            decoration: const InputDecoration(
-              labelText: 'PIN (6 digit)',
-              border: OutlineInputBorder(),
-            ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => VoucherSelectorBottomSheet(
+            currentTotal: getSubtotal().toInt(),
+            selectedVoucher: _selectedVoucher,
+            userPoints: _userPoinUMKM, // ✅ Pass user points
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (pinController.text.length == 6) {
-                  Navigator.pop(context, pinController.text);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('PIN harus 6 digit'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-              child: const Text('Lanjut'),
-            ),
-          ],
-        );
-      },
     );
+
+    if (selectedVoucher != null ||
+        selectedVoucher == null && _selectedVoucher != null) {
+      setState(() {
+        _selectedVoucher = selectedVoucher;
+      });
+
+      // ✅ RELOAD POIN SETELAH PENUKARAN VOUCHER
+      await _loadUserPoints();
+    }
   }
 
   double getSubtotal() =>
@@ -108,10 +134,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   double getBiayaPengiriman() => 5000.0;
 
-  double getTotal() => getSubtotal() + getBiayaPengiriman();
+  // ✅ CALCULATE DISCOUNT FROM VOUCHER
+  double getVoucherDiscount() {
+    if (_selectedVoucher == null) return 0.0;
+    return VoucherManager.calculateDiscount(
+      _selectedVoucher!,
+      getSubtotal().toInt(),
+    ).toDouble();
+  }
 
-  // double getTotal() =>
-  //     _cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
+  // ✅ TOTAL DENGAN VOUCHER
+  double getTotal() {
+    final subtotal = getSubtotal();
+    final shipping = getBiayaPengiriman();
+    final discount = getVoucherDiscount();
+    return subtotal + shipping - discount;
+  }
 
   Future<void> _processCheckout(String paymentType) async {
     if (_isProcessing) return;
@@ -121,14 +159,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
-      print('🔍 DEBUG CHECKOUT - Cart items: ${_cartItems.length}');
-      print('🔍 DEBUG CHECKOUT - Delivery option: ${widget.deliveryOption}');
-      print('🔍 DEBUG CHECKOUT - Catatan: "${widget.catatanPengiriman}"');
-      print('🔍 DEBUG CHECKOUT - Alamat: ${widget.alamat}');
-      print('💳 DEBUG CHECKOUT - Payment type: $paymentType'); // ✅ LOG PAYMENT
-
       final transactionId = 'TRX${DateTime.now().millisecondsSinceEpoch}';
-      print('✅ Generated Transaction ID: $transactionId');
 
       // Extract alamat
       String penerimaName = 'N/A';
@@ -175,11 +206,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         }
       }
 
-      print('📍 Penerima: $penerimaName');
-      print('📍 Nomor HP: $nomorHP');
-      print('📍 Alamat: $alamatLengkap');
-
-      // ✅ PERBAIKAN: Siapkan alamat data dengan metode pembayaran
       final alamatData = {
         'nama_penerima': penerimaName,
         'nomor_hp': nomorHP,
@@ -189,57 +215,43 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'kota': widget.alamat?['kota'],
         'provinsi': widget.alamat?['provinsi'],
         'kodepos': widget.alamat?['kodepos'],
-        'metode_pembayaran': paymentType, // ✅ SIMPAN METODE PEMBAYARAN
+        'metode_pembayaran': paymentType,
+        'voucher_code': _selectedVoucher?.code, // ✅ SIMPAN VOUCHER CODE
+        'voucher_discount': getVoucherDiscount(), // ✅ SIMPAN DISKON
       };
 
-      print('💳 Metode pembayaran yang akan disimpan: $paymentType');
-
-      // ✅ SIMPAN TRANSAKSI dengan parameter metodePembayaran
+      // ✅ SAVE TRANSACTION
       final success = await TransactionManager.createTransaction(
         cartItems: _cartItems,
         deliveryOption: widget.deliveryOption,
-        alamat: alamatData, // ✅ Alamat sudah include metode_pembayaran
+        alamat: alamatData,
         catatanPengiriman: widget.catatanPengiriman,
-        metodePembayaran: paymentType, // ✅ PASS SEBAGAI PARAMETER TERPISAH
+        metodePembayaran: paymentType,
       );
 
       if (success) {
-        print('✅ Transaction created successfully');
-
-        // ✅ VERIFIKASI: Ambil transaksi yang baru disimpan
-        final transactions = await TransactionManager.getTransactions();
-        if (transactions.isNotEmpty) {
-          final savedTransaction = transactions.first;
-          print('✅ Verified saved transaction:');
-          print('  📝 Catatan: "${savedTransaction.catatanPengiriman}"');
-          print('  💳 Metode: "${savedTransaction.metodePembayaran}"');
+        // ✅ USE VOUCHER (MARK AS USED)
+        if (_selectedVoucher != null) {
+          await VoucherManager.useVoucher(_selectedVoucher!.id, transactionId);
         }
+
         if (paymentType == "Saldo Klik") {
-          // ❌ HAPUS BAGIAN INI - PIN sudah diminta di PaymentMethodScreen
-          // Tidak perlu request PIN lagi di checkout
-
           print('✅ Payment with Saldo Klik (PIN already verified)');
-
-          // Saldo sudah dipotong di PaymentMethodScreen
-          // Tidak perlu deduct lagi
-          print('✅ Saldo already deducted in PaymentMethodScreen');
-        }
-        // Hapus semua item dari keranjang
-        final clearSuccess = await CartManager.clearCart();
-        print('🗑️ Cart cleared: $clearSuccess');
-
-        if (!clearSuccess) {
-          print('⚠️ Warning: Cart clearing failed, but transaction was saved');
         }
 
-        // Prepare transaction data for notification
+        // Clear cart
+        await CartManager.clearCart();
+
+        // Prepare transaction data
         final transactionData = {
           'no_transaksi': transactionId,
           'id': transactionId,
           'tanggal': DateTime.now().toIso8601String(),
           'date': DateTime.now().toIso8601String(),
           'status': 'Diproses',
-          'metode_pembayaran': paymentType, // ✅ TAMBAHKAN DI NOTIFICATION DATA
+          'metode_pembayaran': paymentType,
+          'voucher_code': _selectedVoucher?.code, // ✅ ADD VOUCHER INFO
+          'voucher_discount': getVoucherDiscount(),
           'items':
               _cartItems
                   .map(
@@ -273,30 +285,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           'totalPrice': getTotal(),
         };
 
-        print('📦 Transaction data for notification:');
-        print(
-          '  💳 metode_pembayaran: "${transactionData['metode_pembayaran']}"',
-        );
-        print(
-          '  📝 catatan_pengiriman: "${transactionData['catatan_pengiriman']}"',
-        );
-
-        // ✅ TRIGGER NOTIFIKASI dengan data lengkap
         if (mounted) {
           final firstProductImage =
               _cartItems.isNotEmpty ? _cartItems.first.imageUrl : null;
 
-          // ✅ PERBAIKAN: Ensure provider is ready
           final notifProvider = Provider.of<NotificationProvider>(
             context,
             listen: false,
           );
 
-          // ✅ Ensure user is loaded before adding notification
-          print('🔄 [CHECKOUT] Ensuring notification provider is ready...');
           await notifProvider.ensureUserLoaded();
 
-          // 1. Tampilkan Local Notification
           await NotificationService().showPaymentSuccessNotification(
             orderId: transactionId,
             paymentMethod: paymentType,
@@ -305,8 +304,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             transactionData: transactionData,
           );
 
-          // 2. Simpan ke NotificationProvider (user sudah pasti loaded)
-          print('💾 [CHECKOUT] Saving notification to provider...');
           await notifProvider.addPaymentSuccessNotification(
             orderId: transactionId,
             paymentMethod: paymentType,
@@ -315,9 +312,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             transactionData: transactionData,
           );
 
-          print('✅ [CHECKOUT] Notification saved with metode: "$paymentType"');
-
-          // 3. Navigasi ke halaman sukses
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
               builder:
@@ -331,7 +325,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           );
         }
       } else {
-        print('❌ Transaction creation failed');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -387,6 +380,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Alamat Pengiriman
                           const Text(
                             "Alamat Pengiriman",
                             style: TextStyle(
@@ -420,7 +414,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             ),
                           ),
 
-                          // ✅ TAMPILKAN CATATAN DI CHECKOUT
+                          // Catatan Pengiriman
                           if (widget.catatanPengiriman != null &&
                               widget.catatanPengiriman!.isNotEmpty) ...[
                             const SizedBox(height: 16),
@@ -470,6 +464,105 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ],
 
                           const SizedBox(height: 20),
+
+                          // ✅ VOUCHER SECTION
+                          InkWell(
+                            onTap: _showVoucherSelector,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color:
+                                    _selectedVoucher != null
+                                        ? Colors.green[50]
+                                        : Colors.orange[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color:
+                                      _selectedVoucher != null
+                                          ? Colors.green[200]!
+                                          : Colors.orange[200]!,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.local_offer,
+                                    color:
+                                        _selectedVoucher != null
+                                            ? Colors.green[700]
+                                            : Colors.orange[700],
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child:
+                                        _selectedVoucher != null
+                                            ? Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Voucher Digunakan',
+                                                  style: GoogleFonts.poppins(
+                                                    fontSize: 12,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                ),
+                                                Text(
+                                                  _selectedVoucher!.code,
+                                                  style: GoogleFonts.robotoMono(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.green[900],
+                                                  ),
+                                                ),
+                                                Text(
+                                                  'Hemat ${formatRupiah(getVoucherDiscount())}',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.green[700],
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                            : Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Gunakan Voucher',
+                                                  style: GoogleFonts.poppins(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.orange[900],
+                                                  ),
+                                                ),
+                                                Text(
+                                                  _availableVouchers.isNotEmpty
+                                                      ? '${_availableVouchers.length} voucher tersedia'
+                                                      : 'Belum ada voucher',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                  ),
+                                  Icon(
+                                    Icons.chevron_right,
+                                    color: Colors.grey[400],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Daftar Produk
                           const Text(
                             "Daftar Produk",
                             style: TextStyle(
@@ -547,7 +640,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               ),
                             );
                           }),
+
                           const SizedBox(height: 20),
+
+                          // Rincian Pembayaran
                           const Text(
                             "Rincian Pembayaran",
                             style: TextStyle(
@@ -616,6 +712,44 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     ),
                                   ],
                                 ),
+
+                                // ✅ TAMPILKAN DISKON VOUCHER
+                                if (_selectedVoucher != null) ...[
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.local_offer,
+                                            size: 18,
+                                            color: Colors.green[700],
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            "Diskon Voucher",
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.green[700],
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        '- ${formatRupiah(getVoucherDiscount())}',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.green[700],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 12,
@@ -646,6 +780,38 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     ),
                                   ],
                                 ),
+
+                                // ✅ INFO HEMAT
+                                if (_selectedVoucher != null) ...[
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green[50],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: Colors.green[700],
+                                          size: 18,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            'Anda hemat ${formatRupiah(getVoucherDiscount())} dengan voucher',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.green[900],
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -683,12 +849,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     "Total Pembayaran",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
-                  Text(
-                    formatRupiah(getTotal()),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (_selectedVoucher != null)
+                        Text(
+                          formatRupiah(getSubtotal() + getBiayaPengiriman()),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      Text(
+                        formatRupiah(getTotal()),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -797,6 +977,759 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+String formatCurrency(int amount) {
+  return 'Rp${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+}
+
+// ============================================
+// VOUCHER SELECTOR BOTTOM SHEET (2 TAB)
+// ============================================
+
+class VoucherSelectorBottomSheet extends StatefulWidget {
+  final int currentTotal;
+  final UserVoucher? selectedVoucher;
+  final int userPoints;
+
+  const VoucherSelectorBottomSheet({
+    Key? key,
+    required this.currentTotal,
+    this.selectedVoucher,
+    required this.userPoints,
+  }) : super(key: key);
+
+  @override
+  State<VoucherSelectorBottomSheet> createState() =>
+      _VoucherSelectorBottomSheetState();
+}
+
+class _VoucherSelectorBottomSheetState extends State<VoucherSelectorBottomSheet>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  List<UserVoucher> _myVouchers = [];
+  List<Voucher> _availableVouchers = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _loadVouchers();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadVouchers() async {
+    setState(() => _isLoading = true);
+
+    // Load voucher milik user
+    final myVouchers = await VoucherManager.getUserVouchers(onlyValid: true);
+
+    // Filter yang bisa dipakai untuk total belanja ini
+    final usableMyVouchers =
+        myVouchers.where((v) {
+          return widget.currentTotal >= v.minPurchase;
+        }).toList();
+
+    // Load semua voucher yang tersedia di toko
+    final availableVouchers = VoucherManager.getAvailableVouchers();
+
+    // Filter yang bisa dipakai untuk total belanja ini
+    final usableAvailableVouchers =
+        availableVouchers.where((v) {
+          return widget.currentTotal >= v.minPurchase;
+        }).toList();
+
+    setState(() {
+      _myVouchers = usableMyVouchers;
+      _availableVouchers = usableAvailableVouchers;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _redeemAndUseVoucher(Voucher voucher) async {
+    // Konfirmasi
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                Icon(Icons.redeem, color: Colors.orange[700]),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Tukar & Gunakan Voucher?',
+                    style: GoogleFonts.poppins(fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  voucher.name,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange[200]!),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Biaya:'),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.stars,
+                                color: Colors.orange[700],
+                                size: 16,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                '${voucher.pointCost} Poin',
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Divider(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Hemat:'),
+                          Text(
+                            formatCurrency(voucher.discountAmount),
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 12),
+                Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: Colors.blue[700],
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Poin UMKM Anda: ${widget.userPoints}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue[900],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange[700],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  'Tukar & Gunakan',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+    );
+
+    if (confirm != true) return;
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(child: CircularProgressIndicator()),
+    );
+
+    // Proses penukaran
+    final result = await VoucherManager.redeemVoucher(
+      voucher.id,
+      widget.userPoints,
+    );
+
+    Navigator.pop(context); // Close loading
+
+    if (result['success']) {
+      // Success - langsung gunakan voucher
+      final userVoucher = result['voucher'] as UserVoucher;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${result['message']}'),
+          backgroundColor: Colors.green[700],
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // Tutup bottom sheet dan return voucher yang baru ditukar
+      Navigator.pop(context, userVoucher);
+    } else {
+      // Error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message']),
+          backgroundColor: Colors.red[700],
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          // Header
+          Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.local_offer,
+                      color: Colors.orange[700],
+                      size: 24,
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      'Pilih Voucher',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Spacer(),
+                    IconButton(
+                      icon: Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.stars, color: Colors.orange[700], size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Poin UMKM Anda: ',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                      ),
+                      Text(
+                        '${widget.userPoints}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange[900],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Tab Bar
+          TabBar(
+            controller: _tabController,
+            labelColor: Colors.blue[700],
+            unselectedLabelColor: Colors.grey[600],
+            indicatorColor: Colors.blue[700],
+            labelStyle: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+            tabs: [
+              Tab(text: 'Voucher Saya (${_myVouchers.length})'),
+              Tab(text: 'Tukar Poin (${_availableVouchers.length})'),
+            ],
+          ),
+
+          // Tab View
+          Expanded(
+            child:
+                _isLoading
+                    ? Center(child: CircularProgressIndicator())
+                    : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildMyVouchersTab(),
+                        _buildAvailableVouchersTab(),
+                      ],
+                    ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMyVouchersTab() {
+    if (_myVouchers.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inbox_outlined, size: 80, color: Colors.grey[400]),
+            SizedBox(height: 16),
+            Text(
+              'Tidak ada voucher tersedia',
+              style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[600]),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Tukar poin Anda untuk mendapatkan voucher',
+              style: TextStyle(color: Colors.grey[500], fontSize: 13),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.all(16),
+      itemCount: _myVouchers.length + 1, // +1 untuk opsi "Tidak Pakai"
+      itemBuilder: (context, index) {
+        // Opsi "Tidak Pakai Voucher"
+        if (index == 0) {
+          return _buildNoVoucherOption();
+        }
+
+        final voucher = _myVouchers[index - 1];
+        final discount = VoucherManager.calculateDiscount(
+          voucher,
+          widget.currentTotal,
+        );
+        final isSelected = widget.selectedVoucher?.id == voucher.id;
+
+        return _buildMyVoucherCard(voucher, discount, isSelected);
+      },
+    );
+  }
+
+  Widget _buildAvailableVouchersTab() {
+    if (_availableVouchers.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.card_giftcard_outlined,
+              size: 80,
+              color: Colors.grey[400],
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Tidak ada voucher yang sesuai',
+              style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[600]),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Minimum belanja tidak terpenuhi',
+              style: TextStyle(color: Colors.grey[500], fontSize: 13),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.all(16),
+      itemCount: _availableVouchers.length,
+      itemBuilder: (context, index) {
+        final voucher = _availableVouchers[index];
+        final canAfford = widget.userPoints >= voucher.pointCost;
+
+        return _buildAvailableVoucherCard(voucher, canAfford);
+      },
+    );
+  }
+
+  Widget _buildNoVoucherOption() {
+    final isSelected = widget.selectedVoucher == null;
+
+    return InkWell(
+      onTap: () => Navigator.pop(context, null),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? Colors.blue[700]! : Colors.grey[300]!,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.block, color: Colors.grey[600]),
+            SizedBox(width: 12),
+            Text(
+              'Tidak Pakai Voucher',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
+            Spacer(),
+            if (isSelected) Icon(Icons.check_circle, color: Colors.blue[700]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMyVoucherCard(
+    UserVoucher voucher,
+    int discount,
+    bool isSelected,
+  ) {
+    return InkWell(
+      onTap: () => Navigator.pop(context, voucher),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? Colors.green[700]! : Colors.grey[300]!,
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow:
+              isSelected
+                  ? [
+                    BoxShadow(
+                      color: Colors.green.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ]
+                  : [],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.local_offer,
+                    color: Colors.green[700],
+                    size: 20,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        voucher.name,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        voucher.code,
+                        style: GoogleFonts.robotoMono(
+                          fontSize: 11,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isSelected)
+                  Icon(Icons.check_circle, color: Colors.green[700]),
+              ],
+            ),
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Hemat',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  Text(
+                    formatCurrency(discount),
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvailableVoucherCard(Voucher voucher, bool canAfford) {
+    final estimatedDiscount =
+        voucher.discountPercentage != null
+            ? (widget.currentTotal * voucher.discountPercentage! / 100).round()
+            : voucher.discountAmount;
+    final finalDiscount =
+        estimatedDiscount > voucher.discountAmount
+            ? voucher.discountAmount
+            : estimatedDiscount;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header
+          Container(
+            padding: EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.orange[400]!, Colors.orange[600]!],
+              ),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.local_offer,
+                    color: Colors.orange[700],
+                    size: 20,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        voucher.name,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      Text(
+                        voucher.code,
+                        style: GoogleFonts.robotoMono(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Content
+          Padding(
+            padding: EdgeInsets.all(14),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Hemat',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              formatCurrency(finalDiscount),
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Container(
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[50],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.stars,
+                                  size: 12,
+                                  color: Colors.orange[700],
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Biaya',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              '${voucher.pointCost}',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange[900],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed:
+                      canAfford ? () => _redeemAndUseVoucher(voucher) : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        canAfford ? Colors.blue[700] : Colors.grey[300],
+                    foregroundColor: Colors.white,
+                    minimumSize: Size(double.infinity, 42),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text(
+                    canAfford ? 'Tukar & Gunakan' : 'Poin Tidak Cukup',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

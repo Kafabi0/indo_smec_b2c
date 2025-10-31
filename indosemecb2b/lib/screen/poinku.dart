@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:indosemecb2b/screen/pin_poin.dart';
+import 'package:indosemecb2b/screen/voucher.dart';
 import 'package:indosemecb2b/utils/pin_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,7 +16,9 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:share_plus/share_plus.dart';
 import 'package:open_file/open_file.dart';
-import 'package:indosemecb2b/utils/poin_cash_manager.dart'; // ✅ TAMBAHKAN IMPORT INI di bagian atas file
+import 'package:indosemecb2b/utils/poin_cash_manager.dart';
+import 'package:indosemecb2b/models/voucher_model.dart';
+import 'package:indosemecb2b/utils/voucher_manager.dart'; // ✅ TAMBAHKAN IMPORT INI di bagian atas file
 
 // Fungsi helper untuk format mata uang Indonesia
 String formatCurrency(int amount) {
@@ -161,6 +164,8 @@ class _PoinkuScreenState extends State<PoinkuScreen>
 
   Future<void> _calculateTotalPoints() async {
     print('🔍 [POINKU] _calculateTotalPoints() dipanggil');
+    final poinUMKM = await VoucherManager.getUserPoinUMKM();
+    print('📊 [POINKU] Total Poin UMKM (setelah dikurangi voucher): $poinUMKM');
 
     final transactions = await TransactionManager.getFilteredTransactions(
       status: 'Selesai',
@@ -617,6 +622,51 @@ class _PoinkuScreenState extends State<PoinkuScreen>
                         ),
                       ),
                     ),
+                    Transform.translate(
+                      offset: const Offset(0, -30),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Tukar Poin dengan Voucher',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              TextButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => VoucherStoreScreen(
+                                            userPoints: totalPoin,
+                                            onVoucherRedeemed: () {
+                                              _calculateTotalPoints();
+                                            },
+                                          ),
+                                    ),
+                                  );
+                                },
+                                icon: Icon(Icons.store, size: 18),
+                                label: Text(
+                                  'Lihat Semua',
+                                  style: GoogleFonts.poppins(fontSize: 13),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _buildVoucherPreview(),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
 
                     // ==== METODE PEMBAYARAN ====
                     Text(
@@ -708,6 +758,213 @@ class _PoinkuScreenState extends State<PoinkuScreen>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildVoucherPreview() {
+    return FutureBuilder<List<UserVoucher>>(
+      future: VoucherManager.getUserVouchers(onlyValid: true),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        final userVouchers = snapshot.data ?? [];
+
+        if (userVouchers.isEmpty) {
+          // Tampilkan promo card untuk tukar voucher
+          return InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => VoucherStoreScreen(
+                        userPoints: totalPoin,
+                        onVoucherRedeemed: () {
+                          _calculateTotalPoints();
+                        },
+                      ),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.orange[400]!, Colors.orange[600]!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.orange.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.redeem,
+                      color: Colors.orange[700],
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tukar Poin Jadi Voucher!',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Dapatkan diskon hingga Rp 100.000',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios, color: Colors.white, size: 20),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Tampilkan voucher yang dimiliki (max 3)
+        return Column(
+          children: [
+            ...userVouchers.take(3).map((voucher) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green[200]!, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.green[50],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.local_offer,
+                        color: Colors.green[700],
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            voucher.name,
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            voucher.code,
+                            style: GoogleFonts.robotoMono(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green[700],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        formatCurrency(voucher.discountAmount),
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+
+            if (userVouchers.length > 3)
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => VoucherStoreScreen(
+                            userPoints: totalPoin,
+                            onVoucherRedeemed: () {
+                              _calculateTotalPoints();
+                            },
+                          ),
+                    ),
+                  );
+                },
+                child: Text(
+                  'Lihat ${userVouchers.length - 3} voucher lainnya',
+                  style: GoogleFonts.poppins(
+                    color: Colors.blue[700],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 

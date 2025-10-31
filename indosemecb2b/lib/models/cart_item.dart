@@ -7,6 +7,7 @@ class CartItem {
   final int? discountPercentage;
   final String? imageUrl;
   int quantity;
+  final String? category; // ✅ TAMBAHKAN FIELD INI
 
   CartItem({
     required this.productId,
@@ -16,6 +17,7 @@ class CartItem {
     this.discountPercentage,
     this.imageUrl,
     this.quantity = 1,
+    this.category,
   });
 
   // Convert to Map untuk disimpan di SharedPreferences
@@ -28,6 +30,7 @@ class CartItem {
       'discountPercentage': discountPercentage,
       'imageUrl': imageUrl,
       'quantity': quantity,
+      'category': category, // ✅ SIMPAN CATEGORY
     };
   }
 
@@ -41,6 +44,7 @@ class CartItem {
       discountPercentage: map['discountPercentage'],
       imageUrl: map['imageUrl'],
       quantity: map['quantity'] ?? 1,
+      category: map['category'],
     );
   }
 
