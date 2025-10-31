@@ -209,7 +209,27 @@ class NotificationProvider with ChangeNotifier {
       image: productImage,
       detailButtonText: 'Lacak Pesanan',
       orderId: orderId,
-      transactionData: transactionData,
+      transactionData: {
+        'orderId': orderId,
+        'deliveryTime': deliveryTime,
+        'trackingData': {
+          'transaction_id':
+              transactionData?['transaction_id'] ??
+              'TXN-${DateTime.now().millisecondsSinceEpoch}',
+          'order_id': orderId,
+          'courier_name': transactionData?['courier_name'] ?? 'Kurir Sistem',
+          'courier_id': transactionData?['courier_id'] ?? 'C001',
+          'status_message': 'Sedang dikirim',
+          'route':
+              transactionData?['route'] ??
+              [
+                {'lat': -6.2, 'lng': 106.8},
+                {'lat': -6.21, 'lng': 106.82},
+              ],
+        },
+        // tambahkan data transaksi asli jika ingin tetap ada
+        ...?transactionData,
+      },
     );
 
     await addNotification(notification);
@@ -241,7 +261,6 @@ class NotificationProvider with ChangeNotifier {
     await addNotification(notification);
     print('✅ [NotifProvider] Order arrived notification added');
   }
-  
 
   // Mark notification as read
   Future<void> markAsRead(String notifId) async {

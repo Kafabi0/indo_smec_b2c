@@ -19,16 +19,19 @@ class OrderTrackingModel {
 
   factory OrderTrackingModel.fromJson(Map<String, dynamic> json) {
     return OrderTrackingModel(
-      transactionId: json["transaction_id"],
-      orderId: json["order_id"],
-      courierName: json["courier_name"],
-      courierId: json["courier_id"],
-      statusMessage: json["status_message"],
-      statusDesc: json["status_desc"],
+      transactionId: json["transaction_id"] ?? json["transactionId"],
+      orderId: json["order_id"] ?? json["orderId"],
+      courierName: json["courier_name"] ?? json["courierName"],
+      courierId: json["courier_id"] ?? json["courierId"],
+      statusMessage:
+          json["status_message"] ?? json["status"] ?? json["statusMessage"],
+      statusDesc: json["status_desc"] ?? json["statusDesc"],
       updatedAt:
           json["updated_at"] != null
-              ? DateTime.parse(json["updated_at"])
-              : null,
+              ? DateTime.tryParse(json["updated_at"])
+              : (json["updatedAt"] != null
+                  ? DateTime.tryParse(json["updatedAt"])
+                  : null),
     );
   }
 }

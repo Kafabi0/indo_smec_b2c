@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/models/tracking.dart';
+import 'package:indosemecb2b/screen/detail_produk.dart';
+import 'package:indosemecb2b/screen/lacak.dart';
+import 'package:indosemecb2b/screen/main_navigasi.dart';
+import 'package:indosemecb2b/screen/transaksi.dart';
 import 'package:provider/provider.dart';
 import 'notification_provider.dart';
 import '../models/notification_model.dart';
@@ -422,7 +427,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
     print('🔍 Navigating to detail for Order ID: ${notif.orderId}');
     print('📦 Transaction data: ${notif.transactionData}');
 
-    // ✅ Cek apakah transactionData ada
     if (notif.transactionData == null || notif.transactionData!.isEmpty) {
       print('❌ Transaction data is null or empty');
       if (context.mounted) {
@@ -436,23 +440,96 @@ class _NotificationScreenState extends State<NotificationScreen> {
       return;
     }
 
-    // ✅ Langsung gunakan data dari notifikasi dengan validasi tipe data
-    final transaksiMap = Map<String, dynamic>.from(notif.transactionData!);
+    final transaksiMap =
+        notif.transactionData != null
+            ? Map<String, dynamic>.from(notif.transactionData!)
+            : null;
 
-    // ✅ Debug: print setiap field dan tipe datanya
-    print('✅ Using transaction data from notification');
-    transaksiMap.forEach((key, value) {
-      print('📋 $key: ${value.runtimeType} = $value');
-    });
-
-    if (context.mounted) {
-      // Navigate ke DetailPembayaranScreen
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => DetailPembayaranScreen(transaksi: transaksiMap),
+    if (transaksiMap == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Data transaksi tidak ditemukan'),
+          backgroundColor: Colors.orange,
         ),
       );
+      return;
     }
+
+    if (!context.mounted) return;
+
+    // 🔍 Arahkan sesuai dengan teks tombol
+    switch (notif.detailButtonText) {
+      case 'Lihat Detail':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DetailPembayaranScreen(transaksi: transaksiMap),
+          ),
+        );
+        break;
+
+      case 'Lacak Pesanan':
+        final trackingMap = transaksiMap['trackingData'];
+
+        if (trackingMap == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Data pelacakan tidak ditemukan'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
+
+        final trackingData = OrderTrackingModel.fromJson(trackingMap);
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TrackingScreen(trackingData: trackingData),
+          ),
+        );
+        break;
+
+      case 'Konfirmasi Penerimaan':
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MainNavigationWithTransaction(),
+          ),
+          (route) => false,
+        );
+        break;
+
+      default:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Aksi detail belum tersedia'),
+            backgroundColor: Colors.grey,
+          ),
+        );
+    }
+  }
+}
+
+class MainNavigationWithTransaction extends StatefulWidget {
+  const MainNavigationWithTransaction({Key? key}) : super(key: key);
+
+  @override
+  State<MainNavigationWithTransaction> createState() => _MainNavigationWithTransactionState();
+}
+
+class _MainNavigationWithTransactionState extends State<MainNavigationWithTransaction> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Ini akan trigger setelah MainNavigation selesai build
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const MainNavigation(initialIndex: 3);
   }
 }
