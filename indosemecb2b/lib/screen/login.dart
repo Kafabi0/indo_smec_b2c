@@ -1,12 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Import untuk TextInputFormatter
 import 'package:indosemecb2b/screen/notification_provider.dart';
 import 'package:indosemecb2b/screen/register.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
-import 'package:indosemecb2b/utils/user_data_manager.dart'; // Import helper
+import 'package:indosemecb2b/utils/user_data_manager.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,7 +17,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _showPassword = false;
   bool _stepTwo = false;
@@ -25,24 +26,24 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    _emailController.addListener(() {
+    _phoneController.addListener(() {
       setState(() {
-        _isFilled = _emailController.text.isNotEmpty;
+        _isFilled = _phoneController.text.isNotEmpty;
       });
     });
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  bool _isEmailOrPhone(String input) {
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+  bool _isValidPhone(String input) {
+    // Validasi nomor telepon: hanya angka, minimal 9 digit, maksimal 15 digit
     final phoneRegex = RegExp(r'^[0-9]{9,15}$');
-    return emailRegex.hasMatch(input) || phoneRegex.hasMatch(input);
+    return phoneRegex.hasMatch(input);
   }
 
   @override
@@ -74,14 +75,18 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 20),
 
-            // STEP 1: Email / HP
+            // STEP 1: Nomor HP
             if (!_stepTwo) ...[
               TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
+                controller: _phoneController,
+                keyboardType: TextInputType.number, // Keyboard hanya angka
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly, // Hanya terima angka
+                ],
                 decoration: InputDecoration(
                   labelText: "Nomor Whatsapp",
-                  hintText: "Masukkan nomor Whatsapp",
+                  hintText: "Contoh: 628123456789",
+                  prefixText: "+", // Opsional: tambahkan prefix +
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
                   ),
@@ -97,7 +102,6 @@ class _LoginPageState extends State<LoginPage> {
                 height: 48,
                 child: ElevatedButton(
                   onPressed: _isFilled ? _checkAccountExists : null,
-
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[700],
                     disabledBackgroundColor: Colors.grey[300],
@@ -122,7 +126,7 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    _emailController.text,
+                    "+${_phoneController.text}", // Tampilkan dengan prefix +
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -208,19 +212,18 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _checkAccountExists() async {
-    final input = _emailController.text.trim();
+    final input = _phoneController.text.trim();
 
-    if (!_isEmailOrPhone(input)) {
+    if (!_isValidPhone(input)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Masukkan email atau nomor telepon yang valid"),
+          content: Text("Masukkan nomor telepon yang valid (9-15 digit)"),
         ),
       );
       return;
     }
 
     // 🔍 Simulasi pengecekan user di database / API
-    // Nanti kamu bisa ganti dengan request ke backend
     bool exists = await _fakeCheckUser(input);
 
     if (exists) {
@@ -235,7 +238,7 @@ class _LoginPageState extends State<LoginPage> {
       // Jika register sukses, isi kembali input field
       if (result != null && result is String) {
         setState(() {
-          _emailController.text = result;
+          _phoneController.text = result;
           _stepTwo = true; // langsung lanjut ke input password
         });
       }
@@ -255,7 +258,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _handleLogin() async {
     final prefs = await SharedPreferences.getInstance();
-    final emailOrPhone = _emailController.text.trim();
+    final phoneNumber = _phoneController.text.trim();
     final password = _passwordController.text;
 
     final usersString = prefs.getString('registered_users');
@@ -268,19 +271,19 @@ class _LoginPageState extends State<LoginPage> {
 
     final List<dynamic> users = jsonDecode(usersString);
     final user = users.firstWhere(
-      (u) => u['emailOrPhone'] == emailOrPhone && u['password'] == password,
+      (u) => u['emailOrPhone'] == phoneNumber && u['password'] == password,
       orElse: () => {},
     );
 
     if (user.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Email/Nomor HP atau kata sandi salah")),
+        const SnackBar(content: Text("Nomor HP atau kata sandi salah")),
       );
       return;
     }
 
     // ✅ Simpan status login dengan UserDataManager
-    await UserDataManager.setCurrentUser(emailOrPhone);
+    await UserDataManager.setCurrentUser(phoneNumber);
     if (context.mounted) {
       final notifProvider = Provider.of<NotificationProvider>(
         context,
@@ -288,11 +291,11 @@ class _LoginPageState extends State<LoginPage> {
       );
       await notifProvider.reloadForCurrentUser();
 
-      print('✅ Login success, notifications reloaded for: $emailOrPhone');
+      print('✅ Login success, notifications reloaded for: $phoneNumber');
     }
     await prefs.setBool('isLoggedIn', true);
     await prefs.setString('userName', user['name']);
-    await prefs.setString('userLogin', emailOrPhone); // <-- Tambahkan baris ini
+    await prefs.setString('userLogin', phoneNumber);
 
     if (!mounted) return;
 
