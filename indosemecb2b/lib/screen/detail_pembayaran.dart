@@ -731,14 +731,14 @@ class DetailPembayaranScreen extends StatelessWidget {
             ),
             if (showIcon) ...[
               const SizedBox(width: 4),
-              Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
+              Icon(Icons.info_outline, size: 12, color: Colors.grey[600]),
             ],
           ],
         ),
         Text(
           value,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
           ),
         ),

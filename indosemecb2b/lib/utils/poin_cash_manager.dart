@@ -23,18 +23,24 @@ class PoinCashManager {
     print('📊 [POIN CASH] Menghitung total Poin Cash...');
 
     for (var transaction in transactions) {
-      // ✅ HITUNG PENGGUNAAN POIN CASH (KURANGI DARI TOTAL)
-      if (transaction['isPoinCashUsage'] == true) {
-        final amount = (transaction['amount'] ?? 0.0).toDouble();
-        usedPoinCash += amount;
-        print('   💸 Used Poin Cash: ${transaction['id']} = -Rp$amount');
-        continue;
-      }
-
       // ⏭️ SKIP transaksi Top-Up (tidak memberikan poin cash)
       if (transaction['deliveryOption'] == 'topup') {
         print('   ⏭️ Skip Top-Up: ${transaction['id']}');
         continue;
+      }
+
+      // ✅ HITUNG PENGGUNAAN POIN CASH DARI METADATA
+      if (transaction['alamat'] != null) {
+        final alamat = transaction['alamat'] as Map<String, dynamic>;
+
+        if (alamat['is_using_poin_cash'] == true &&
+            alamat['poin_cash_used'] != null) {
+          final amount = (alamat['poin_cash_used']).toDouble();
+          usedPoinCash += amount;
+          print(
+            '   💸 Used Poin Cash (from metadata): ${transaction['id']} = -Rp$amount',
+          );
+        }
       }
 
       // ✅ HITUNG POIN DARI TRANSAKSI SELESAI

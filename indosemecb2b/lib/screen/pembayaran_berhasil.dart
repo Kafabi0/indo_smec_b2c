@@ -103,7 +103,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                       'date': latestTransaction.date, // ✅ TAMBAHKAN date juga
                       'status': latestTransaction.status,
                       'metode_pembayaran': metodePembayaran,
-                      'metodePembayaran': metodePembayaran, // ✅ Both variants
+                      // 'metodePembayaran': metodePembayaran, // ✅ Both variants
                       'total_pembayaran': totalPembayaran,
                       'totalPrice': latestTransaction.totalPrice, // ✅ TAMBAHKAN
                       // ✅ VOUCHER FIELDS (PALING PENTING!)
@@ -353,7 +353,7 @@ class PaymentSuccessScreen extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 12,
               color: color ?? Colors.black87,
               fontWeight: bold ? FontWeight.bold : FontWeight.w500,
             ),
