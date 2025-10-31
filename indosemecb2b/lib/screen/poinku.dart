@@ -164,69 +164,39 @@ class _PoinkuScreenState extends State<PoinkuScreen>
 
   Future<void> _calculateTotalPoints() async {
     print('🔍 [POINKU] _calculateTotalPoints() dipanggil');
-    final poinUMKM = await VoucherManager.getUserPoinUMKM();
-    print('📊 [POINKU] Total Poin UMKM (setelah dikurangi voucher): $poinUMKM');
 
+    // ✅ 1. HITUNG POIN UMKM (SUDAH DIKURANGI VOUCHER)
+    final poinUMKM = await VoucherManager.getUserPoinUMKM();
+    print('📊 [POINKU] Total Poin UMKM: $poinUMKM');
+
+    // ✅ 2. HITUNG POIN CASH (SUDAH DIKURANGI PENGGUNAAN)
+    final poinCashValue = await PoinCashManager.getTotalPoinCash();
+    print('💰 [POINKU] Total Poin Cash: $poinCashValue');
+
+    // ✅ 3. HITUNG STAMP (dari transaksi selesai, kecuali Poin Cash usage & Top-Up)
     final transactions = await TransactionManager.getFilteredTransactions(
       status: 'Selesai',
       dateFilter: 'Semua Tanggal',
       category: 'Semua',
     );
 
-    print('📦 [POINKU] Transaksi selesai: ${transactions.length}');
-
-    int poinFromTransactions = 0;
     int stampCount = 0;
-
     for (var transaction in transactions) {
-      print('💰 [POINKU] Processing: ${transaction.id}');
-
-      // ⭐ SKIP transaksi penggunaan Poin Cash
-      if (transaction.deliveryOption == 'poin_cash_usage') {
-        print('   ⏭️ Skipping Poin Cash usage transaction');
-        continue;
+      // Skip transaksi penggunaan Poin Cash & Top-Up untuk stamp
+      if (transaction.deliveryOption != 'poin_cash_usage' &&
+          transaction.deliveryOption != 'topup') {
+        stampCount++;
       }
-
-      // ⭐ SKIP transaksi Top-Up
-      if (transaction.deliveryOption == 'topup') {
-        print('   ⏭️ Skipping Top-Up transaction');
-        continue;
-      }
-
-      // Poin UMKM: Rp 1.000 = 1 Poin
-      int poin = (transaction.totalPrice / 1000).floor();
-      poinFromTransactions += poin;
-
-      // Stamp: Setiap transaksi = 1 Stamp
-      stampCount++;
-
-      print('   ➕ ${poin} poin UMKM');
     }
 
-    // Bonus poin member baru
-    final prefs = await SharedPreferences.getInstance();
-    final isFirstTime = prefs.getBool('poin_welcome_given') ?? false;
-
-    if (!isFirstTime) {
-      poinFromTransactions += 1000;
-      await prefs.setBool('poin_welcome_given', true);
-      print('🎁 [POINKU] Bonus welcome: +1000 UMKM');
-    }
-
-    // ✅ GUNAKAN PoinCashManager untuk menghitung Poin Cash yang benar
-    final poinCashValue = await PoinCashManager.getTotalPoinCash();
-    print('💰 [POINKU] Poin Cash dari PoinCashManager: $poinCashValue');
-
-    print(
-      '✅ [POINKU] Final - UMKM: $poinFromTransactions, Cash: ${poinCashValue.toInt()}',
-    );
+    print('📦 [POINKU] Total Stamp: $stampCount');
+    print('✅ [POINKU] Update UI dengan data baru');
 
     if (mounted) {
       setState(() {
-        totalPoin = poinFromTransactions;
+        totalPoin = poinUMKM;
         totalStamp = stampCount;
-        totalPoinCash =
-            poinCashValue.toInt(); // ✅ GUNAKAN NILAI DARI PoinCashManager
+        totalPoinCash = poinCashValue.toInt();
       });
     }
   }

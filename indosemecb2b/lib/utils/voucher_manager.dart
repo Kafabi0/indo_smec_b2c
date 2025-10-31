@@ -188,8 +188,11 @@ class VoucherManager {
       await prefs.setBool('poin_welcome_given', true);
     }
 
-    // Kurangi poin yang sudah digunakan untuk voucher
+    // ✅ PENTING: Kurangi poin yang sudah digunakan untuk voucher
     final usedPoints = await _getTotalUsedPoints();
+    print('📊 Total Poin dari transaksi: $poinFromTransactions');
+    print('💸 Poin terpakai untuk voucher: $usedPoints');
+    print('✅ Sisa Poin UMKM: ${poinFromTransactions - usedPoints}');
 
     return poinFromTransactions - usedPoints;
   }

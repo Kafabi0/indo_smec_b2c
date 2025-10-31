@@ -6,6 +6,7 @@ import 'package:indosemecb2b/screen/search_screen.dart';
 import 'package:indosemecb2b/utils/cart_manager.dart';
 import 'package:indosemecb2b/utils/poin_cash_manager.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart';
+import 'package:indosemecb2b/utils/voucher_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product_model.dart';
@@ -247,7 +248,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       category: 'Semua',
     );
 
-    int poinUMKM = 0;
     int stampCount = 0;
 
     for (var transaction in transactions) {
@@ -258,8 +258,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
 
       // Hitung poin
-      int poin = (transaction.totalPrice ~/ 1000);
-      poinUMKM += poin;
       stampCount++;
     }
 
@@ -267,16 +265,16 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final prefs = await SharedPreferences.getInstance();
     final isFirstTime = prefs.getBool('poin_welcome_given') ?? false;
     if (!isFirstTime) {
-      poinUMKM += 1000;
       await prefs.setBool('poin_welcome_given', true);
     }
+    final poinUMKM = await VoucherManager.getUserPoinUMKM();
 
     // Gunakan nilai Poin Cash yang benar dari manager
     final poinCashValue = await PoinCashManager.getTotalPoinCash();
 
     if (mounted) {
       setState(() {
-        _totalPoinUMKM = poinUMKM;
+        _totalPoinUMKM = poinUMKM.toInt();
         _totalPoinCash = poinCashValue.toInt();
       });
     }
@@ -1845,219 +1843,235 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildFlashSaleCard(Product product) {
-  // ⭐ CEK STATUS FLASH SALE
-  final isFlashActive = FlashSaleService.isProductOnFlashSale(product.id);
-  final flashDiscountPercent = FlashSaleService.getFlashDiscountPercentage(product.id);
-  
-  // ⭐ HITUNG HARGA
-  final displayPrice = isFlashActive 
-      ? FlashSaleService.calculateFlashPrice(
-          product.id, 
-          product.originalPrice ?? product.price,
-        )
-      : product.price;
-  
-  final originalPrice = product.originalPrice ?? product.price;
+    // ⭐ CEK STATUS FLASH SALE
+    final isFlashActive = FlashSaleService.isProductOnFlashSale(product.id);
+    final flashDiscountPercent = FlashSaleService.getFlashDiscountPercentage(
+      product.id,
+    );
 
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ProductDetailPage(product: product),
-        ),
-      );
-    },
-    child: Container(
-      width: 120,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: Offset(0, 4),
+    // ⭐ HITUNG HARGA
+    final displayPrice =
+        isFlashActive
+            ? FlashSaleService.calculateFlashPrice(
+              product.id,
+              product.originalPrice ?? product.price,
+            )
+            : product.price;
+
+    final originalPrice = product.originalPrice ?? product.price;
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductDetailPage(product: product),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // IMAGE
-          Stack(
-            children: [
-              Container(
-                height: 100,
-                child: ClipRRect(
-                  child: Image.network(
-                    product.imageUrl ?? '',
-                    width: double.infinity,
-                    height: 100,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey[200],
-                        child: Center(
-                          child: Icon(
-                            Icons.image_rounded,
-                            size: 40,
-                            color: Colors.grey[400],
+        );
+      },
+      child: Container(
+        width: 120,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // IMAGE
+            Stack(
+              children: [
+                Container(
+                  height: 100,
+                  child: ClipRRect(
+                    child: Image.network(
+                      product.imageUrl ?? '',
+                      width: double.infinity,
+                      height: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[200],
+                          child: Center(
+                            child: Icon(
+                              Icons.image_rounded,
+                              size: 40,
+                              color: Colors.grey[400],
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
-              
-              // ⭐ BADGE FLASH SALE (pojok kiri atas)
-              if (isFlashActive)
-                Positioned(
-                  top: 4,
-                  left: 4,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.red[600]!, Colors.red[800]!],
-                      ),
-                      borderRadius: BorderRadius.circular(4),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.red.withOpacity(0.4),
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
+
+                // ⭐ BADGE FLASH SALE (pojok kiri atas)
+                if (isFlashActive)
+                  Positioned(
+                    top: 4,
+                    left: 4,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.red[600]!, Colors.red[800]!],
                         ),
-                      ],
+                        borderRadius: BorderRadius.circular(4),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.4),
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.local_fire_department,
+                            color: Colors.white,
+                            size: 10,
+                          ),
+                          SizedBox(width: 2),
+                          Text(
+                            '${flashDiscountPercent}%',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                  ),
+              ],
+            ),
+
+            // DETAIL
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Nama Produk
+                    Flexible(
+                      child: Text(
+                        product.name,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Rating
+                    Row(
                       children: [
                         Icon(
-                          Icons.local_fire_department,
-                          color: Colors.white,
+                          Icons.star_rounded,
+                          color: Colors.amber[700],
                           size: 10,
                         ),
-                        SizedBox(width: 2),
+                        const SizedBox(width: 2),
                         Text(
-                          '${flashDiscountPercent}%',
+                          '${product.rating}',
                           style: TextStyle(
-                            color: Colors.white,
                             fontSize: 9,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          '(${product.reviewCount})',
+                          style: TextStyle(
+                            fontSize: 8,
+                            color: Colors.grey[500],
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ),
-            ],
-          ),
+                    const SizedBox(height: 4),
 
-          // DETAIL
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Nama Produk
-                  Flexible(
-                    child: Text(
-                      product.name,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w600,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  
-                  // Rating
-                  Row(
-                    children: [
-                      Icon(Icons.star_rounded, color: Colors.amber[700], size: 10),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${product.rating}',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[700],
+                    // ⭐ HARGA DINAMIS
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Harga Flash Sale / Normal
+                        Text(
+                          _formatPrice(displayPrice),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color:
+                                isFlashActive
+                                    ? Colors.red[700]
+                                    : Colors.blue[700],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        '(${product.reviewCount})',
-                        style: TextStyle(fontSize: 8, color: Colors.grey[500]),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  
-                  // ⭐ HARGA DINAMIS
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Harga Flash Sale / Normal
-                      Text(
-                        _formatPrice(displayPrice),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: isFlashActive ? Colors.red[700] : Colors.blue[700],
-                        ),
-                      ),
-                      
-                      // Harga Original (coret)
-                      if (displayPrice < originalPrice)
-                        Row(
-                          children: [
-                            Text(
-                              _formatPrice(originalPrice),
-                              style: TextStyle(
-                                decoration: TextDecoration.lineThrough,
-                                color: Colors.grey[400],
-                                fontSize: 9,
-                              ),
-                            ),
-                            if (isFlashActive) ...[
-                              SizedBox(width: 4),
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: Colors.red[50],
-                                  borderRadius: BorderRadius.circular(3),
+
+                        // Harga Original (coret)
+                        if (displayPrice < originalPrice)
+                          Row(
+                            children: [
+                              Text(
+                                _formatPrice(originalPrice),
+                                style: TextStyle(
+                                  decoration: TextDecoration.lineThrough,
+                                  color: Colors.grey[400],
+                                  fontSize: 9,
                                 ),
-                                child: Text(
-                                  '-${flashDiscountPercent}%',
-                                  style: TextStyle(
-                                    color: Colors.red[700],
-                                    fontSize: 8,
-                                    fontWeight: FontWeight.bold,
+                              ),
+                              if (isFlashActive) ...[
+                                SizedBox(width: 4),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 3,
+                                    vertical: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red[50],
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
+                                  child: Text(
+                                    '-${flashDiscountPercent}%',
+                                    style: TextStyle(
+                                      color: Colors.red[700],
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
-                          ],
-                        ),
-                    ],
-                  ),
-                ],
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   String _formatPrice(double price) {
     final priceInt = price.toInt();
