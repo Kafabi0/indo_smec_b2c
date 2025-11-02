@@ -87,62 +87,49 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     {'name': 'Pertanian', 'icon': Icons.agriculture},
     {'name': 'Kreatif', 'icon': Icons.palette},
     {'name': 'Herbal', 'icon': Icons.spa},
+    {'name': 'Jasa', 'icon': Icons.build_circle},
   ];
 
   @override
   void initState() {
     super.initState();
+    print('🚀 [HOME] ========== initState START ==========');
     WidgetsBinding.instance.addObserver(this);
 
-    // Gunakan microtask untuk memastikan semua inisialisasi berjalan berurutan
-    Future.microtask(() async {
-      print('🚀 [HOME] Starting initialization...');
-      await _checkLoginStatus();
-      print('✅ [HOME] Login status checked');
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
 
-      if (!_isLocationInitialized) {
-        await _loadUserLocation();
-        _isLocationInitialized = true;
-        print('✅ [HOME] User location loaded');
+      try {
+        print('🔄 [HOME] Step 1: Check login...');
+        await _checkLoginStatus();
+
+        // ⭐ PERBAIKAN: Load alamat dulu, baru dapat lokasi dari alamat
+        if (isLoggedIn && userEmail.isNotEmpty) {
+          print('🔄 [HOME] Step 2: Load alamat user...');
+          await _loadAlamatData();
+        }
+
+        print('🔄 [HOME] Step 3: Load poin...');
+        await _loadPoinFromTransactions();
+
+        print('🔄 [HOME] Step 4: Update flash sale...');
+        _updateFlashSaleStatus();
+
+        print('🔄 [HOME] Step 5: Schedule notifications...');
+        _scheduleFlashSaleNotifications();
+
+        print('🔄 [HOME] Step 6: Load data...');
+        _loadData();
+
+        print('🎉 [HOME] ========== initState COMPLETE ==========');
+      } catch (e, stackTrace) {
+        print('❌ [HOME] FATAL ERROR in initState: $e');
+        print('📜 [HOME] Stack: $stackTrace');
       }
-
-      await _loadUserLocation();
-      print('✅ [HOME] User location loaded');
-
-      await _loadPoinFromTransactions();
-      print('✅ [HOME] Poin data loaded');
-
-      _updateFlashSaleStatus();
-      print('✅ [HOME] Flash sale status updated');
-
-      _scheduleFlashSaleNotifications();
-      print('✅ [HOME] Flash sale notifications scheduled');
-
-      _refreshData();
-      print('✅ [HOME] Initial data loaded');
-      print('🎉 [HOME] Initialization complete');
     });
 
     _flashSaleCheckTimer = Timer.periodic(Duration(seconds: 10), (_) {
       _updateFlashSaleStatus();
-    });
-  }
-
-  void _refreshData() {
-    if (_isLoadingData) {
-      print('⚠️ [HOME] Data already loading, skipping refresh...');
-      return;
-    }
-
-    // Hapus timer sebelumnya jika ada (debounce)
-    _debounceTimer?.cancel();
-
-    // Set timer baru untuk mencegah pemanggilan terlalu cepat
-    _debounceTimer = Timer(Duration(milliseconds: 300), () {
-      if (mounted && !_isLoadingData) {
-        print('🔄 [HOME] Refreshing data...');
-        _loadData();
-      }
     });
   }
 
@@ -184,6 +171,158 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       debugPrint('✅ [HOME] Flash sale notifications scheduled!');
     } catch (e) {
       debugPrint('❌ [HOME] Error: $e');
+    }
+  }
+
+  // ⭐ TAMBAHKAN METHOD BARU INI
+  // ⭐ GANTI SELURUH FUNGSI INI DI home.dart
+  Future<void> _updateLocationFromAddress(Map<String, dynamic> alamat) async {
+    print('📍 [HOME] ========== UPDATE LOCATION FROM ADDRESS ==========');
+    print('📦 [HOME] Raw alamat data: $alamat');
+    print('🏠 [HOME] Kelurahan: ${alamat['kelurahan']}');
+    print('🏠 [HOME] Kecamatan: ${alamat['kecamatan']}');
+    print('🏠 [HOME] Kota: ${alamat['kota']}');
+
+    setState(() {
+      _isLoadingLocation = true;
+    });
+
+    try {
+      // ⭐ Set lokasi dari alamat yang dipilih
+      final kelurahan = (alamat['kelurahan'] ?? 'Unknown').toString().trim();
+      final kecamatan = (alamat['kecamatan'] ?? 'Unknown').toString().trim();
+      final kota = (alamat['kota'] ?? 'Unknown').toString().trim();
+
+      final locationFromAddress = {
+        'kelurahan': kelurahan,
+        'kecamatan': kecamatan,
+        'kota': kota,
+        'provinsi': alamat['provinsi'] ?? 'Jawa Barat',
+        'latitude': alamat['latitude'] ?? -6.905789,
+        'longitude': alamat['longitude'] ?? 107.653267,
+      };
+
+      print('🔄 [HOME] Processed location data:');
+      print('   Kelurahan: "$kelurahan"');
+      print('   Kecamatan: "$kecamatan"');
+      print('   Kota: "$kota"');
+
+      // ⭐ Cari koperasi berdasarkan alamat yang dipilih
+      final koperasiList = KoperasiService.getAllKoperasi();
+      print('📋 [HOME] Total koperasi available: ${koperasiList.length}');
+
+      // ⭐ Debug: Print semua koperasi
+      for (var k in koperasiList) {
+        print('   - ${k.name}:');
+        print('     Kelurahan: "${k.kelurahan}"');
+        print('     Kecamatan: "${k.kecamatan}"');
+        print('     Kota: "${k.kota}"');
+      }
+
+      // ⭐ PERBAIKAN: Smart Matching dengan normalisasi yang lebih baik
+      final matchedKoperasi =
+          koperasiList.where((k) {
+            // ⭐ NORMALISASI YANG LEBIH KETAT + REMOVE PREFIX
+            String normalize(String text) {
+              return text
+                  .toLowerCase()
+                  .trim()
+                  .replaceAll(RegExp(r'\s+'), ' ') // Multiple spaces → 1 space
+                  .replaceAll(RegExp(r'[^\w\s]'), '') // Remove special chars
+                  .replaceAll(
+                    RegExp(r'^kecamatan\s+'),
+                    '',
+                  ) // ⭐ Remove "kecamatan " prefix
+                  .replaceAll(
+                    RegExp(r'^kelurahan\s+'),
+                    '',
+                  ) // ⭐ Remove "kelurahan " prefix
+                  .replaceAll(
+                    RegExp(r'^kota\s+'),
+                    '',
+                  ) // ⭐ Remove "kota " prefix
+                  .replaceAll(
+                    RegExp(r'^kabupaten\s+'),
+                    '',
+                  ); // ⭐ Remove "kabupaten " prefix
+            }
+
+            final kKelurahan = normalize(k.kelurahan);
+            final kKecamatan = normalize(k.kecamatan);
+            final kKota = normalize(k.kota);
+
+            final aKelurahan = normalize(kelurahan);
+            final aKecamatan = normalize(kecamatan);
+            final aKota = normalize(kota);
+
+            print('🔍 [HOME] Checking ${k.name}:');
+            print('   Kelurahan: "$kKelurahan" == "$aKelurahan"');
+            print('   Kecamatan: "$kKecamatan" == "$aKecamatan"');
+            print('   Kota: "$kKota" == "$aKota"');
+
+            // ⭐ SMART MATCHING LOGIC:
+
+            // 1. EXACT MATCH: Kelurahan cocok persis
+            if (kKelurahan == aKelurahan) {
+              print('   ✅ Result: EXACT MATCH (Kelurahan)');
+              return true;
+            }
+
+            // 2. SMART MATCH: Kelurahan berbeda tapi masih satu kecamatan
+            if (kKecamatan == aKecamatan && kKota == aKota) {
+              // ⭐ Cek apakah kelurahan user adalah bagian dari kecamatan koperasi
+              final kecamatanBase = kKecamatan.split(' ').first;
+
+              if (aKelurahan.startsWith(kecamatanBase) ||
+                  kKelurahan.startsWith(kecamatanBase)) {
+                print('   ✅ Result: SMART MATCH (Same Kecamatan: $kKecamatan)');
+                return true;
+              }
+
+              print('   ✅ Result: MATCH (Kecamatan + Kota)');
+              return true;
+            }
+
+            // 3. PARTIAL MATCH: Hanya Kecamatan cocok
+            if (kKecamatan == aKecamatan) {
+              print('   ⚠️ Result: PARTIAL MATCH (Kecamatan only)');
+              return true;
+            }
+
+            print('   ❌ Result: NO MATCH');
+            return false;
+          }).toList();
+
+      if (!mounted) return;
+
+      setState(() {
+        _userLocation = locationFromAddress;
+        _nearbyKoperasi = matchedKoperasi;
+        _isLoadingLocation = false;
+      });
+
+      print('✅ [HOME] Location updated from address');
+      print('🏪 [HOME] Found ${_nearbyKoperasi.length} matching koperasi');
+      if (_nearbyKoperasi.isNotEmpty) {
+        for (var k in _nearbyKoperasi) {
+          print('   ✓ ${k.name} (${k.productIds.length} produk)');
+        }
+      } else {
+        print('❌ [HOME] NO MATCHING KOPERASI FOUND!');
+      }
+      print('========================================================');
+
+      // ⭐ Reload produk berdasarkan koperasi baru
+      _loadData();
+    } catch (e, stackTrace) {
+      print('❌ [HOME] Error updating location from address: $e');
+      print('📜 Stack: $stackTrace');
+
+      if (mounted) {
+        setState(() {
+          _isLoadingLocation = false;
+        });
+      }
     }
   }
 
@@ -263,56 +402,18 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _loadUserLocation() async {
-    print('📍 [HOME] _loadUserLocation() called');
-
-    if (_isLoadingLocation) {
-      print('⚠️ [HOME] Location already loading, skipping...');
-      return;
-    }
-
-    setState(() {
-      _isLoadingLocation = true;
-    });
-
-    try {
-      print('🔄 [HOME] Getting user location...');
-      final location = await LocationService.getUserLocation();
-      print('🔄 [HOME] Getting koperasi list...');
-      final koperasiList = await KoperasiService.getKoperasiByLocation();
-
-      if (mounted) {
-        setState(() {
-          _userLocation = location;
-          _nearbyKoperasi = koperasiList;
-          _isLoadingLocation = false;
-        });
-      }
-
-      if (location != null) {
-        print(
-          '✅ [HOME] Location loaded: ${location?['kelurahan'] ?? 'Unknown'}',
-        );
-      } else {
-        print('❌ [HOME] Failed to get location');
-      }
-      print('✅ [HOME] Koperasi found: ${koperasiList.length}');
-    } catch (e) {
-      print('❌ [HOME] Error loading location: $e');
-      if (mounted) {
-        setState(() {
-          _isLoadingLocation = false;
-        });
-      }
-    }
+    print('📍 [HOME] _loadUserLocation() - SKIPPED (using selected address)');
+    // Method ini tidak digunakan lagi karena kita pakai alamat pilihan user
   }
 
   Future<void> _loadAlamatData() async {
     print('🔍 [HOME] _loadAlamatData() dipanggil');
     print('📧 [HOME] userEmail: $userEmail');
-    print('🔐 [HOME] isLoggedIn: $isLoggedIn');
 
     if (userEmail.isNotEmpty) {
       print('⏳ [HOME] Mengambil alamat dari UserDataManager...');
+
+      // ⭐ Ambil alamat yang sedang dipilih
       final alamatList = await UserDataManager.getAlamatList(userEmail);
       final selectedIndex = await UserDataManager.getSelectedAlamatIndex(
         userEmail,
@@ -332,9 +433,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             _selectedAlamatIndex = validIndex;
             _savedAlamat = alamatList[validIndex];
           });
-          print(
-            '🔄 [HOME] setState() selesai, _savedAlamat: ${_savedAlamat!['label']}',
-          );
+
+          // ⭐ UPDATE LOKASI DARI ALAMAT YANG DIPILIH
+          await _updateLocationFromAddress(_savedAlamat!);
         }
       } else {
         print('❌ [HOME] Tidak ada alamat tersimpan');
@@ -343,6 +444,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             _listAlamat = [];
             _selectedAlamatIndex = 0;
             _savedAlamat = null;
+            _userLocation = null;
+            _nearbyKoperasi = [];
           });
         }
       }
@@ -350,6 +453,168 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       print('⚠️ [HOME] userEmail kosong, tidak bisa load alamat');
     }
   }
+
+  void _loadData() async {
+    if (_isLoadingData) {
+      print('⚠️ [HOME] Data already loading, skipping...');
+      return;
+    }
+
+    setState(() {
+      _isLoadingData = true;
+    });
+
+    try {
+      print('🔄 [HOME] Loading data...');
+
+      // ⭐ PERBAIKAN: Gunakan produk dari koperasi yang cocok dengan alamat
+      if (_nearbyKoperasi.isNotEmpty) {
+        // Ambil semua produk dari koperasi yang match
+        final Set<String> allowedProductIds = {};
+        for (var koperasi in _nearbyKoperasi) {
+          allowedProductIds.addAll(koperasi.productIds);
+        }
+
+        final allProducts = _productService.getAllProducts();
+
+        if (selectedCategory == 'Semua') {
+          displayedProducts =
+              allProducts
+                  .where((p) => allowedProductIds.contains(p.id))
+                  .toList();
+        } else {
+          displayedProducts =
+              allProducts
+                  .where(
+                    (p) =>
+                        allowedProductIds.contains(p.id) &&
+                        p.category == selectedCategory,
+                  )
+                  .toList();
+        }
+
+        print(
+          '📦 [HOME] Filtered ${displayedProducts.length} products from koperasi',
+        );
+      } else {
+        // Jika tidak ada koperasi match, tampilkan semua
+        print('⚠️ [HOME] No matching koperasi, showing all products');
+        displayedProducts =
+            selectedCategory == 'Semua'
+                ? _productService.getAllProducts()
+                : _productService.getProductsByCategory(selectedCategory);
+      }
+
+      flashSaleProducts = _productService.getActiveFlashSaleProducts();
+
+      // Filter produk lain berdasarkan koperasi
+      if (_nearbyKoperasi.isNotEmpty) {
+        final allowedIds = <String>{};
+        for (var k in _nearbyKoperasi) {
+          allowedIds.addAll(k.productIds);
+        }
+
+        final allProducts = _productService.getAllProducts();
+        final filteredProducts =
+            allProducts.where((p) => allowedIds.contains(p.id)).toList();
+
+        topRatedProducts = List<Product>.from(filteredProducts)
+          ..sort((a, b) => b.rating.compareTo(a.rating));
+        topRatedProducts = topRatedProducts.take(8).toList();
+
+        freshProducts =
+            _productService
+                .getFreshProducts()
+                .where((p) => allowedIds.contains(p.id))
+                .take(8)
+                .toList();
+
+        newestProducts = filteredProducts.take(8).toList();
+
+        fruitAndVeggies =
+            _productService
+                .getFruitAndVeggies()
+                .where((p) => allowedIds.contains(p.id))
+                .take(8)
+                .toList();
+      } else {
+        // Fallback ke semua produk
+        topRatedProducts = List<Product>.from(_productService.getAllProducts())
+          ..sort((a, b) => b.rating.compareTo(a.rating));
+        topRatedProducts = topRatedProducts.take(8).toList();
+
+        freshProducts = _productService.getFreshProducts().take(8).toList();
+        newestProducts = _productService.getAllProducts().take(8).toList();
+        fruitAndVeggies = _productService.getFruitAndVeggies().take(8).toList();
+      }
+
+      categoryStores = _productService.getStoresByCategory(selectedCategory);
+      subCategories = _productService.getSubCategories(selectedCategory);
+      flagshipStore = _productService.getFlagshipStore(selectedCategory);
+
+      print('✅ [HOME] Data loaded successfully');
+
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      print('❌ Error loading data: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingData = false;
+        });
+      }
+    }
+  }
+
+  // Future<void> _loadAlamatData() async {
+  //   print('🔍 [HOME] _loadAlamatData() dipanggil');
+  //   print('📧 [HOME] userEmail: $userEmail');
+  //   print('🔐 [HOME] isLoggedIn: $isLoggedIn');
+
+  //   if (userEmail.isNotEmpty) {
+  //     print('⏳ [HOME] Mengambil alamat dari UserDataManager...');
+  //     final alamatList = await UserDataManager.getAlamatList(userEmail);
+  //     final selectedIndex = await UserDataManager.getSelectedAlamatIndex(
+  //       userEmail,
+  //     );
+
+  //     print('📦 [HOME] Alamat list length: ${alamatList.length}');
+  //     print('🎯 [HOME] Selected index: $selectedIndex');
+
+  //     if (alamatList.isNotEmpty) {
+  //       final validIndex =
+  //           selectedIndex < alamatList.length ? selectedIndex : 0;
+  //       print('✅ [HOME] Alamat terpilih: ${alamatList[validIndex]['label']}');
+
+  //       if (mounted) {
+  //         setState(() {
+  //           _listAlamat = alamatList;
+  //           _selectedAlamatIndex = validIndex;
+  //           _savedAlamat = alamatList[validIndex];
+  //         });
+  //         print(
+  //           '🔄 [HOME] setState() selesai, _savedAlamat: ${_savedAlamat!['label']}',
+  //         );
+
+  //         // ⭐ TAMBAHKAN: Update lokasi dari alamat yang tersimpan
+  //         await _updateLocationFromAddress(_savedAlamat!);
+  //       }
+  //     } else {
+  //       print('❌ [HOME] Tidak ada alamat tersimpan');
+  //       if (mounted) {
+  //         setState(() {
+  //           _listAlamat = [];
+  //           _selectedAlamatIndex = 0;
+  //           _savedAlamat = null;
+  //         });
+  //       }
+  //     }
+  //   } else {
+  //     print('⚠️ [HOME] userEmail kosong, tidak bisa load alamat');
+  //   }
+  // }
 
   Future<void> _loadPoinFromTransactions() async {
     print('🔍 [HOME] _loadPoinFromTransactions dipanggil');
@@ -477,72 +742,136 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _refreshData(); // Gunakan _refreshData() instead of _loadData()
   }
 
-  void _loadData() async {
+  // void _loadData() async {
+  //   if (_isLoadingData) {
+  //     print('⚠️ [HOME] Data already loading, skipping...');
+  //     return;
+  //   }
+
+  //   setState(() {
+  //     _isLoadingData = true;
+  //   });
+
+  //   try {
+  //     print('🔄 [HOME] Loading data...');
+
+  //     // ⭐ PERBAIKAN: Gunakan produk dari koperasi yang cocok dengan alamat
+  //     if (_nearbyKoperasi.isNotEmpty) {
+  //       // Ambil semua produk dari koperasi yang match
+  //       final Set<String> allowedProductIds = {};
+  //       for (var koperasi in _nearbyKoperasi) {
+  //         allowedProductIds.addAll(koperasi.productIds);
+  //       }
+
+  //       final allProducts = _productService.getAllProducts();
+
+  //       if (selectedCategory == 'Semua') {
+  //         displayedProducts =
+  //             allProducts
+  //                 .where((p) => allowedProductIds.contains(p.id))
+  //                 .toList();
+  //       } else {
+  //         displayedProducts =
+  //             allProducts
+  //                 .where(
+  //                   (p) =>
+  //                       allowedProductIds.contains(p.id) &&
+  //                       p.category == selectedCategory,
+  //                 )
+  //                 .toList();
+  //       }
+
+  //       print(
+  //         '📦 [HOME] Filtered ${displayedProducts.length} products from koperasi',
+  //       );
+  //     } else {
+  //       // Jika tidak ada koperasi match, tampilkan semua
+  //       print('⚠️ [HOME] No matching koperasi, showing all products');
+  //       displayedProducts =
+  //           selectedCategory == 'Semua'
+  //               ? _productService.getAllProducts()
+  //               : _productService.getProductsByCategory(selectedCategory);
+  //     }
+
+  //     flashSaleProducts = _productService.getActiveFlashSaleProducts();
+
+  //     // Filter produk lain berdasarkan koperasi
+  //     if (_nearbyKoperasi.isNotEmpty) {
+  //       final allowedIds = <String>{};
+  //       for (var k in _nearbyKoperasi) {
+  //         allowedIds.addAll(k.productIds);
+  //       }
+
+  //       final allProducts = _productService.getAllProducts();
+  //       final filteredProducts =
+  //           allProducts.where((p) => allowedIds.contains(p.id)).toList();
+
+  //       topRatedProducts = List<Product>.from(filteredProducts)
+  //         ..sort((a, b) => b.rating.compareTo(a.rating));
+  //       topRatedProducts = topRatedProducts.take(8).toList();
+
+  //       freshProducts =
+  //           _productService
+  //               .getFreshProducts()
+  //               .where((p) => allowedIds.contains(p.id))
+  //               .take(8)
+  //               .toList();
+
+  //       newestProducts = filteredProducts.take(8).toList();
+
+  //       fruitAndVeggies =
+  //           _productService
+  //               .getFruitAndVeggies()
+  //               .where((p) => allowedIds.contains(p.id))
+  //               .take(8)
+  //               .toList();
+  //     } else {
+  //       // Fallback ke semua produk
+  //       topRatedProducts = List<Product>.from(_productService.getAllProducts())
+  //         ..sort((a, b) => b.rating.compareTo(a.rating));
+  //       topRatedProducts = topRatedProducts.take(8).toList();
+
+  //       freshProducts = _productService.getFreshProducts().take(8).toList();
+  //       newestProducts = _productService.getAllProducts().take(8).toList();
+  //       fruitAndVeggies = _productService.getFruitAndVeggies().take(8).toList();
+  //     }
+
+  //     categoryStores = _productService.getStoresByCategory(selectedCategory);
+  //     subCategories = _productService.getSubCategories(selectedCategory);
+  //     flagshipStore = _productService.getFlagshipStore(selectedCategory);
+
+  //     print('✅ [HOME] Data loaded successfully');
+
+  //     if (mounted) {
+  //       setState(() {});
+  //     }
+  //   } catch (e) {
+  //     print('❌ Error loading data: $e');
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() {
+  //         _isLoadingData = false;
+  //       });
+  //     }
+  //   }
+  // }
+
+  void _refreshData() {
     if (_isLoadingData) {
-      print('⚠️ [HOME] Data already loading, skipping...');
+      print('⚠️ [HOME] Data already loading, skipping refresh...');
       return;
     }
 
-    setState(() {
-      _isLoadingData = true;
+    // Hapus timer sebelumnya jika ada (debounce)
+    _debounceTimer?.cancel();
+
+    // Set timer baru untuk mencegah pemanggilan terlalu cepat
+    _debounceTimer = Timer(Duration(milliseconds: 300), () {
+      if (mounted && !_isLoadingData) {
+        print('🔄 [HOME] Refreshing data...');
+        _loadData();
+      }
     });
-
-    try {
-      print('🔄 [HOME] Loading data...');
-
-      // Gunakan produk berdasarkan lokasi
-      if (selectedCategory == 'Semua') {
-        displayedProducts = await KoperasiService.getProductsByLocation();
-      } else {
-        displayedProducts =
-            await KoperasiService.getProductsByCategoryAndLocation(
-              selectedCategory,
-            );
-      }
-
-      flashSaleProducts = _productService.getActiveFlashSaleProducts();
-
-      // Filter produk lain juga berdasarkan lokasi
-      final locationProducts = await KoperasiService.getProductsByLocation();
-
-      topRatedProducts = List<Product>.from(locationProducts)
-        ..sort((a, b) => b.rating.compareTo(a.rating));
-      topRatedProducts = topRatedProducts.take(8).toList();
-
-      freshProducts =
-          _productService
-              .getFreshProducts()
-              .where((p) => locationProducts.any((lp) => lp.id == p.id))
-              .take(8)
-              .toList();
-
-      newestProducts = List<Product>.from(locationProducts).take(8).toList();
-
-      fruitAndVeggies =
-          _productService
-              .getFruitAndVeggies()
-              .where((p) => locationProducts.any((lp) => lp.id == p.id))
-              .take(8)
-              .toList();
-
-      categoryStores = _productService.getStoresByCategory(selectedCategory);
-      subCategories = _productService.getSubCategories(selectedCategory);
-      flagshipStore = _productService.getFlagshipStore(selectedCategory);
-
-      print('✅ [HOME] Data loaded successfully');
-
-      if (mounted) {
-        setState(() {});
-      }
-    } catch (e) {
-      print('❌ Error loading data: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingData = false;
-        });
-      }
-    }
   }
 
   void _onCategorySelected(String category) {
@@ -793,6 +1122,91 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             _productService
                 .getAllProducts()
                 .where((p) => p.name.toLowerCase().contains('sketsa'))
+                .toList();
+      } else if (subCategory == 'Jahit & Bordir') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('jahit') ||
+                      p.name.toLowerCase().contains('bordir') ||
+                      p.name.toLowerCase().contains('obras'),
+                )
+                .toList();
+      } else if (subCategory == 'Laundry') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('laundry') ||
+                      p.name.toLowerCase().contains('cuci') ||
+                      p.name.toLowerCase().contains('dry cleaning'),
+                )
+                .toList();
+      } else if (subCategory == 'Salon & Spa') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('salon') ||
+                      p.name.toLowerCase().contains('potong rambut') ||
+                      p.name.toLowerCase().contains('creambath') ||
+                      p.name.toLowerCase().contains('facial'),
+                )
+                .toList();
+      } else if (subCategory == 'Bengkel') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('service motor') ||
+                      p.name.toLowerCase().contains('ganti ban') ||
+                      p.name.toLowerCase().contains('tambal ban'),
+                )
+                .toList();
+      } else if (subCategory == 'Tukang') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('pembuatan') ||
+                      p.name.toLowerCase().contains('reparasi') ||
+                      p.name.toLowerCase().contains('furniture'),
+                )
+                .toList();
+      } else if (subCategory == 'Service Elektronik') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('service') ||
+                      p.name.toLowerCase().contains('cuci ac') ||
+                      p.name.toLowerCase().contains('tv') ||
+                      p.name.toLowerCase().contains('kulkas'),
+                )
+                .toList();
+      } else if (subCategory == 'Cleaning Service') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains('cleaning') ||
+                      p.name.toLowerCase().contains('cuci sofa') ||
+                      p.name.toLowerCase().contains('cuci karpet'),
+                )
+                .toList();
+      } else if (subCategory == 'Catering') {
+        displayedProducts =
+            _productService
+                .getAllProducts()
+                .where((p) => p.name.toLowerCase().contains('catering'))
                 .toList();
       } else if (subCategory == 'Clay & Polymer') {
         displayedProducts =
@@ -1230,136 +1644,164 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget _buildLoginArea() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
+      child: Column(
         children: [
-          if (!isLoggedIn) ...[
-            GestureDetector(
-              onTap: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
-                );
-
-                if (result == true || mounted) {
-                  _checkLoginStatus();
-                }
-              },
-              child: Text(
-                'Login dulu yuk!',
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Text('|', style: TextStyle(color: Colors.grey[400], fontSize: 15)),
-            const SizedBox(width: 4),
-          ],
-
-          if (isLoggedIn && _savedAlamat != null) ...[
-            GestureDetector(
-              onTap: () {
-                _showLocationModal();
-              },
-              child: Row(
-                children: [
-                  Text(
-                    'Dikirim ke',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _savedAlamat!['label'] ?? 'Rumah',
+          Row(
+            children: [
+              if (!isLoggedIn) ...[
+                GestureDetector(
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginPage(),
+                      ),
+                    );
+                    if (result == true || mounted) {
+                      _checkLoginStatus();
+                    }
+                  },
+                  child: Text(
+                    'Login dulu yuk!',
                     style: TextStyle(
                       color: Colors.black87,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: Colors.grey[600],
-                    size: 14,
+                ),
+              ],
+
+              if (isLoggedIn && _savedAlamat != null) ...[
+                GestureDetector(
+                  onTap: () {
+                    _showLocationModal();
+                  },
+                  child: Row(
+                    children: [
+                      Text(
+                        'Dikirim ke',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _savedAlamat!['label'] ?? 'Rumah',
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: Colors.grey[600],
+                        size: 14,
+                      ),
+                    ],
+                  ),
+                ),
+                Spacer(),
+                GestureDetector(
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => FavoritScreen()),
+                    );
+                    _loadFavoriteStatus();
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.favorite,
+                      color: Colors.red[600],
+                      size: 21,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+
+          // ⭐ INFO KOPERASI DARI ALAMAT YANG DIPILIH
+          if (_nearbyKoperasi.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.green[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.store, color: Colors.green[700], size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Belanja dari: ${_nearbyKoperasi.first.name}',
+                      style: TextStyle(
+                        color: Colors.green[800],
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    '${_nearbyKoperasi.first.productIds.length} produk',
+                    style: TextStyle(
+                      color: Colors.green[600],
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 4),
-            Text('|', style: TextStyle(color: Colors.grey[400], fontSize: 15)),
-            const SizedBox(width: 4),
-          ],
-
-          GestureDetector(
-            onTap: () {
-              // Bisa buka modal atau refresh lokasi
-            },
-            child: Row(
-              children: [
-                Text(
-                  'Lokasi Anda',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                _isLoadingLocation
-                    ? SizedBox(
-                      width: 12,
-                      height: 12,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.blue[700]!,
-                        ),
-                      ),
-                    )
-                    : Row(
-                      children: [
-                        Text(
-                          _userLocation != null
-                              ? _userLocation!['kelurahan'] ?? 'Tidak Dikenal'
-                              : 'Tidak Dikenal',
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                      ],
-                    ),
-              ],
-            ),
-          ),
-
-          Spacer(),
-
-          GestureDetector(
-            onTap: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => FavoritScreen()),
-              );
-              _loadFavoriteStatus();
-            },
-            child: Container(
-              padding: EdgeInsets.all(6),
+          ] else if (_savedAlamat != null) ...[
+            // Jika alamat dipilih tapi tidak ada koperasi match
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.grey[200],
-                shape: BoxShape.circle,
+                color: Colors.orange[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange[200]!),
               ),
-              child: Icon(Icons.favorite, color: Colors.red[600], size: 21),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.warning_amber,
+                    color: Colors.orange[700],
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Belum ada koperasi di ${_savedAlamat!['kelurahan']}',
+                      style: TextStyle(
+                        color: Colors.orange[800],
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -1383,9 +1825,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _buildLoggedInLocationModal() {
     print('🏗️ [HOME] _buildLoggedInLocationModal() building...');
-    print(
-      '📍 [HOME] _savedAlamat saat build: ${_savedAlamat != null ? "ADA" : "NULL"}',
-    );
 
     return StatefulBuilder(
       builder: (BuildContext context, StateSetter setModalState) {
@@ -1475,6 +1914,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           _selectedAlamatIndex = index;
                           _savedAlamat = alamat;
                         });
+
                         setState(() {
                           _selectedAlamatIndex = index;
                           _savedAlamat = alamat;
@@ -1487,6 +1927,12 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           );
                           print('💾 Selected index saved: $index');
                         }
+
+                        // ⭐ UPDATE LOKASI DARI ALAMAT YANG DIPILIH
+                        await _updateLocationFromAddress(alamat);
+
+                        // Tutup modal
+                        Navigator.pop(context);
                       },
                       child: Container(
                         padding: EdgeInsets.all(12),
@@ -1595,6 +2041,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       result,
                     );
                     if (saved && mounted) {
+                      // ⭐ UPDATE LOKASI DARI ALAMAT BARU
+                      await _updateLocationFromAddress(result);
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Alamat berhasil disimpan'),
@@ -1682,7 +2131,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               context,
               MaterialPageRoute(builder: (context) => const LoginPage()),
             );
-
             if (result == true || mounted) {
               _checkLoginStatus();
             }
@@ -1708,67 +2156,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       const SizedBox(height: 4),
                       Text(
                         'Masuk agar alamat pengirimanmu disimpan',
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
-              ],
-            ),
-          ),
-        ),
-
-        Divider(height: 1, color: Colors.grey[300]),
-
-        const SizedBox(height: 10),
-
-        Text(
-          'Cara Lain',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[700],
-          ),
-        ),
-
-        const SizedBox(height: 10),
-
-        InkWell(
-          onTap: () {
-            Navigator.pop(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Membuka pilihan lokasi...'),
-                duration: Duration(seconds: 2),
-              ),
-            );
-          },
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.location_on_rounded,
-                  color: Colors.grey[700],
-                  size: 24,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Pilih Lokasi',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Pilih area kota atau kecamatan',
                         style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                       ),
                     ],

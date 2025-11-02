@@ -13,11 +13,11 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final ProductService _productService = ProductService();
   final TextEditingController _searchController = TextEditingController();
-  
+
   List<Product> allProducts = [];
   List<Product> searchResults = [];
   bool isSearching = false;
-  
+
   // Popular searches & recent searches
   final List<String> popularSearches = [
     'Beras',
@@ -28,8 +28,11 @@ class _SearchScreenState extends State<SearchScreen> {
     'Jamu',
     'Batik',
     'Madu',
+    'Jasa Jahit', // ⭐ TAMBAHKAN
+    'Laundry', // ⭐ TAMBAHKAN
+    'Service AC',
   ];
-  
+
   List<String> recentSearches = [];
 
   @override
@@ -48,7 +51,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _onSearchChanged() {
     final query = _searchController.text.toLowerCase();
-    
+
     if (query.isEmpty) {
       setState(() {
         searchResults = [];
@@ -59,12 +62,16 @@ class _SearchScreenState extends State<SearchScreen> {
 
     setState(() {
       isSearching = true;
-      searchResults = allProducts
-          .where((product) =>
-              product.name.toLowerCase().contains(query) ||
-              product.category.toLowerCase().contains(query) ||
-              (product.description?.toLowerCase().contains(query) ?? false))
-          .toList();
+      searchResults =
+          allProducts
+              .where(
+                (product) =>
+                    product.name.toLowerCase().contains(query) ||
+                    product.category.toLowerCase().contains(query) ||
+                    (product.description?.toLowerCase().contains(query) ??
+                        false),
+              )
+              .toList();
     });
   }
 
@@ -82,20 +89,29 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     // Navigate to ProductListScreen with search results
-    final results = allProducts
-        .where((product) =>
-            product.name.toLowerCase().contains(query.toLowerCase()) ||
-            product.category.toLowerCase().contains(query.toLowerCase()) ||
-            (product.description?.toLowerCase().contains(query.toLowerCase()) ?? false))
-        .toList();
+    final results =
+        allProducts
+            .where(
+              (product) =>
+                  product.name.toLowerCase().contains(query.toLowerCase()) ||
+                  product.category.toLowerCase().contains(
+                    query.toLowerCase(),
+                  ) ||
+                  (product.description?.toLowerCase().contains(
+                        query.toLowerCase(),
+                      ) ??
+                      false),
+            )
+            .toList();
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ProductListScreen(
-          title: 'Hasil pencarian "$query"',
-          products: results,
-        ),
+        builder:
+            (context) => ProductListScreen(
+              title: 'Hasil pencarian "$query"',
+              products: results,
+            ),
       ),
     );
   }
@@ -130,20 +146,28 @@ class _SearchScreenState extends State<SearchScreen> {
               hintText: 'Cari produk UMKM...',
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
               prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: Icon(Icons.clear, color: Colors.grey[600], size: 20),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() {
-                          searchResults = [];
-                          isSearching = false;
-                        });
-                      },
-                    )
-                  : null,
+              suffixIcon:
+                  _searchController.text.isNotEmpty
+                      ? IconButton(
+                        icon: Icon(
+                          Icons.clear,
+                          color: Colors.grey[600],
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            searchResults = [];
+                            isSearching = false;
+                          });
+                        },
+                      )
+                      : null,
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
             onSubmitted: _performSearch,
           ),
@@ -157,9 +181,10 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ],
       ),
-      body: isSearching && searchResults.isNotEmpty
-          ? _buildSearchResults()
-          : isSearching && searchResults.isEmpty
+      body:
+          isSearching && searchResults.isNotEmpty
+              ? _buildSearchResults()
+              : isSearching && searchResults.isEmpty
               ? _buildNoResults()
               : _buildSearchSuggestions(),
     );
@@ -210,14 +235,18 @@ class _SearchScreenState extends State<SearchScreen> {
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Center(
-                      child: Icon(Icons.image, color: Colors.grey[400], size: 30),
+                      child: Icon(
+                        Icons.image,
+                        color: Colors.grey[400],
+                        size: 30,
+                      ),
                     );
                   },
                 ),
               ),
             ),
             SizedBox(width: 12),
-            
+
             // Product Info
             Expanded(
               child: Column(
@@ -236,10 +265,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   SizedBox(height: 4),
                   Text(
                     product.category,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   SizedBox(height: 4),
                   Text(
@@ -253,7 +279,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ],
               ),
             ),
-            
+
             Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
           ],
         ),
@@ -309,23 +335,19 @@ class _SearchScreenState extends State<SearchScreen> {
                   onPressed: _clearRecentSearches,
                   child: Text(
                     'Hapus Semua',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.red[600],
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.red[600]),
                   ),
                 ),
               ],
             ),
             SizedBox(height: 8),
-            ...recentSearches.map((search) => _buildSearchItem(
-                  search,
-                  Icons.history,
-                  isRecent: true,
-                )),
+            ...recentSearches.map(
+              (search) =>
+                  _buildSearchItem(search, Icons.history, isRecent: true),
+            ),
             SizedBox(height: 24),
           ],
-          
+
           // Popular Searches
           Text(
             'Pencarian Populer',
@@ -339,48 +361,56 @@ class _SearchScreenState extends State<SearchScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: popularSearches.map((search) {
-              return GestureDetector(
-                onTap: () {
-                  _searchController.text = search;
-                  _performSearch(search);
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.grey[300]!),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
+            children:
+                popularSearches.map((search) {
+                  return GestureDetector(
+                    onTap: () {
+                      _searchController.text = search;
+                      _performSearch(search);
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.trending_up, size: 16, color: Colors.blue[700]),
-                      SizedBox(width: 6),
-                      Text(
-                        search,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.grey[300]!),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.trending_up,
+                            size: 16,
+                            color: Colors.blue[700],
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            search,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
           ),
-          
+
           SizedBox(height: 24),
-          
+
           // Categories Quick Access
           Text(
             'Cari Berdasarkan Kategori',
@@ -424,10 +454,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Expanded(
               child: Text(
                 text,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black87,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.black87),
               ),
             ),
             if (isRecent)
@@ -455,6 +482,11 @@ class _SearchScreenState extends State<SearchScreen> {
       {'name': 'Pertanian', 'icon': Icons.agriculture, 'color': Colors.green},
       {'name': 'Herbal', 'icon': Icons.spa, 'color': Colors.teal},
       {'name': 'Kerajinan', 'icon': Icons.handyman, 'color': Colors.brown},
+      {
+        'name': 'Jasa',
+        'icon': Icons.build_circle,
+        'color': Colors.blue,
+      }, // ⭐ TAMBAHKAN INI
     ];
 
     return GridView.builder(
@@ -477,10 +509,11 @@ class _SearchScreenState extends State<SearchScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ProductListScreen(
-                  title: category['name'] as String,
-                  products: products,
-                ),
+                builder:
+                    (context) => ProductListScreen(
+                      title: category['name'] as String,
+                      products: products,
+                    ),
               ),
             );
           },

@@ -40,16 +40,32 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
   String _kecamatan = '-';
 
   // Dropdown values yang bisa diubah
-  String _selectedKelurahan = 'Antapani Kidul';
-  String _selectedKodepos = '40291';
+  String _selectedKelurahan = 'Cicadas'; // ⭐ Default untuk Cicadas
+  String _selectedKodepos = '40293';
 
-  // List untuk dropdown
+  // List untuk dropdown - ⭐ TAMBAHKAN SEMUA KELURAHAN DARI KOPERASI
   List<String> _kelurahanList = [
     'Antapani Kidul',
     'Antapani Tengah',
     'Antapani Wetan',
+    'Cicadas',
+    'Cibangkong',
+    'Sukajadi',
+    'Cileunyi Wetan',
+    'Baleendah',
+    'Baros',
   ];
-  List<String> _kodeposList = ['40291', '40292', '40293'];
+
+  List<String> _kodeposList = [
+    '40291',
+    '40292',
+    '40293',
+    '40294',
+    '40295',
+    '40371',
+    '40372',
+    '40393',
+  ];
 
   @override
   void initState() {
@@ -85,8 +101,8 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
       _provinsi = addr['provinsi'] ?? '-';
       _kota = addr['kota'] ?? '-';
       _kecamatan = addr['kecamatan'] ?? '-';
-      _selectedKelurahan = addr['kelurahan'] ?? 'Antapani Kidul';
-      _selectedKodepos = addr['kodepos'] ?? '40291';
+      _selectedKelurahan = addr['kelurahan'] ?? 'Cicadas';
+      _selectedKodepos = addr['kodepos'] ?? '40293';
 
       _lokasiDetail = '$_kecamatan, $_kota, $_provinsi';
 
@@ -103,28 +119,90 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
     final location = widget.selectedLocation!;
     final place = widget.placemark!;
 
-    print('📍 Location: ${location.latitude}, ${location.longitude}');
-    print('🏘️ Placemark: ${place.administrativeArea}, ${place.locality}');
+    print('📍 ========== RAW PLACEMARK DATA ==========');
+    print('Location: ${location.latitude}, ${location.longitude}');
+    print('name: "${place.name}"');
+    print('street: "${place.street}"');
+    print('subThoroughfare: "${place.subThoroughfare}"');
+    print('thoroughfare: "${place.thoroughfare}"');
+    print('subLocality: "${place.subLocality}"'); // ⭐ Biasanya Kelurahan
+    print('locality: "${place.locality}"'); // ⭐ Biasanya Kecamatan
+    print(
+      'subAdministrativeArea: "${place.subAdministrativeArea}"',
+    ); // ⭐ Biasanya Kota
+    print('administrativeArea: "${place.administrativeArea}"'); // ⭐ Provinsi
+    print('postalCode: "${place.postalCode}"');
+    print('country: "${place.country}"');
+    print('isoCountryCode: "${place.isoCountryCode}"');
+    print('==========================================');
 
     setState(() {
       _selectedLocation = location;
       _lokasiText =
           '${location.latitude.toStringAsFixed(6)}, ${location.longitude.toStringAsFixed(6)}';
 
-      _provinsi = place.administrativeArea ?? '-';
-      _kota = place.subAdministrativeArea ?? place.locality ?? '-';
-      _kecamatan = place.subLocality ?? '-';
+      // ⭐ MAPPING YANG BENAR UNTUK INDONESIA:
+      // administrativeArea = Provinsi
+      // subAdministrativeArea = Kota/Kabupaten
+      // locality = Kecamatan (kadang Kota jika subAdministrativeArea kosong)
+      // subLocality = Kelurahan/Desa
 
-      _lokasiDetail =
-          '${place.subLocality ?? ''}, ${place.locality ?? ''}, ${place.administrativeArea ?? ''}';
+      _provinsi = place.administrativeArea ?? 'Jawa Barat';
 
-      if (place.subLocality != null && place.subLocality!.isNotEmpty) {
-        _selectedKelurahan = place.subLocality!;
-        if (!_kelurahanList.contains(_selectedKelurahan)) {
-          _kelurahanList.add(_selectedKelurahan);
+      // Kota: prioritas subAdministrativeArea, fallback locality
+      _kota = place.subAdministrativeArea ?? place.locality ?? 'Kota Bandung';
+
+      // ⭐ PERBAIKAN: Deteksi Kecamatan dan Kelurahan
+      final subLoc = (place.subLocality ?? '').trim();
+      final loc = (place.locality ?? '').trim();
+
+      print('🔍 Detection:');
+      print('   subLocality: "$subLoc"');
+      print('   locality: "$loc"');
+
+      // Jika subLocality ada dan bukan kota
+      if (subLoc.isNotEmpty &&
+          !subLoc.toLowerCase().contains('kota') &&
+          !subLoc.toLowerCase().contains('kabupaten')) {
+        _selectedKelurahan = subLoc;
+        print('   ✅ Kelurahan: "$_selectedKelurahan" (from subLocality)');
+
+        // Kecamatan dari locality jika bukan kota
+        if (loc.isNotEmpty &&
+            !loc.toLowerCase().contains('kota') &&
+            !loc.toLowerCase().contains('kabupaten')) {
+          _kecamatan = loc;
+          print('   ✅ Kecamatan: "$_kecamatan" (from locality)');
+        } else {
+          // Deteksi kecamatan dari nama kelurahan
+          _kecamatan = _detectKecamatanFromKelurahan(subLoc);
+          print('   ✅ Kecamatan: "$_kecamatan" (detected)');
         }
       }
+      // Jika subLocality kosong, coba deteksi dari locality
+      else if (loc.isNotEmpty) {
+        _selectedKelurahan = loc;
+        _kecamatan = _detectKecamatanFromKelurahan(loc);
+        print(
+          '   ⚠️ Kelurahan: "$_selectedKelurahan" (fallback from locality)',
+        );
+        print('   ⚠️ Kecamatan: "$_kecamatan" (detected)');
+      }
+      // Fallback terakhir
+      else {
+        _selectedKelurahan = 'Antapani Kidul';
+        _kecamatan = 'Antapani';
+        print('   ❌ Using default: Antapani Kidul, Antapani');
+      }
 
+      _lokasiDetail = '$_selectedKelurahan, $_kecamatan, $_kota';
+
+      // Ensure kelurahan ada di list
+      if (!_kelurahanList.contains(_selectedKelurahan)) {
+        _kelurahanList.add(_selectedKelurahan);
+      }
+
+      // Kodepos
       if (place.postalCode != null && place.postalCode!.isNotEmpty) {
         _selectedKodepos = place.postalCode!;
         if (!_kodeposList.contains(_selectedKodepos)) {
@@ -133,7 +211,30 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
       }
     });
 
-    print('✅ Location initialized: $_provinsi, $_kota, $_kecamatan');
+    print('✅ ========== RESULT ==========');
+    print('   Provinsi: $_provinsi');
+    print('   Kota: $_kota');
+    print('   Kecamatan: $_kecamatan');
+    print('   ⭐ KELURAHAN: "$_selectedKelurahan" ⭐');
+    print('   Kodepos: $_selectedKodepos');
+    print('==============================');
+  }
+
+  // ⭐ Helper function untuk deteksi kecamatan
+  String _detectKecamatanFromKelurahan(String kelurahan) {
+    final kel = kelurahan.toLowerCase().trim();
+
+    // Mapping berdasarkan data koperasi Anda
+    if (kel.contains('cicadas')) return 'Cibeunying Kidul';
+    if (kel.contains('antapani')) return 'Antapani';
+    if (kel.contains('sukajadi')) return 'Sukajadi';
+    if (kel.contains('cileunyi')) return 'Cileunyi';
+    if (kel.contains('baleendah')) return 'Baleendah';
+    if (kel.contains('baros')) return 'Cimahi Tengah';
+    if (kel.contains('cibangkong')) return 'Cibeunying Kidul';
+
+    // Fallback: gunakan kelurahan sebagai kecamatan
+    return kelurahan;
   }
 
   @override
@@ -157,23 +258,57 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
       final location = result['location'] as LatLng;
       final place = result['placemark'] as Placemark;
 
+      print('🏘️ New Placemark from map:');
+      print('   subLocality: ${place.subLocality}');
+      print('   locality: ${place.locality}');
+
       setState(() {
         _selectedLocation = location;
         _lokasiText =
             '${location.latitude.toStringAsFixed(6)}, ${location.longitude.toStringAsFixed(6)}';
 
-        _provinsi = place.administrativeArea ?? '-';
-        _kota = place.subAdministrativeArea ?? place.locality ?? '-';
-        _kecamatan = place.subLocality ?? '-';
+        _provinsi = place.administrativeArea ?? 'Jawa Barat';
+        _kota = place.subAdministrativeArea ?? place.locality ?? 'Kota Bandung';
 
-        _lokasiDetail =
-            '${place.subLocality ?? ''}, ${place.locality ?? ''}, ${place.administrativeArea ?? ''}';
+        // ⭐ SAMA SEPERTI _initializeLocationData
+        final subLoc = (place.subLocality ?? '').trim();
 
-        if (place.subLocality != null && place.subLocality!.isNotEmpty) {
-          _selectedKelurahan = place.subLocality!;
-          if (!_kelurahanList.contains(_selectedKelurahan)) {
-            _kelurahanList.add(_selectedKelurahan);
+        if (subLoc.toLowerCase().contains('cicadas')) {
+          _kecamatan = 'Cibeunying Kidul';
+          _selectedKelurahan = 'Cicadas';
+        } else if (subLoc.toLowerCase().contains('antapani')) {
+          _kecamatan = 'Antapani';
+          if (subLoc.toLowerCase().contains('kidul')) {
+            _selectedKelurahan = 'Antapani Kidul';
+          } else if (subLoc.toLowerCase().contains('tengah')) {
+            _selectedKelurahan = 'Antapani Tengah';
+          } else if (subLoc.toLowerCase().contains('wetan')) {
+            _selectedKelurahan = 'Antapani Wetan';
+          } else {
+            _selectedKelurahan = 'Antapani Kidul';
           }
+        } else if (subLoc.toLowerCase().contains('sukajadi')) {
+          _kecamatan = 'Sukajadi';
+          _selectedKelurahan = 'Sukajadi';
+        } else if (subLoc.toLowerCase().contains('cileunyi')) {
+          _kecamatan = 'Cileunyi';
+          _selectedKelurahan = 'Cileunyi Wetan';
+        } else if (subLoc.toLowerCase().contains('baleendah')) {
+          _kecamatan = 'Baleendah';
+          _selectedKelurahan = 'Baleendah';
+        } else if (subLoc.toLowerCase().contains('baros') ||
+            subLoc.toLowerCase().contains('cimahi')) {
+          _kecamatan = 'Cimahi Tengah';
+          _selectedKelurahan = 'Baros';
+        } else {
+          _kecamatan = place.locality ?? 'Unknown';
+          _selectedKelurahan = subLoc.isNotEmpty ? subLoc : 'Cicadas';
+        }
+
+        _lokasiDetail = '$_selectedKelurahan, $_kecamatan, $_kota';
+
+        if (!_kelurahanList.contains(_selectedKelurahan)) {
+          _kelurahanList.add(_selectedKelurahan);
         }
 
         if (place.postalCode != null && place.postalCode!.isNotEmpty) {
@@ -183,9 +318,10 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
           }
         }
       });
-      print('✅ Form updated dengan lokasi baru');
-    } else {
-      print('❌ Tidak ada lokasi dipilih atau dibatalkan');
+
+      print('✅ Form updated dengan lokasi baru:');
+      print('   Kecamatan: $_kecamatan');
+      print('   Kelurahan: $_selectedKelurahan');
     }
   }
 
@@ -223,12 +359,17 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
         'is_manual': false,
       };
 
-      print('📦 Data alamat yang akan disimpan:');
+      print('📦 ========== DATA ALAMAT AKAN DISIMPAN ==========');
       print('   Label: ${alamatData['label']}');
+      print('   Provinsi: ${alamatData['provinsi']}');
+      print('   Kota: ${alamatData['kota']}');
+      print('   Kecamatan: ${alamatData['kecamatan']}');
+      print('   ⭐ KELURAHAN: "${alamatData['kelurahan']}" ⭐'); // CRITICAL!
       print('   Nama: ${alamatData['nama_penerima']}');
       print('   HP: ${alamatData['nomor_hp']}');
-      print('   Lokasi: ${alamatData['lokasi']}');
-      print('   Alamat: ${alamatData['alamat_lengkap']}');
+      print('   Latitude: ${alamatData['latitude']}');
+      print('   Longitude: ${alamatData['longitude']}');
+      print('==================================================');
 
       // Tutup keyboard
       FocusScope.of(context).unfocus();
@@ -264,22 +405,6 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Debug info
-            if (_selectedLocation != null)
-              // Container(
-              //   padding: const EdgeInsets.all(8),
-              //   margin: const EdgeInsets.only(bottom: 16),
-              //   decoration: BoxDecoration(
-              //     color: Colors.green[50],
-              //     borderRadius: BorderRadius.circular(8),
-              //     border: Border.all(color: Colors.green[200]!),
-              //   ),
-              //   child: Text(
-              //     '✅ Lokasi sudah dipilih: ${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)}',
-              //     style: TextStyle(fontSize: 11, color: Colors.green[900]),
-              //   ),
-              // ),
-
             _buildTextField(
               label: 'Label Alamat',
               controller: _labelAlamatController,
@@ -313,7 +438,7 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
                         children: [
                           Text(
                             _selectedLocation != null
-                                ? _kecamatan
+                                ? _selectedKelurahan
                                 : 'Pilih Lokasi',
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
@@ -377,8 +502,10 @@ class _TambahAlamatScreenState extends State<TambahAlamatScreen> {
                     label: 'Kelurahan',
                     value: _selectedKelurahan,
                     items: _kelurahanList,
-                    onChanged:
-                        (value) => setState(() => _selectedKelurahan = value!),
+                    onChanged: (value) {
+                      setState(() => _selectedKelurahan = value!);
+                      print('📍 Kelurahan changed to: $value');
+                    },
                   ),
                 ),
                 const SizedBox(width: 12),

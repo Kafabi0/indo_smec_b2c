@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -5,17 +7,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 class LocationService {
   static const String _cachedLocationKey = 'cached_user_location';
   static const String _lastLocationUpdateKey = 'last_location_update';
-  
+
   // Cache untuk menyimpan lokasi terakhir
   static Map<String, dynamic>? _cachedLocation;
   static DateTime? _lastUpdateTime;
 
   // ============ GET USER LOCATION DENGAN CACHING ============
-  static Future<Map<String, dynamic>?> getUserLocation({bool forceRefresh = false}) async {
+  static Future<Map<String, dynamic>?> getUserLocation({
+    bool forceRefresh = false,
+  }) async {
     // Cek cache dulu jika tidak force refresh
     if (!forceRefresh && _cachedLocation != null) {
       // Cek apakah cache masih valid (kurang dari 1 jam)
-      if (_lastUpdateTime != null && 
+      if (_lastUpdateTime != null &&
           DateTime.now().difference(_lastUpdateTime!).inMinutes < 60) {
         print('📍 [LocationService] Menggunakan lokasi dari cache');
         return _cachedLocation;
@@ -23,7 +27,7 @@ class LocationService {
     }
 
     print('🔄 [LocationService] Mendapatkan lokasi baru...');
-    
+
     bool serviceEnabled;
     LocationPermission permission;
 
@@ -75,8 +79,10 @@ class LocationService {
 
       // Simpan ke cache
       await _saveLocationToCache(locationData);
-      
-      print('✅ [LocationService] Lokasi berhasil diperbarui: ${address['kelurahan']}');
+
+      print(
+        '✅ [LocationService] Lokasi berhasil diperbarui: ${address['kelurahan']}',
+      );
       return locationData;
     } catch (e) {
       print('❌ Error getting position: $e');
@@ -85,17 +91,27 @@ class LocationService {
   }
 
   // ============ SIMPAN LOKASI KE CACHE ============
-  static Future<void> _saveLocationToCache(Map<String, dynamic> location) async {
+  // ============ SIMPAN LOKASI KE CACHE ============
+  static Future<void> _saveLocationToCache(
+    Map<String, dynamic> location,
+  ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      // Fixed: Changed 'locationData' to 'location'
-      await prefs.setString(_cachedLocationKey, location.toString());
-      await prefs.setString(_lastLocationUpdateKey, DateTime.now().toIso8601String());
-      
+
+      // ⭐ PERBAIKAN: Simpan sebagai JSON string yang proper
+      await prefs.setString(
+        _cachedLocationKey,
+        jsonEncode(location), // ⭐ Gunakan jsonEncode, bukan toString()
+      );
+      await prefs.setString(
+        _lastLocationUpdateKey,
+        DateTime.now().toIso8601String(),
+      );
+
       // Update cache di memory
       _cachedLocation = location;
       _lastUpdateTime = DateTime.now();
-      
+
       print('💾 [LocationService] Lokasi disimpan ke cache');
     } catch (e) {
       print('❌ Error saving location to cache: $e');
@@ -108,23 +124,27 @@ class LocationService {
       final prefs = await SharedPreferences.getInstance();
       final cachedData = prefs.getString(_cachedLocationKey);
       final lastUpdateString = prefs.getString(_lastLocationUpdateKey);
-      
+
       if (cachedData == null || lastUpdateString == null) {
         return null;
       }
-      
+
       final lastUpdate = DateTime.parse(lastUpdateString);
-      
+
       // Cek apakah cache masih valid (kurang dari 1 jam)
       if (DateTime.now().difference(lastUpdate).inMinutes >= 60) {
         print('⏰ [LocationService] Cache lokasi sudah kedaluwarsa');
         return null;
       }
-      
-      // Parse data lokasi dari string
-      // Format: {latitude: -6.123, longitude: 106.123, kelurahan: Antapani Kidul, ...}
-      // Ini perlu disesuaikan dengan format penyimpanan Anda
-      return _cachedLocation; // Kembalikan cache di memory
+
+      // ⭐ PERBAIKAN: Parse JSON string
+      final Map<String, dynamic> locationData = jsonDecode(cachedData);
+
+      // Update cache di memory
+      _cachedLocation = locationData;
+      _lastUpdateTime = lastUpdate;
+
+      return locationData;
     } catch (e) {
       print('❌ Error loading location from cache: $e');
       return null;
@@ -152,7 +172,7 @@ class LocationService {
         'kota': place.administrativeArea ?? 'Unknown',
         'provinsi': place.country ?? 'Indonesia',
         'postal_code': place.postalCode ?? '',
-        'full_address': 
+        'full_address':
             '${place.street ?? ''}, ${place.subLocality ?? ''}, ${place.locality ?? ''}, ${place.administrativeArea ?? ''}',
       };
     } catch (e) {
@@ -203,7 +223,8 @@ class LocationService {
     double lat2,
     double lon2,
   ) {
-    return Geolocator.distanceBetween(lat1, lon1, lat2, lon2) / 1000; // dalam km
+    return Geolocator.distanceBetween(lat1, lon1, lat2, lon2) /
+        1000; // dalam km
   }
 
   // ============ CLEAR CACHE ============

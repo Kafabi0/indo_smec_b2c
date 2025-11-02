@@ -17,11 +17,13 @@ class KoperasiService {
       longitude: 107.654358,
       description: 'Koperasi yang melayani UMKM di wilayah Antapani Kidul',
       productIds: [
-        '1', '2', '9', '10', '15', '20', '27', '33', '45', '100', 
+        '1', '2', '9', '10', '15', '20', '27', '33', '45', '100',
         '121', '122', '123', '124', '125',
+        '126', '127', '128', '129', '130', // ⭐ Tambahkan jasa
+        '134', '135', '136', '137', // Jasa Salon
       ],
     ),
-    
+
     Koperasi(
       id: 'kop2',
       name: 'Koperasi Sejahtera Cicadas',
@@ -31,7 +33,22 @@ class KoperasiService {
       latitude: -6.905789,
       longitude: 107.653267,
       description: 'Koperasi yang melayani UMKM di wilayah Cicadas',
-      productIds: ['3', '4', '5', '11', '16', '21', '28', '34', '46', '101'],
+      productIds: [
+        '3',
+        '4',
+        '5',
+        '11',
+        '16',
+        '21',
+        '28',
+        '34',
+        '46',
+        '101',
+        '138',
+        '139',
+        '140', // Jasa Bengkel
+        '141', '142', '143',
+      ],
     ),
 
     Koperasi(
@@ -43,7 +60,23 @@ class KoperasiService {
       latitude: -6.894321,
       longitude: 107.589876,
       description: 'Koperasi yang melayani UMKM di wilayah Sukajadi',
-      productIds: ['6', '7', '8', '12', '17', '22', '29', '35', '47', '102'],
+      productIds: [
+        '6',
+        '7',
+        '8',
+        '12',
+        '17',
+        '22',
+        '29',
+        '35',
+        '47',
+        '102',
+        '144',
+        '145',
+        '146',
+        '147', // Service Elektronik
+        '148', '149', '150',
+      ],
     ),
 
     // KABUPATEN BANDUNG
@@ -88,9 +121,11 @@ class KoperasiService {
   // ============ GET KOPERASI BY LOCATION ============
   static Future<List<Koperasi>> getKoperasiByLocation() async {
     final location = await LocationService.getUserLocation();
-    
+
     if (location == null) {
-      print('⚠️ Lokasi tidak terdeteksi, tampilkan semua koperasi');
+      print(
+        '⚠️ [KoperasiService] Lokasi tidak terdeteksi, tampilkan semua koperasi',
+      );
       return _allKoperasi;
     }
 
@@ -98,41 +133,101 @@ class KoperasiService {
     final kecamatan = location['kecamatan'] as String;
     final kota = location['kota'] as String;
 
-    print('📍 Lokasi user: $kelurahan, $kecamatan, $kota');
+    print('📍 [KoperasiService] Lokasi user: $kelurahan, $kecamatan, $kota');
 
     // 1. Cari koperasi di kelurahan yang sama
-    List<Koperasi> filtered = _allKoperasi.where(
-      (k) => k.matchLocation(kelurahan: kelurahan),
-    ).toList();
+    List<Koperasi> filtered =
+        _allKoperasi.where((k) {
+          final match = k.matchLocation(kelurahan: kelurahan);
+          if (match) {
+            print('✅ [KoperasiService] Match found: ${k.name} (kelurahan)');
+          }
+          return match;
+        }).toList();
 
     if (filtered.isNotEmpty) {
-      print('✅ Ditemukan ${filtered.length} koperasi di $kelurahan');
+      print(
+        '✅ [KoperasiService] Ditemukan ${filtered.length} koperasi di $kelurahan',
+      );
       return filtered;
     }
 
     // 2. Fallback ke kecamatan
-    filtered = _allKoperasi.where(
-      (k) => k.matchLocation(kecamatan: kecamatan),
-    ).toList();
+    filtered =
+        _allKoperasi.where((k) {
+          final match = k.matchLocation(kecamatan: kecamatan);
+          if (match) {
+            print('✅ [KoperasiService] Match found: ${k.name} (kecamatan)');
+          }
+          return match;
+        }).toList();
 
     if (filtered.isNotEmpty) {
-      print('✅ Ditemukan ${filtered.length} koperasi di $kecamatan');
+      print(
+        '✅ [KoperasiService] Ditemukan ${filtered.length} koperasi di $kecamatan',
+      );
       return filtered;
     }
 
     // 3. Fallback ke kota
-    filtered = _allKoperasi.where(
-      (k) => k.matchLocation(kota: kota),
-    ).toList();
+    filtered =
+        _allKoperasi.where((k) {
+          final match = k.matchLocation(kota: kota);
+          if (match) {
+            print('✅ [KoperasiService] Match found: ${k.name} (kota)');
+          }
+          return match;
+        }).toList();
 
     if (filtered.isNotEmpty) {
-      print('✅ Ditemukan ${filtered.length} koperasi di $kota');
+      print(
+        '✅ [KoperasiService] Ditemukan ${filtered.length} koperasi di $kota',
+      );
       return filtered;
     }
 
     // 4. Jika tidak ada, tampilkan semua
-    print('⚠️ Tidak ada koperasi di lokasi ini, tampilkan semua');
+    print(
+      '⚠️ [KoperasiService] Tidak ada koperasi di lokasi ini, tampilkan semua',
+    );
     return _allKoperasi;
+  }
+
+  // ============ GET PRODUK DARI KOPERASI TERDEKAT SAJA ============
+  static Future<List<Product>> getProductsFromNearestKoperasi() async {
+    final nearestKoperasi = await getNearestKoperasi();
+
+    if (nearestKoperasi == null) {
+      print('⚠️ Tidak ada koperasi terdekat, tampilkan semua produk');
+      return ProductService().getAllProducts();
+    }
+
+    print('🎯 Mengambil produk dari: ${nearestKoperasi.name}');
+    print('📦 Jumlah produk di koperasi: ${nearestKoperasi.productIds.length}');
+
+    // Filter produk berdasarkan ID dari koperasi terdekat
+    final allProducts = ProductService().getAllProducts();
+    final filteredProducts =
+        allProducts
+            .where((p) => nearestKoperasi.productIds.contains(p.id))
+            .toList();
+
+    print('✅ Produk terfilter: ${filteredProducts.length}');
+
+    return filteredProducts;
+  }
+
+  // ============ GET PRODUK BY CATEGORY DARI KOPERASI TERDEKAT ============
+  static Future<List<Product>> getProductsByCategoryFromNearestKoperasi(
+    String category,
+  ) async {
+    final productsFromNearest = await getProductsFromNearestKoperasi();
+
+    if (category == 'Semua') {
+      return productsFromNearest;
+    }
+
+    return productsFromNearest.where((p) => p.category == category).toList();
   }
 
   // ============ GET NEAREST KOPERASI ============
@@ -161,7 +256,9 @@ class KoperasiService {
     }
 
     if (nearest != null) {
-      print('🎯 Koperasi terdekat: ${nearest.name} (${minDistance.toStringAsFixed(1)} km)');
+      print(
+        '🎯 Koperasi terdekat: ${nearest.name} (${minDistance.toStringAsFixed(1)} km)',
+      );
     }
 
     return nearest;
@@ -185,7 +282,7 @@ class KoperasiService {
   // ============ GET PRODUK BY LOCATION ============
   static Future<List<Product>> getProductsByLocation() async {
     final koperasiList = await getKoperasiByLocation();
-    
+
     if (koperasiList.isEmpty) {
       print('⚠️ Tidak ada koperasi, tampilkan semua produk');
       return ProductService().getAllProducts();
@@ -210,7 +307,7 @@ class KoperasiService {
     String category,
   ) async {
     final locationProducts = await getProductsByLocation();
-    
+
     if (category == 'Semua') {
       return locationProducts;
     }

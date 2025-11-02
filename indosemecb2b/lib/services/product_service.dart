@@ -218,6 +218,68 @@ class ProductService {
       description: 'Supplier buah-buahan segar',
       isFlagship: false,
     ),
+    // JASA STORES (tambahkan di bagian bawah _allStores)
+    Store(
+      id: 's22',
+      name: 'Jahit Bu Siti',
+      category: 'Jasa',
+      distance: 0.8,
+      openHours: '08:00 - 17:00',
+      rating: 4.9,
+      reviewCount: 456,
+      description: 'Jasa jahit dan reparasi pakaian',
+      isFlagship: true,
+    ),
+    Store(
+      id: 's23',
+      name: 'Laundry Express',
+      category: 'Jasa',
+      distance: 1.2,
+      openHours: '07:00 - 20:00',
+      rating: 4.7,
+      reviewCount: 678,
+      description: 'Laundry kilat dan dry cleaning',
+    ),
+    Store(
+      id: 's24',
+      name: 'Salon Cantik',
+      category: 'Jasa',
+      distance: 1.5,
+      openHours: '09:00 - 19:00',
+      rating: 4.8,
+      reviewCount: 534,
+      description: 'Salon kecantikan lengkap',
+    ),
+    Store(
+      id: 's25',
+      name: 'Bengkel Motor Jaya',
+      category: 'Jasa',
+      distance: 2.0,
+      openHours: '08:00 - 18:00',
+      rating: 4.6,
+      reviewCount: 389,
+      description: 'Service motor dan spare part',
+    ),
+    Store(
+      id: 's26',
+      name: 'Tukang Kayu Pak Agus',
+      category: 'Jasa',
+      distance: 2.5,
+      openHours: '07:00 - 17:00',
+      rating: 4.8,
+      reviewCount: 267,
+      description: 'Pembuatan furniture custom',
+    ),
+    Store(
+      id: 's27',
+      name: 'Cuci AC Profesional',
+      category: 'Jasa',
+      distance: 1.8,
+      openHours: '08:00 - 18:00',
+      rating: 4.7,
+      reviewCount: 423,
+      description: 'Service AC dan elektronik',
+    ),
 
     // KREATIF STORES
     Store(
@@ -324,6 +386,41 @@ class ProductService {
       name: 'Dress',
       parentCategory: 'Fashion',
       icon: '👗',
+    ),
+
+    // JASA SUB-CATEGORIES (tambahkan di bagian bawah _subCategories)
+    SubCategory(
+      id: 'j1',
+      name: 'Jahit & Bordir',
+      parentCategory: 'Jasa',
+      icon: '🧵',
+    ),
+    SubCategory(id: 'j2', name: 'Laundry', parentCategory: 'Jasa', icon: '👔'),
+    SubCategory(
+      id: 'j3',
+      name: 'Salon & Spa',
+      parentCategory: 'Jasa',
+      icon: '💇',
+    ),
+    SubCategory(id: 'j4', name: 'Bengkel', parentCategory: 'Jasa', icon: '🔧'),
+    SubCategory(id: 'j5', name: 'Tukang', parentCategory: 'Jasa', icon: '🛠️'),
+    SubCategory(
+      id: 'j6',
+      name: 'Service Elektronik',
+      parentCategory: 'Jasa',
+      icon: '📱',
+    ),
+    SubCategory(
+      id: 'j7',
+      name: 'Cleaning Service',
+      parentCategory: 'Jasa',
+      icon: '🧹',
+    ),
+    SubCategory(
+      id: 'j8',
+      name: 'Catering',
+      parentCategory: 'Jasa',
+      icon: '🍽️',
     ),
 
     // HERBAL SUB-CATEGORIES
@@ -441,7 +538,8 @@ class ProductService {
       reviewCount: 150,
       storeName: 'Warung Pak Budi',
       storeDistance: '0.5 km',
-      imageUrl:'https://img-global.cpcdn.com/recipes/2d6b62a61e9bb969/680x482cq70/nasi-goreng-hongkong-foto-resep-utama.jpg'
+      imageUrl:
+          'https://img-global.cpcdn.com/recipes/2d6b62a61e9bb969/680x482cq70/nasi-goreng-hongkong-foto-resep-utama.jpg',
     ),
     Product(
       id: '2',
@@ -455,7 +553,7 @@ class ProductService {
       storeName: 'Toko Berkah',
       storeDistance: '1.2 km',
       imageUrl:
-      'https://drivethru.klikindomaret.com/t69e/wp-content/uploads/sites/58/2020/09/nasi.jpg'
+          'https://drivethru.klikindomaret.com/t69e/wp-content/uploads/sites/58/2020/09/nasi.jpg',
     ),
     Product(
       id: '3',
@@ -468,7 +566,8 @@ class ProductService {
       reviewCount: 220,
       storeName: 'Sushi Corner',
       storeDistance: '2.1 km',
-      imageUrl: 'https://drivethru.klikindomaret.com/t69e/wp-content/uploads/sites/58/2024/03/20096377_1-745x1024.jpg'
+      imageUrl:
+          'https://drivethru.klikindomaret.com/t69e/wp-content/uploads/sites/58/2024/03/20096377_1-745x1024.jpg',
     ),
     Product(
       id: '4',
@@ -481,7 +580,8 @@ class ProductService {
       reviewCount: 180,
       storeName: 'Fast Food Center',
       storeDistance: '0.8 km',
-      imageUrl: 'https://assets.klikindomaret.com/products/20115652/20115652_1.jpg'
+      imageUrl:
+          'https://assets.klikindomaret.com/products/20115652/20115652_1.jpg',
     ),
     Product(
       id: '5',
@@ -494,7 +594,8 @@ class ProductService {
       reviewCount: 195,
       storeName: 'Dimsum House',
       storeDistance: '1.5 km',
-      imageUrl: 'https://assets.klikindomaret.com/products/20122942/20122942_thumb.jpg?Version.20.03.1.01'
+      imageUrl:
+          'https://assets.klikindomaret.com/products/20122942/20122942_thumb.jpg?Version.20.03.1.01',
     ),
     Product(
       id: '6',
@@ -507,7 +608,8 @@ class ProductService {
       reviewCount: 167,
       storeName: 'Bakery Mama',
       storeDistance: '0.9 km',
-      imageUrl: 'https://awsimages.detik.net.id/community/media/visual/2021/12/07/resep-sate-ayam-pedas_43.jpeg?w=480'
+      imageUrl:
+          'https://awsimages.detik.net.id/community/media/visual/2021/12/07/resep-sate-ayam-pedas_43.jpeg?w=480',
     ),
     Product(
       id: '7',
@@ -520,7 +622,8 @@ class ProductService {
       reviewCount: 310,
       storeName: 'Japan Snack',
       storeDistance: '1.8 km',
-      imageUrl: 'https://drivethru.klikindomaret.com/t69e/wp-content/uploads/sites/58/2022/11/WhatsApp-Image-2022-11-04-at-16.47.13.jpeg'
+      imageUrl:
+          'https://drivethru.klikindomaret.com/t69e/wp-content/uploads/sites/58/2022/11/WhatsApp-Image-2022-11-04-at-16.47.13.jpeg',
     ),
     Product(
       id: '8',
@@ -533,7 +636,8 @@ class ProductService {
       reviewCount: 278,
       storeName: 'Rumah Makan Padang',
       storeDistance: '1.3 km',
-      imageUrl: 'https://assets.klikindomaret.com/products/20103568/20103568_thumb.jpg?Version.20.03.1.01'
+      imageUrl:
+          'https://assets.klikindomaret.com/products/20103568/20103568_thumb.jpg?Version.20.03.1.01',
     ),
 
     // ============ GROCERY CATEGORY ============
@@ -548,7 +652,8 @@ class ProductService {
       reviewCount: 320,
       storeName: 'Toko Sumber Rezeki',
       storeDistance: '0.7 km',
-      imageUrl: 'https://cdn-klik.klikindomaret.com/klik-catalog/product/20002897_1.jpg'
+      imageUrl:
+          'https://cdn-klik.klikindomaret.com/klik-catalog/product/20002897_1.jpg',
     ),
     Product(
       id: '10',
@@ -561,7 +666,8 @@ class ProductService {
       reviewCount: 250,
       storeName: 'Grocery Mart',
       storeDistance: '0.5 km',
-      imageUrl: 'https://img.lazcdn.com/g/p/5a20b25510c6741f4b12a9607e3a2905.jpg_720x720q80.jpg'
+      imageUrl:
+          'https://img.lazcdn.com/g/p/5a20b25510c6741f4b12a9607e3a2905.jpg_720x720q80.jpg',
     ),
     Product(
       id: '11',
@@ -574,7 +680,8 @@ class ProductService {
       reviewCount: 189,
       storeName: 'Toko Berkah',
       storeDistance: '1.2 km',
-      imageUrl: 'https://cdn-klik.klikindomaret.com/klik-catalog/product/20042991_1.jpg'
+      imageUrl:
+          'https://cdn-klik.klikindomaret.com/klik-catalog/product/20042991_1.jpg',
     ),
     Product(
       id: '12',
@@ -587,7 +694,8 @@ class ProductService {
       reviewCount: 412,
       storeName: 'Pasar Segar',
       storeDistance: '0.9 km',
-      imageUrl: 'https://cdn-klik.klikindomaret.com/klik-catalog/product/20024079_1.jpg'
+      imageUrl:
+          'https://cdn-klik.klikindomaret.com/klik-catalog/product/20024079_1.jpg',
     ),
     Product(
       id: '13',
@@ -600,7 +708,8 @@ class ProductService {
       reviewCount: 356,
       storeName: 'Supermarket Indo',
       storeDistance: '1.1 km',
-      imageUrl: 'https://cdn-klik.klikindomaret.com/klik-catalog/product/20134320_1.jpg'
+      imageUrl:
+          'https://cdn-klik.klikindomaret.com/klik-catalog/product/20134320_1.jpg',
     ),
     Product(
       id: '14',
@@ -613,7 +722,8 @@ class ProductService {
       reviewCount: 289,
       storeName: 'Warung Serba Ada',
       storeDistance: '0.6 km',
-      imageUrl: 'https://down-id.img.susercontent.com/file/id-11134207-7r98x-lvic6q9m6095fc'
+      imageUrl:
+          'https://down-id.img.susercontent.com/file/id-11134207-7r98x-lvic6q9m6095fc',
     ),
 
     // ============ FASHION CATEGORY ============
@@ -628,7 +738,8 @@ class ProductService {
       reviewCount: 95,
       storeName: 'Batik Nusantara',
       storeDistance: '2.3 km',
-      imageUrl: 'https://i.pinimg.com/1200x/89/49/43/89494308b3d6d38cf728ec1b6e24e798.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/89/49/43/89494308b3d6d38cf728ec1b6e24e798.jpg',
     ),
     Product(
       id: '16',
@@ -641,7 +752,8 @@ class ProductService {
       reviewCount: 310,
       storeName: 'Hijab Store',
       storeDistance: '1.7 km',
-      imageUrl: 'https://i.pinimg.com/1200x/7a/26/c9/7a26c999cfcd9a931c83237c22e8f96b.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/7a/26/c9/7a26c999cfcd9a931c83237c22e8f96b.jpg',
     ),
     Product(
       id: '17',
@@ -654,7 +766,8 @@ class ProductService {
       reviewCount: 147,
       storeName: 'Fashion Hub',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/736x/83/63/55/83635564a2b3880593033e875a7ee6cd.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/83/63/55/83635564a2b3880593033e875a7ee6cd.jpg',
     ),
     Product(
       id: '18',
@@ -667,7 +780,8 @@ class ProductService {
       reviewCount: 203,
       storeName: 'Batik Cantik',
       storeDistance: '1.9 km',
-      imageUrl: 'https://i.pinimg.com/736x/95/15/75/951575bf612a50d8a7632860215387ba.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/95/15/75/951575bf612a50d8a7632860215387ba.jpg',
     ),
     Product(
       id: '19',
@@ -680,7 +794,8 @@ class ProductService {
       reviewCount: 178,
       storeName: 'Denim Store',
       storeDistance: '2.5 km',
-      imageUrl: 'https://i.pinimg.com/736x/08/c8/9d/08c89d1c2f9b4bebbcfe079fd31d49a5.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/08/c8/9d/08c89d1c2f9b4bebbcfe079fd31d49a5.jpg',
     ),
 
     // ============ HERBAL CATEGORY ============
@@ -695,7 +810,8 @@ class ProductService {
       reviewCount: 180,
       storeName: 'Jamu Bu Ningsih',
       storeDistance: '0.6 km',
-      imageUrl: 'https://i.pinimg.com/736x/f9/bf/d6/f9bfd638c69ebdbeff6d236a6072b37b.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/f9/bf/d6/f9bfd638c69ebdbeff6d236a6072b37b.jpg',
     ),
     Product(
       id: '21',
@@ -708,7 +824,8 @@ class ProductService {
       reviewCount: 275,
       storeName: 'Madu Alami',
       storeDistance: '1.4 km',
-      imageUrl: 'https://i.pinimg.com/736x/aa/4c/e5/aa4ce5f447925e72362b0a6c9a6db65b.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/aa/4c/e5/aa4ce5f447925e72362b0a6c9a6db65b.jpg',
     ),
     Product(
       id: '22',
@@ -721,7 +838,8 @@ class ProductService {
       reviewCount: 198,
       storeName: 'Herbal Nusantara',
       storeDistance: '1.8 km',
-      imageUrl: 'https://down-id.img.susercontent.com/file/40714140dc961d5ca9ca2444f1be0612'
+      imageUrl:
+          'https://down-id.img.susercontent.com/file/40714140dc961d5ca9ca2444f1be0612',
     ),
     Product(
       id: '23',
@@ -734,7 +852,8 @@ class ProductService {
       reviewCount: 156,
       storeName: 'Toko Herbal Sehat',
       storeDistance: '1.1 km',
-      imageUrl: 'https://tse2.mm.bing.net/th/id/OIP.xuIGr5AFt6EeCaa_8mnX2gHaHa?rs=1&pid=ImgDetMain&o=7&rm=3'
+      imageUrl:
+          'https://tse2.mm.bing.net/th/id/OIP.xuIGr5AFt6EeCaa_8mnX2gHaHa?rs=1&pid=ImgDetMain&o=7&rm=3',
     ),
 
     // ============ KERAJINAN CATEGORY ============
@@ -749,7 +868,8 @@ class ProductService {
       reviewCount: 87,
       storeName: 'Kerajinan Tangan',
       storeDistance: '2.5 km',
-      imageUrl: 'https://i.pinimg.com/736x/db/17/cc/db17ccbb78756c6f0cda1d11a40ef30e.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/db/17/cc/db17ccbb78756c6f0cda1d11a40ef30e.jpg',
     ),
     Product(
       id: '25',
@@ -762,7 +882,8 @@ class ProductService {
       reviewCount: 56,
       storeName: 'Seni Ukir Bali',
       storeDistance: '3.2 km',
-      imageUrl: 'https://i.pinimg.com/736x/5d/11/d0/5d11d0db5f0ea31b0e00077916e9e09f.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/5d/11/d0/5d11d0db5f0ea31b0e00077916e9e09f.jpg',
     ),
     Product(
       id: '26',
@@ -775,7 +896,8 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Souvenir Nusantara',
       storeDistance: '1.9 km',
-      imageUrl: 'https://i.pinimg.com/736x/2b/d6/72/2bd67264b0b81133eb7ff08895fb398b.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/2b/d6/72/2bd67264b0b81133eb7ff08895fb398b.jpg',
     ),
 
     // ============ PERTANIAN CATEGORY ============
@@ -790,7 +912,8 @@ class ProductService {
       reviewCount: 145,
       storeName: 'Toko Tani Jaya',
       storeDistance: '2.8 km',
-      imageUrl: 'https://i.pinimg.com/736x/10/f8/fc/10f8fcf1ecd91bd59d9eaa59f1e3f4f4.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/10/f8/fc/10f8fcf1ecd91bd59d9eaa59f1e3f4f4.jpg',
     ),
     Product(
       id: '28',
@@ -803,7 +926,8 @@ class ProductService {
       reviewCount: 98,
       storeName: 'Tani Makmur',
       storeDistance: '3.5 km',
-      imageUrl: 'https://i.pinimg.com/1200x/6a/e4/4f/6ae44f8829716b4bfbfddf3dcc5ca3ca.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/6a/e4/4f/6ae44f8829716b4bfbfddf3dcc5ca3ca.jpg',
     ),
     Product(
       id: '29',
@@ -816,9 +940,9 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/e6/e1/19/e6e119960061eec773d9e0f573929d33.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/e6/e1/19/e6e119960061eec773d9e0f573929d33.jpg',
     ),
-
 
     // ============ KREATIF CATEGORY ============
     Product(
@@ -832,7 +956,8 @@ class ProductService {
       reviewCount: 89,
       storeName: 'Art Supply Store',
       storeDistance: '2.4 km',
-      imageUrl: 'https://i.pinimg.com/736x/f2/ec/d7/f2ecd776d62afb556f7b8277f77d3ee0.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/f2/ec/d7/f2ecd776d62afb556f7b8277f77d3ee0.jpg',
     ),
     Product(
       id: '31',
@@ -845,8 +970,8 @@ class ProductService {
       reviewCount: 156,
       storeName: 'Creative Corner',
       storeDistance: '1.8 km',
-      imageUrl: 'https://i.pinimg.com/736x/6c/3f/5c/6c3f5c3efc8a11ad2ce76ad60e536069.jpg'
-
+      imageUrl:
+          'https://i.pinimg.com/736x/6c/3f/5c/6c3f5c3efc8a11ad2ce76ad60e536069.jpg',
     ),
     Product(
       id: '32',
@@ -859,7 +984,8 @@ class ProductService {
       reviewCount: 123,
       storeName: 'DIY Craft Shop',
       storeDistance: '2.2 km',
-      imageUrl: 'https://i.pinimg.com/1200x/d2/73/8e/d2738eceae9feb07c53076a922bd1644.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/d2/73/8e/d2738eceae9feb07c53076a922bd1644.jpg',
     ),
 
     // ============ TAMBAHAN PRODUK SEGAR (MINUMAN, JELLY, PRODUK UMKM INDONESIA) ============
@@ -874,7 +1000,8 @@ class ProductService {
       reviewCount: 425,
       storeName: 'Warung Pak Budi',
       storeDistance: '0.5 km',
-      imageUrl: 'https://i.pinimg.com/736x/63/30/04/633004a76c6f03ab9665d8cce7dade47.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/63/30/04/633004a76c6f03ab9665d8cce7dade47.jpg',
     ),
     Product(
       id: '34',
@@ -887,7 +1014,8 @@ class ProductService {
       reviewCount: 312,
       storeName: 'Snack House',
       storeDistance: '1.1 km',
-      imageUrl: 'https://i.pinimg.com/736x/85/58/a5/8558a5cc58e0e57707635793b32e9279.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/85/58/a5/8558a5cc58e0e57707635793b32e9279.jpg',
     ),
     Product(
       id: '35',
@@ -900,7 +1028,8 @@ class ProductService {
       reviewCount: 278,
       storeName: 'Jamu Bu Ningsih',
       storeDistance: '0.6 km',
-      imageUrl: 'https://img.freepik.com/premium-photo/es-dawet-hitam-cendol-hitam-is-indonesia-traditional-iced-dessert-from-purworejo_581937-5126.jpg'
+      imageUrl:
+          'https://img.freepik.com/premium-photo/es-dawet-hitam-cendol-hitam-is-indonesia-traditional-iced-dessert-from-purworejo_581937-5126.jpg',
     ),
     Product(
       id: '36',
@@ -913,7 +1042,8 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Madu Alami',
       storeDistance: '1.4 km',
-      imageUrl: 'https://tse2.mm.bing.net/th/id/OIP.JtMOAoE1KvaYFqqANYJeRwHaHa?rs=1&pid=ImgDetMain&o=7&rm=3'
+      imageUrl:
+          'https://tse2.mm.bing.net/th/id/OIP.JtMOAoE1KvaYFqqANYJeRwHaHa?rs=1&pid=ImgDetMain&o=7&rm=3',
     ),
     Product(
       id: '37',
@@ -926,7 +1056,8 @@ class ProductService {
       reviewCount: 198,
       storeName: 'Pasar Segar',
       storeDistance: '0.9 km',
-      imageUrl: 'https://i.pinimg.com/736x/6a/5a/df/6a5adf9ad625176e415f49822ae7b924.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/6a/5a/df/6a5adf9ad625176e415f49822ae7b924.jpg',
     ),
     Product(
       id: '38',
@@ -939,7 +1070,8 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Herbal Nusantara',
       storeDistance: '1.8 km',
-      imageUrl: 'https://i.pinimg.com/736x/61/47/0f/61470f214ef15ab5fc4008a0e7c1a749.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/61/47/0f/61470f214ef15ab5fc4008a0e7c1a749.jpg',
     ),
     Product(
       id: '39',
@@ -952,7 +1084,8 @@ class ProductService {
       reviewCount: 345,
       storeName: 'Tropical Drink',
       storeDistance: '0.8 km',
-      imageUrl: 'https://i.pinimg.com/736x/43/3d/28/433d28c07a9b05f671d3710a90804934.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/43/3d/28/433d28c07a9b05f671d3710a90804934.jpg',
     ),
     Product(
       id: '40',
@@ -965,7 +1098,8 @@ class ProductService {
       reviewCount: 289,
       storeName: 'Snack House',
       storeDistance: '1.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/ae/78/f0/ae78f05040e740cc24887f84c3f5ed39.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/ae/78/f0/ae78f05040e740cc24887f84c3f5ed39.jpg',
     ),
     Product(
       id: '41',
@@ -978,7 +1112,8 @@ class ProductService {
       reviewCount: 312,
       storeName: 'Warung Pak Budi',
       storeDistance: '0.5 km',
-      imageUrl: 'https://i.pinimg.com/1200x/bf/f5/02/bff502e79673602b6d93271c46583676.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/bf/f5/02/bff502e79673602b6d93271c46583676.jpg',
     ),
     Product(
       id: '42',
@@ -991,7 +1126,8 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Snack House',
       storeDistance: '1.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/69/72/c1/6972c17a5b9b8de373b26e1c61461c97.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/69/72/c1/6972c17a5b9b8de373b26e1c61461c97.jpg',
     ),
     Product(
       id: '43',
@@ -1004,7 +1140,8 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Herbal Nusantara',
       storeDistance: '1.8 km',
-      imageUrl: 'https://i.pinimg.com/736x/ab/0d/f7/ab0df7146af3fe5c29d1513cdaf9b97e.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/ab/0d/f7/ab0df7146af3fe5c29d1513cdaf9b97e.jpg',
     ),
     Product(
       id: '44',
@@ -1017,7 +1154,8 @@ class ProductService {
       reviewCount: 298,
       storeName: 'Snack House',
       storeDistance: '1.1 km',
-      imageUrl: 'https://i.pinimg.com/736x/c1/8e/70/c18e709489f143a9b12152ab4ab2cc29.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/c1/8e/70/c18e709489f143a9b12152ab4ab2cc29.jpg',
     ),
 
     // ============ TAMBAHAN PRODUK BUAH & SAYUR ============
@@ -1032,7 +1170,8 @@ class ProductService {
       reviewCount: 312,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/89/94/cc/8994cc72eb45158a30c06d4774230ded.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/89/94/cc/8994cc72eb45158a30c06d4774230ded.jpg',
     ),
     Product(
       id: '46',
@@ -1045,7 +1184,8 @@ class ProductService {
       reviewCount: 278,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/16/ee/49/16ee497d374644223ccd26a1493c794b.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/16/ee/49/16ee497d374644223ccd26a1493c794b.jpg',
     ),
     Product(
       id: '47',
@@ -1058,7 +1198,8 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/67/d7/fc/67d7fc8e8c788fd50b96cc650d24bfb9.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/67/d7/fc/67d7fc8e8c788fd50b96cc650d24bfb9.jpg',
     ),
     Product(
       id: '48',
@@ -1071,7 +1212,8 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/90/14/0a/90140a4f0056916e38b7c3020772416f.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/90/14/0a/90140a4f0056916e38b7c3020772416f.jpg',
     ),
     Product(
       id: '49',
@@ -1084,7 +1226,8 @@ class ProductService {
       reviewCount: 289,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/e5/a0/95/e5a095d73452f84ee2dd563a9b56d2f7.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/e5/a0/95/e5a095d73452f84ee2dd563a9b56d2f7.jpg',
     ),
     Product(
       id: '50',
@@ -1097,7 +1240,8 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/9c/68/6e/9c686ec6d33e9d264bf392c072371b89.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/9c/68/6e/9c686ec6d33e9d264bf392c072371b89.jpg',
     ),
     Product(
       id: '51',
@@ -1110,7 +1254,8 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/57/2e/44/572e446e7ecd1261d1973b7e11f1d622.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/57/2e/44/572e446e7ecd1261d1973b7e11f1d622.jpg',
     ),
     Product(
       id: '52',
@@ -1123,7 +1268,8 @@ class ProductService {
       reviewCount: 298,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/736x/05/1e/f7/051ef76a110dfd40de4aef4e601c3040.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/05/1e/f7/051ef76a110dfd40de4aef4e601c3040.jpg',
     ),
     Product(
       id: '53',
@@ -1136,7 +1282,8 @@ class ProductService {
       reviewCount: 345,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/736x/38/5a/1a/385a1a57260b175ffc75b32a4da62234.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/38/5a/1a/385a1a57260b175ffc75b32a4da62234.jpg',
     ),
     Product(
       id: '54',
@@ -1149,7 +1296,8 @@ class ProductService {
       reviewCount: 312,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/02/ce/2f/02ce2feb0755beed215dac5f6187b7c0.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/02/ce/2f/02ce2feb0755beed215dac5f6187b7c0.jpg',
     ),
     Product(
       id: '55',
@@ -1162,7 +1310,8 @@ class ProductService {
       reviewCount: 278,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/736x/fd/2f/75/fd2f7532157da5c6519aa76d938d17bc.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/fd/2f/75/fd2f7532157da5c6519aa76d938d17bc.jpg',
     ),
     Product(
       id: '56',
@@ -1175,7 +1324,8 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/91/c2/d5/91c2d5cb35f8db6bd9ab3cadcb2e65a3.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/91/c2/d5/91c2d5cb35f8db6bd9ab3cadcb2e65a3.jpg',
     ),
     Product(
       id: '57',
@@ -1188,7 +1338,8 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/82/b7/29/82b729fb22b9e2fd02a08d995c1ffbd7.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/82/b7/29/82b729fb22b9e2fd02a08d995c1ffbd7.jpg',
     ),
     Product(
       id: '58',
@@ -1201,7 +1352,8 @@ class ProductService {
       reviewCount: 289,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/736x/8f/f4/f0/8ff4f0b8413c8e3ef42a200f43492a77.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/8f/f4/f0/8ff4f0b8413c8e3ef42a200f43492a77.jpg',
     ),
     Product(
       id: '59',
@@ -1214,7 +1366,8 @@ class ProductService {
       reviewCount: 345,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/70/f0/cc/70f0cc60b42372f96ff52242cf29710b.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/70/f0/cc/70f0cc60b42372f96ff52242cf29710b.jpg',
     ),
     Product(
       id: '60',
@@ -1227,7 +1380,8 @@ class ProductService {
       reviewCount: 312,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/736x/5a/3d/2f/5a3d2fb75acdd8aabe60ae134a357136.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/5a/3d/2f/5a3d2fb75acdd8aabe60ae134a357136.jpg',
     ),
 
     // ============ TAMBAHAN PRODUK BUAH YANG LEBIH BANYAK ============
@@ -1242,7 +1396,8 @@ class ProductService {
       reviewCount: 312,
       storeName: 'Buah Segar Pak Joko',
       storeDistance: '1.2 km',
-      imageUrl: 'https://i.pinimg.com/1200x/64/2e/b8/642eb823cc55b56c8e0f611277d850a3.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/64/2e/b8/642eb823cc55b56c8e0f611277d850a3.jpg',
     ),
     Product(
       id: '62',
@@ -1255,7 +1410,8 @@ class ProductService {
       reviewCount: 278,
       storeName: 'Warung Buah Sari',
       storeDistance: '0.8 km',
-      imageUrl: 'https://i.pinimg.com/1200x/5d/aa/71/5daa71ea3e755354e00cdacd26d60bbd.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/5d/aa/71/5daa71ea3e755354e00cdacd26d60bbd.jpg',
     ),
     Product(
       id: '63',
@@ -1268,7 +1424,8 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Gudang Buah Nusantara',
       storeDistance: '2.3 km',
-      imageUrl: 'https://i.pinimg.com/736x/2c/91/5f/2c915f71906c55242fa4819403e888d0.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/2c/91/5f/2c915f71906c55242fa4819403e888d0.jpg',
     ),
     Product(
       id: '64',
@@ -1281,7 +1438,8 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Buah Segar Pak Joko',
       storeDistance: '1.2 km',
-      imageUrl: 'https://i.pinimg.com/736x/1f/98/1a/1f981a87a0ecd3ef4d321e52400458af.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/1f/98/1a/1f981a87a0ecd3ef4d321e52400458af.jpg',
     ),
     Product(
       id: '65',
@@ -1294,7 +1452,8 @@ class ProductService {
       reviewCount: 289,
       storeName: 'Warung Buah Sari',
       storeDistance: '0.8 km',
-      imageUrl: 'https://i.pinimg.com/736x/2b/20/70/2b207008e715f68d55f9a913cda6799d.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/2b/20/70/2b207008e715f68d55f9a913cda6799d.jpg',
     ),
     Product(
       id: '66',
@@ -1307,7 +1466,8 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Gudang Buah Nusantara',
       storeDistance: '2.3 km',
-      imageUrl: 'https://i.pinimg.com/736x/57/81/50/578150b5f0e41fea90ab992c2e971533.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/57/81/50/578150b5f0e41fea90ab992c2e971533.jpg',
     ),
     Product(
       id: '67',
@@ -1320,7 +1480,8 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Buah Segar Pak Joko',
       storeDistance: '1.2 km',
-      imageUrl: 'https://i.pinimg.com/1200x/96/e9/b6/96e9b6b277e3abc05ed03d92c7d41b1e.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/96/e9/b6/96e9b6b277e3abc05ed03d92c7d41b1e.jpg',
     ),
     Product(
       id: '68',
@@ -1333,7 +1494,8 @@ class ProductService {
       reviewCount: 289,
       storeName: 'Warung Buah Sari',
       storeDistance: '0.8 km',
-      imageUrl: 'https://i.pinimg.com/736x/5c/79/5a/5c795af37a63ed75f733d5543dfd64c9.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/5c/79/5a/5c795af37a63ed75f733d5543dfd64c9.jpg',
     ),
     // PAKET SEMBAKO
     Product(
@@ -1347,12 +1509,14 @@ class ProductService {
       reviewCount: 567,
       storeName: 'Toko Sumber Rezeki',
       storeDistance: '0.7 km',
-      imageUrl: 'https://i.pinimg.com/1200x/09/b9/72/09b972688cd8b79b4ee15502fd652456.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/09/b9/72/09b972688cd8b79b4ee15502fd652456.jpg',
     ),
     Product(
       id: '101',
       name: 'Paket Sembako Lengkap E',
-      description: 'Beras 5kg + Minyak 2L + Gula 1kg + Telur 10pcs + Mie Instan 10pcs + Susu 1L',
+      description:
+          'Beras 5kg + Minyak 2L + Gula 1kg + Telur 10pcs + Mie Instan 10pcs + Susu 1L',
       price: 165000,
       originalPrice: 225000,
       category: 'Grocery',
@@ -1360,12 +1524,14 @@ class ProductService {
       reviewCount: 489,
       storeName: 'Toko Sumber Rezeki',
       storeDistance: '0.7 km',
-      imageUrl: 'https://i.pinimg.com/1200x/04/28/ae/0428ae2dd8d05913fda40d33b39e8c4c.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/04/28/ae/0428ae2dd8d05913fda40d33b39e8c4c.jpg',
     ),
     Product(
       id: '102',
       name: 'Paket Sayur Asem',
-      description: 'Tomat, Toge kedelai, Kacang Panjang, Manisa, Asem dan Labu air',
+      description:
+          'Tomat, Toge kedelai, Kacang Panjang, Manisa, Asem dan Labu air',
       price: 15000,
       originalPrice: 20000,
       category: 'Grocery',
@@ -1373,12 +1539,14 @@ class ProductService {
       reviewCount: 623,
       storeName: 'Toko Sumber Rezeki',
       storeDistance: '0.7 km',
-      imageUrl: 'https://i.pinimg.com/1200x/5e/88/cf/5e88cfe4ffb4b767823cff39731c2ed2.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/5e/88/cf/5e88cfe4ffb4b767823cff39731c2ed2.jpg',
     ),
     Product(
       id: '103',
       name: 'Paket Sembako Ramadhan',
-      description: 'Beras 5kg + Kurma 500gr + Minyak 2L + Tepung 1kg + Gula 2kg + Susu 2L',
+      description:
+          'Beras 5kg + Kurma 500gr + Minyak 2L + Tepung 1kg + Gula 2kg + Susu 2L',
       price: 195000,
       originalPrice: 270000,
       category: 'Grocery',
@@ -1386,14 +1554,16 @@ class ProductService {
       reviewCount: 512,
       storeName: 'Toko Sumber Rezeki',
       storeDistance: '0.7 km',
-      imageUrl: 'https://www.static-src.com/wcsstore/Indraprastha/images/catalog/full//102/MTA-51199076/no_brand_paket_ramadhan_sembako_1_full01_uitvmwss.jpg'
+      imageUrl:
+          'https://www.static-src.com/wcsstore/Indraprastha/images/catalog/full//102/MTA-51199076/no_brand_paket_ramadhan_sembako_1_full01_uitvmwss.jpg',
     ),
 
     // PAKET LAUK PAUK
     Product(
       id: '104',
       name: 'Paket Lauk Ayam Lengkap',
-      description: 'Nasi, Ayam Goreng / Bakar, Tahu / Tempe, Sambal / Lalapan, Perkedel / Tempe Kering',
+      description:
+          'Nasi, Ayam Goreng / Bakar, Tahu / Tempe, Sambal / Lalapan, Perkedel / Tempe Kering',
       price: 27000,
       originalPrice: 30000,
       category: 'Food',
@@ -1401,12 +1571,14 @@ class ProductService {
       reviewCount: 345,
       storeName: 'Warung Pak Budi',
       storeDistance: '0.5 km',
-      imageUrl: 'https://i.pinimg.com/1200x/a9/4f/ec/a94fec80cee33091150472f62e139ada.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/a9/4f/ec/a94fec80cee33091150472f62e139ada.jpg',
     ),
     Product(
       id: '105',
       name: 'Paket Lauk Seafood',
-      description: 'Kepiting ukuran sedang, Kerang campur ±150–200gr, Jagung + bumbu',
+      description:
+          'Kepiting ukuran sedang, Kerang campur ±150–200gr, Jagung + bumbu',
       price: 52000,
       originalPrice: 55000,
       category: 'Food',
@@ -1414,7 +1586,8 @@ class ProductService {
       reviewCount: 298,
       storeName: 'Pasar Segar',
       storeDistance: '0.9 km',
-      imageUrl: 'https://i.pinimg.com/736x/6e/56/4f/6e564f2f06eb7fdc75660d8f561b1a5c.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/6e/56/4f/6e564f2f06eb7fdc75660d8f561b1a5c.jpg',
     ),
     Product(
       id: '106',
@@ -1427,14 +1600,16 @@ class ProductService {
       reviewCount: 412,
       storeName: 'Rumah Makan Padang',
       storeDistance: '1.3 km',
-      imageUrl: 'https://i.pinimg.com/1200x/7c/6e/02/7c6e02d9bdde795470cce9bd364f433a.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/7c/6e/02/7c6e02d9bdde795470cce9bd364f433a.jpg',
     ),
 
     // PAKET SNACK & MINUMAN
     Product(
       id: '107',
       name: 'Paket Snack Keluarga',
-      description: '10 Macam Snack (Keripik, Biskuit, Coklat, Permen) + 6 Minuman Ringan',
+      description:
+          '10 Macam Snack (Keripik, Biskuit, Coklat, Permen) + 6 Minuman Ringan',
       price: 125000,
       originalPrice: 175000,
       category: 'Food',
@@ -1442,7 +1617,8 @@ class ProductService {
       reviewCount: 456,
       storeName: 'Warung Pak Budi',
       storeDistance: '0.5 km',
-      imageUrl: 'https://i.pinimg.com/736x/c2/22/27/c22227da9452f0e24cdea4511498db68.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/c2/22/27/c22227da9452f0e24cdea4511498db68.jpg',
     ),
     Product(
       id: '108',
@@ -1455,7 +1631,8 @@ class ProductService {
       reviewCount: 389,
       storeName: 'Tropical Drink',
       storeDistance: '0.8 km',
-      imageUrl: 'https://i.pinimg.com/1200x/27/51/ad/2751ad58f8a34da9eb93a4fd72ebf2c2.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/27/51/ad/2751ad58f8a34da9eb93a4fd72ebf2c2.jpg',
     ),
 
     // PAKET BUAH & SAYUR
@@ -1470,7 +1647,8 @@ class ProductService {
       reviewCount: 523,
       storeName: 'Buah Segar Pak Joko',
       storeDistance: '1.2 km',
-      imageUrl: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=400&h=400&fit=crop'
+      imageUrl:
+          'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=400&h=400&fit=crop',
     ),
     Product(
       id: '110',
@@ -1483,7 +1661,8 @@ class ProductService {
       reviewCount: 467,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=400&fit=crop'
+      imageUrl:
+          'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=400&fit=crop',
     ),
     Product(
       id: '111',
@@ -1496,7 +1675,8 @@ class ProductService {
       reviewCount: 389,
       storeName: 'Gudang Buah Nusantara',
       storeDistance: '2.3 km',
-      imageUrl: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&h=400&fit=crop'
+      imageUrl:
+          'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&h=400&fit=crop',
     ),
 
     // PAKET HERBAL & KESEHATAN
@@ -1511,7 +1691,8 @@ class ProductService {
       reviewCount: 412,
       storeName: 'Jamu Bu Ningsih',
       storeDistance: '0.6 km',
-      imageUrl: 'https://i.pinimg.com/1200x/f2/6b/70/f26b70aa1ea1dd46110ce43ade9cdefb.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/f2/6b/70/f26b70aa1ea1dd46110ce43ade9cdefb.jpg',
     ),
     Product(
       id: '113',
@@ -1524,14 +1705,16 @@ class ProductService {
       reviewCount: 345,
       storeName: 'Madu Alami',
       storeDistance: '1.4 km',
-      imageUrl: 'https://i.pinimg.com/1200x/7f/ee/4d/7fee4d25744b070bfe355911e457bd6e.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/7f/ee/4d/7fee4d25744b070bfe355911e457bd6e.jpg',
     ),
 
     // PAKET BUMBU DAPUR
     Product(
       id: '114',
       name: 'Paket Bumbu Dapur Lengkap',
-      description: '15 Jenis Bumbu (Bawang, Cabai, Jahe, Kunyit, Lengkuas, dll)',
+      description:
+          '15 Jenis Bumbu (Bawang, Cabai, Jahe, Kunyit, Lengkuas, dll)',
       price: 65000,
       originalPrice: 95000,
       category: 'Grocery',
@@ -1539,12 +1722,14 @@ class ProductService {
       reviewCount: 489,
       storeName: 'Toko Sumber Rezeki',
       storeDistance: '0.7 km',
-      imageUrl: 'https://i.pinimg.com/1200x/14/50/da/1450daea02bdf6e5741831c87483d28b.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/14/50/da/1450daea02bdf6e5741831c87483d28b.jpg',
     ),
     Product(
       id: '115',
       name: 'Paket Rempah Nusantara',
-      description: 'Rempah Pilihan: Kayu Manis, Cengkeh, Pala, Kapulaga, Merica',
+      description:
+          'Rempah Pilihan: Kayu Manis, Cengkeh, Pala, Kapulaga, Merica',
       price: 55000,
       originalPrice: 80000,
       category: 'Herbal',
@@ -1552,14 +1737,16 @@ class ProductService {
       reviewCount: 367,
       storeName: 'Herbal Nusantara',
       storeDistance: '1.8 km',
-      imageUrl: 'https://i.pinimg.com/1200x/ed/b9/7c/edb97cd71eb4adfab250590dfcb2cfa7.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/ed/b9/7c/edb97cd71eb4adfab250590dfcb2cfa7.jpg',
     ),
 
     // PAKET KEBUTUHAN BAYI & ANAK
     Product(
       id: '116',
       name: 'Paket Hampers Bayi Newborn',
-      description: 'UKURAN 20 × 20 × 5 cm) Dilapisi Paper Tissue + stiker thank you Gift Card',
+      description:
+          'UKURAN 20 × 20 × 5 cm) Dilapisi Paper Tissue + stiker thank you Gift Card',
       price: 145000,
       originalPrice: 200000,
       category: 'Grocery',
@@ -1567,7 +1754,8 @@ class ProductService {
       reviewCount: 523,
       storeName: 'Supermarket Indo',
       storeDistance: '1.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/5e/9d/58/5e9d58710b089870133d2064e409685f.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/5e/9d/58/5e9d58710b089870133d2064e409685f.jpg',
     ),
 
     // PAKET NASI BOX & CATERING
@@ -1582,7 +1770,8 @@ class ProductService {
       reviewCount: 678,
       storeName: 'Warung Pak Budi',
       storeDistance: '0.5 km',
-      imageUrl: 'https://i.pinimg.com/736x/c2/3d/c6/c23dc672030d696e4167bfa8f4c978d2.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/c2/3d/c6/c23dc672030d696e4167bfa8f4c978d2.jpg',
     ),
     Product(
       id: '118',
@@ -1595,7 +1784,8 @@ class ProductService {
       reviewCount: 445,
       storeName: 'Rumah Makan Padang',
       storeDistance: '1.3 km',
-      imageUrl: 'https://i.pinimg.com/1200x/2d/0d/3e/2d0d3eb53498670c275cf452916e3316.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/2d/0d/3e/2d0d3eb53498670c275cf452916e3316.jpg',
     ),
 
     // PAKET FASHION
@@ -1610,7 +1800,8 @@ class ProductService {
       reviewCount: 567,
       storeName: 'Hijab Store',
       storeDistance: '1.7 km',
-      imageUrl: 'https://i.pinimg.com/736x/ae/4b/d3/ae4bd32a32125a561647a661080dd73f.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/ae/4b/d3/ae4bd32a32125a561647a661080dd73f.jpg',
     ),
     Product(
       id: '120',
@@ -1623,7 +1814,8 @@ class ProductService {
       reviewCount: 389,
       storeName: 'Batik Nusantara',
       storeDistance: '2.3 km',
-      imageUrl: 'https://i.pinimg.com/1200x/82/b3/ee/82b3ee7ca7de98c0912f14000495873b.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/82/b3/ee/82b3ee7ca7de98c0912f14000495873b.jpg',
     ),
 
     // ============ TAMBAHAN PRODUK BUAH & SAYUR ANTAPANI KIDUL ============
@@ -1638,7 +1830,8 @@ class ProductService {
       reviewCount: 234,
       storeName: 'Buah Segar Pak Joko',
       storeDistance: '1.2 km',
-      imageUrl: 'https://i.pinimg.com/1200x/9b/34/d6/9b34d6c11454df471aaf4a4016a0e643.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/9b/34/d6/9b34d6c11454df471aaf4a4016a0e643.jpg',
     ),
     Product(
       id: '122',
@@ -1651,7 +1844,8 @@ class ProductService {
       reviewCount: 189,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/736x/fc/20/c3/fc20c344d55b0d934bc96c329fdeeede.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/fc/20/c3/fc20c344d55b0d934bc96c329fdeeede.jpg',
     ),
     Product(
       id: '123',
@@ -1664,7 +1858,8 @@ class ProductService {
       reviewCount: 267,
       storeName: 'Buah Segar Pak Joko',
       storeDistance: '1.2 km',
-      imageUrl: 'https://i.pinimg.com/1200x/24/fd/4b/24fd4b6fbe068137f447498948902328.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/24/fd/4b/24fd4b6fbe068137f447498948902328.jpg',
     ),
     Product(
       id: '124',
@@ -1677,7 +1872,8 @@ class ProductService {
       reviewCount: 198,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
-      imageUrl: 'https://i.pinimg.com/1200x/50/37/8a/50378a38123d6fbfee9c293f7901d9a2.jpg'
+      imageUrl:
+          'https://i.pinimg.com/1200x/50/37/8a/50378a38123d6fbfee9c293f7901d9a2.jpg',
     ),
     Product(
       id: '125',
@@ -1690,7 +1886,373 @@ class ProductService {
       reviewCount: 312,
       storeName: 'Buah Segar Pak Joko',
       storeDistance: '1.2 km',
-      imageUrl: 'https://i.pinimg.com/736x/30/cf/92/30cf924f97b8a30adc4e9c4382e95b64.jpg'
+      imageUrl:
+          'https://i.pinimg.com/736x/30/cf/92/30cf924f97b8a30adc4e9c4382e95b64.jpg',
+    ),
+    // ============ JASA CATEGORY ============ (tambahkan di bagian bawah _allProducts)
+
+    // JASA JAHIT & BORDIR
+    Product(
+      id: '126',
+      name: 'Jahit Baju Baru',
+      description: 'Jasa jahit baju baru sesuai model yang diinginkan',
+      price: 150000,
+      originalPrice: 200000,
+      category: 'Jasa',
+      rating: 4.9,
+      reviewCount: 234,
+      storeName: 'Jahit Bu Siti',
+      storeDistance: '0.8 km',
+      imageUrl:
+          'https://i.pinimg.com/1200x/6d/7a/25/6d7a2546fec0b43d75e7db699ce7a4da.jpg',
+    ),
+    Product(
+      id: '127',
+      name: 'Obras Baju',
+      description: 'Jasa obras/reparasi baju yang sobek atau rusak',
+      price: 25000,
+      originalPrice: 35000,
+      category: 'Jasa',
+      rating: 4.8,
+      reviewCount: 456,
+      storeName: 'Jahit Bu Siti',
+      storeDistance: '0.8 km',
+      imageUrl:
+          'https://i.pinimg.com/1200x/ec/3e/fd/ec3efd5dd70f04f0046f5b7c64286fcd.jpg',
+    ),
+    Product(
+      id: '128',
+      name: 'Bordir Nama',
+      description: 'Jasa bordir nama di baju, tas, atau topi',
+      price: 15000,
+      originalPrice: 20000,
+      category: 'Jasa',
+      rating: 4.7,
+      reviewCount: 189,
+      storeName: 'Jahit Bu Siti',
+      storeDistance: '0.8 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/da/74/3b/da743b01900c5d7b0bbc1188aa9b88d4.jpg',
+    ),
+    Product(
+      id: '129',
+      name: 'Jahit Celana Pendek',
+      description: 'Jasa mempendekkan celana sesuai ukuran',
+      price: 20000,
+      originalPrice: 30000,
+      category: 'Jasa',
+      rating: 4.8,
+      reviewCount: 312,
+      storeName: 'Jahit Bu Siti',
+      storeDistance: '0.8 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/e1/a4/9a/e1a49abac463fc9bd0e5c1f23dda80f3.jpg',
+    ),
+
+    // JASA LAUNDRY
+    Product(
+      id: '130',
+      name: 'Laundry Kiloan Regular',
+      description: 'Laundry per kilogram untuk pakaian sehari-hari',
+      price: 7000,
+      originalPrice: 10000,
+      category: 'Jasa',
+      rating: 4.7,
+      reviewCount: 678,
+      storeName: 'Laundry Express',
+      storeDistance: '1.2 km',
+      imageUrl:
+          'https://i.pinimg.com/1200x/67/63/cc/6763cc2eb799ffb9ac0760ace0cc41ff.jpg',
+    ),
+    Product(
+      id: '131',
+      name: 'Laundry Express (1 Hari)',
+      description: 'Laundry kilat selesai dalam 1 hari',
+      price: 12000,
+      originalPrice: 15000,
+      category: 'Jasa',
+      rating: 4.8,
+      reviewCount: 523,
+      storeName: 'Laundry Express',
+      storeDistance: '1.2 km',
+      imageUrl:
+          'https://i.pinimg.com/1200x/bd/ff/80/bdff807bdf5db5d2ff2933fbfbdd067c.jpg',
+    ),
+    Product(
+      id: '132',
+      name: 'Dry Cleaning Jas/Jaket',
+      description: 'Dry cleaning khusus jas, jaket, atau mantel',
+      price: 35000,
+      originalPrice: 45000,
+      category: 'Jasa',
+      rating: 4.9,
+      reviewCount: 289,
+      storeName: 'Laundry Express',
+      storeDistance: '1.2 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/30/5d/9f/305d9f8ac37a921e538db712c685ded8.jpg',
+    ),
+    Product(
+      id: '133',
+      name: 'Cuci Sepatu',
+      description: 'Jasa cuci sepatu hingga bersih seperti baru',
+      price: 25000,
+      originalPrice: 35000,
+      category: 'Jasa',
+      rating: 4.6,
+      reviewCount: 412,
+      storeName: 'Laundry Express',
+      storeDistance: '1.2 km',
+      imageUrl:
+          'https://i.pinimg.com/1200x/f5/39/0b/f5390b634743638c0e4d567ff02cfa6c.jpg',
+    ),
+
+    // JASA SALON & SPA
+    Product(
+      id: '134',
+      name: 'Potong Rambut Pria',
+      description: 'Potong rambut gaya modern untuk pria',
+      price: 30000,
+      originalPrice: 40000,
+      category: 'Jasa',
+      rating: 4.8,
+      reviewCount: 534,
+      storeName: 'Salon Cantik',
+      storeDistance: '1.5 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/74/e3/18/74e318156d57c26f1218249912988fc1.jpg',
+    ),
+    Product(
+      id: '135',
+      name: 'Potong Rambut Wanita',
+      description: 'Potong rambut dengan styling untuk wanita',
+      price: 45000,
+      originalPrice: 60000,
+      category: 'Jasa',
+      rating: 4.9,
+      reviewCount: 623,
+      storeName: 'Salon Cantik',
+      storeDistance: '1.5 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/57/0d/49/570d49d8dfc2fe9dff5a151cef34a9d9.jpg',
+    ),
+    Product(
+      id: '136',
+      name: 'Creambath + Masker',
+      description: 'Perawatan rambut creambath dengan masker',
+      price: 55000,
+      originalPrice: 75000,
+      category: 'Jasa',
+      rating: 4.8,
+      reviewCount: 445,
+      storeName: 'Salon Cantik',
+      storeDistance: '1.5 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/e0/1f/65/e01f65a161957f6e75dd5f830c9d71ad.jpg',
+    ),
+    Product(
+      id: '137',
+      name: 'Facial Treatment',
+      description: 'Perawatan wajah lengkap dengan facial',
+      price: 85000,
+      originalPrice: 110000,
+      category: 'Jasa',
+      rating: 4.9,
+      reviewCount: 389,
+      storeName: 'Salon Cantik',
+      storeDistance: '1.5 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/f5/3d/c2/f53dc2f3b6bdca19959f2628d03d912f.jpg',
+    ),
+
+    // JASA BENGKEL
+    Product(
+      id: '138',
+      name: 'Service Motor Rutin',
+      description: 'Service rutin motor ganti oli dan tune up',
+      price: 75000,
+      originalPrice: 100000,
+      category: 'Jasa',
+      rating: 4.6,
+      reviewCount: 389,
+      storeName: 'Bengkel Motor Jaya',
+      storeDistance: '2.0 km',
+      imageUrl:
+          'https://i.pinimg.com/1200x/11/af/c6/11afc699df33049810ef1e8de0cc5ef3.jpg',
+    ),
+    Product(
+      id: '139',
+      name: 'Ganti Ban Motor',
+      description: 'Jasa ganti ban motor sudah termasuk ban baru',
+      price: 185000,
+      originalPrice: 220000,
+      category: 'Jasa',
+      rating: 4.7,
+      reviewCount: 312,
+      storeName: 'Bengkel Motor Jaya',
+      storeDistance: '2.0 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/64/71/e8/6471e8b575b53daca54bc13e5bd7bf95.jpg',
+    ),
+    Product(
+      id: '140',
+      name: 'Tambal Ban Motor',
+      description: 'Tambal ban motor bocor atau kempes',
+      price: 15000,
+      originalPrice: 20000,
+      category: 'Jasa',
+      rating: 4.5,
+      reviewCount: 567,
+      storeName: 'Bengkel Motor Jaya',
+      storeDistance: '2.0 km',
+      imageUrl:
+          'https://i.pinimg.com/1200x/0e/4c/90/0e4c9081b2a9abe5bfa8c44bb7771c37.jpg',
+    ),
+
+    // JASA TUKANG
+    Product(
+      id: '141',
+      name: 'Pembuatan Meja Kayu Custom',
+      description: 'Jasa pembuatan meja kayu sesuai ukuran dan desain',
+      price: 850000,
+      originalPrice: 1200000,
+      category: 'Jasa',
+      rating: 4.8,
+      reviewCount: 145,
+      storeName: 'Tukang Kayu Pak Agus',
+      storeDistance: '2.5 km',
+      imageUrl:
+          'https://down-id.img.susercontent.com/file/sg-11134201-22120-s1jp6kei5kkv31@resize_w900_nl.webp',
+    ),
+    Product(
+      id: '142',
+      name: 'Pembuatan Lemari Pakaian',
+      description: 'Jasa pembuatan lemari pakaian kayu jati',
+      price: 1500000,
+      originalPrice: 2000000,
+      category: 'Jasa',
+      rating: 4.9,
+      reviewCount: 98,
+      storeName: 'Tukang Kayu Pak Agus',
+      storeDistance: '2.5 km',
+      imageUrl:
+          'https://i.pinimg.com/1200x/e2/14/a9/e214a911556ecc4e1c90b8f7fb9be94a.jpg',
+    ),
+    Product(
+      id: '143',
+      name: 'Reparasi Furniture',
+      description: 'Jasa perbaikan furniture yang rusak atau patah',
+      price: 125000,
+      originalPrice: 175000,
+      category: 'Jasa',
+      rating: 4.7,
+      reviewCount: 234,
+      storeName: 'Tukang Kayu Pak Agus',
+      storeDistance: '2.5 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/f3/0d/b2/f30db2618cde3344119613d4ad3d2924.jpg',
+    ),
+
+    // JASA SERVICE ELEKTRONIK
+    Product(
+      id: '144',
+      name: 'Cuci AC 1 PK',
+      description: 'Jasa cuci AC 1 PK hingga bersih dan dingin',
+      price: 85000,
+      originalPrice: 110000,
+      category: 'Jasa',
+      rating: 4.7,
+      reviewCount: 423,
+      storeName: 'Cuci AC Profesional',
+      storeDistance: '1.8 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/c7/3b/bc/c73bbc2413230e6ba236d6a96ec48c81.jpg',
+    ),
+    Product(
+      id: '145',
+      name: 'Service AC (Isi Freon)',
+      description: 'Jasa service AC dengan isi freon R410A',
+      price: 165000,
+      originalPrice: 210000,
+      category: 'Jasa',
+      rating: 4.8,
+      reviewCount: 356,
+      storeName: 'Cuci AC Profesional',
+      storeDistance: '1.8 km',
+      imageUrl:
+          'https://i.pinimg.com/1200x/0d/e7/db/0de7db6330259357c6f26c96b101413b.jpg',
+    ),
+    Product(
+      id: '146',
+      name: 'Service Kulkas',
+      description: 'Jasa service kulkas tidak dingin atau rusak',
+      price: 135000,
+      originalPrice: 175000,
+      category: 'Jasa',
+      rating: 4.6,
+      reviewCount: 289,
+      storeName: 'Cuci AC Profesional',
+      storeDistance: '1.8 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/ae/b5/1c/aeb51c02e751e76eb30efbf67f91f810.jpg',
+    ),
+    Product(
+      id: '147',
+      name: 'Service TV LED',
+      description: 'Jasa service TV LED mati atau bergaris',
+      price: 125000,
+      originalPrice: 165000,
+      category: 'Jasa',
+      rating: 4.7,
+      reviewCount: 312,
+      storeName: 'Cuci AC Profesional',
+      storeDistance: '1.8 km',
+      imageUrl:
+          'https://i.pinimg.com/1200x/c6/d1/fe/c6d1fecb340b20a324c4c471ddf255ca.jpg',
+    ),
+
+    // JASA CLEANING SERVICE
+    Product(
+      id: '148',
+      name: 'General Cleaning Rumah',
+      description: 'Jasa bersih-bersih rumah menyeluruh',
+      price: 275000,
+      originalPrice: 350000,
+      category: 'Jasa',
+      rating: 4.8,
+      reviewCount: 445,
+      storeName: 'Cleaning Pro',
+      storeDistance: '1.4 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/91/23/d1/9123d1fd0162848f5993cf577a97e056.jpg',
+    ),
+    Product(
+      id: '149',
+      name: 'Cuci Sofa',
+      description: 'Jasa cuci sofa dengan teknologi modern',
+      price: 185000,
+      originalPrice: 240000,
+      category: 'Jasa',
+      rating: 4.9,
+      reviewCount: 378,
+      storeName: 'Cleaning Pro',
+      storeDistance: '1.4 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/c3/8c/b7/c38cb71d80afa9fa1edbe55c03bd4173.jpg',
+    ),
+    Product(
+      id: '150',
+      name: 'Cuci Karpet',
+      description: 'Jasa cuci karpet bersih dan wangi',
+      price: 35000,
+      originalPrice: 50000,
+      category: 'Jasa',
+      rating: 4.7,
+      reviewCount: 512,
+      storeName: 'Cleaning Pro',
+      storeDistance: '1.4 km',
+      imageUrl:
+          'https://i.pinimg.com/1200x/0b/4c/d6/0b4cd6fcfde48e5a1845789064f25650.jpg',
     ),
   ];
 
@@ -1711,156 +2273,153 @@ class ProductService {
 
   // Get flash sale products (diskon >= 15%)
   List<Product> getFlashSaleProducts() {
-  final flashSale =
-      _allProducts
-          .where(
-            (p) =>
-                p.discountPercentage != null && p.discountPercentage! >= 15,
-          )
-          .toList();
-
-  // Jika kurang dari 8 produk, tambahkan produk dengan diskon lebih rendah
-  if (flashSale.length < 8) {
-    final otherDiscounted =
+    final flashSale =
         _allProducts
             .where(
               (p) =>
-                  p.discountPercentage != null && p.discountPercentage! < 15,
+                  p.discountPercentage != null && p.discountPercentage! >= 15,
             )
             .toList();
-    flashSale.addAll(otherDiscounted);
-  }
 
-  // Urutkan berdasarkan persentase diskon tertinggi
-  flashSale.sort(
-    (a, b) =>
-        (b.discountPercentage ?? 0).compareTo(a.discountPercentage ?? 0),
-  );
+    // Jika kurang dari 8 produk, tambahkan produk dengan diskon lebih rendah
+    if (flashSale.length < 8) {
+      final otherDiscounted =
+          _allProducts
+              .where(
+                (p) =>
+                    p.discountPercentage != null && p.discountPercentage! < 15,
+              )
+              .toList();
+      flashSale.addAll(otherDiscounted);
+    }
 
-  // Kembalikan maksimal 12 produk
-  return flashSale.take(12).toList();
-}
-
-// Get flash sale paketan (KHUSUS PAKET id >= 100)
-List<Product> getFlashSalePaketan() {
-  // Filter produk paketan (ID >= 100)
-  final paketan = _allProducts
-      .where((p) {
-        try {
-          return int.parse(p.id) >= 100;
-        } catch (e) {
-          return false;
-        }
-      })
-      .toList();
-
-  // Urutkan berdasarkan persentase diskon tertinggi
-  paketan.sort(
-    (a, b) => (b.discountPercentage ?? 0).compareTo(a.discountPercentage ?? 0),
-  );
-
-  return paketan;
-}
-
-List<Product> getActiveFlashSaleProducts() {
-  final currentSale = FlashSaleService.getCurrentFlashSale();
-  
-  if (currentSale != null && currentSale.isActive) {
-    // Ambil produk berdasarkan productIds dari schedule
-    return _allProducts
-        .where((p) => currentSale.productIds.contains(p.id))
-        .toList();
-  }
-  
-  // Jika tidak ada flash sale aktif, tampilkan semua paket
-  return getFlashSalePaketan();
-}
-
-// Get harga produk (otomatis cek flash sale)
-double getProductPrice(String productId) {
-  // Cari produk dulu
-  final product = _allProducts.firstWhere(
-    (p) => p.id == productId,
-    orElse: () => _allProducts.first,
-  );
-  
-  // Cek apakah sedang flash sale
-  if (FlashSaleService.isProductOnFlashSale(productId)) {
-    return FlashSaleService.calculateFlashPrice(
-      productId, 
-      product.originalPrice ?? product.price,
+    // Urutkan berdasarkan persentase diskon tertinggi
+    flashSale.sort(
+      (a, b) =>
+          (b.discountPercentage ?? 0).compareTo(a.discountPercentage ?? 0),
     );
-  }
-  
-  // Jika tidak flash sale, return harga normal
-  return product.price;
-}
 
-double getProductDiscountPercentage(String productId) {
-  final product = _allProducts.firstWhere(
-    (p) => p.id == productId,
-    orElse: () => _allProducts.first,
-  );
-  
-  // Cek flash sale dulu
-  final flashDiscount = FlashSaleService.getFlashDiscountPercentage(productId);
-  if (flashDiscount != null) {
-    return flashDiscount.toDouble();
+    // Kembalikan maksimal 12 produk
+    return flashSale.take(12).toList();
   }
-  
-  // ⬅️ FIX: Cast ke double langsung
-  return product.discountPercentage?.toDouble() ?? 0.0;
-}
 
-// Get paketan by category
-List<Product> getPaketanByCategory(String category) {
-  final paketan = _allProducts
-      .where((p) {
-        try {
-          return int.parse(p.id) >= 100;
-        } catch (e) {
-          return false;
-        }
-      })
-      .toList();
-  
-  if (category == 'Semua') {
+  // Get flash sale paketan (KHUSUS PAKET id >= 100)
+  List<Product> getFlashSalePaketan() {
+    // Filter produk paketan (ID >= 100)
+    final paketan =
+        _allProducts.where((p) {
+          try {
+            return int.parse(p.id) >= 100;
+          } catch (e) {
+            return false;
+          }
+        }).toList();
+
+    // Urutkan berdasarkan persentase diskon tertinggi
+    paketan.sort(
+      (a, b) =>
+          (b.discountPercentage ?? 0).compareTo(a.discountPercentage ?? 0),
+    );
+
     return paketan;
   }
-  
-  return paketan.where((p) => p.category == category).toList();
-}
 
-// Get paket sembako
-List<Product> getPaketSembako() {
-  return _allProducts
-      .where((p) {
-        try {
-          return int.parse(p.id) >= 100 && 
-              p.name.toLowerCase().contains('paket sembako');
-        } catch (e) {
-          return false;
-        }
-      })
-      .toList();
-}
+  List<Product> getActiveFlashSaleProducts() {
+    final currentSale = FlashSaleService.getCurrentFlashSale();
 
-// Get paket makanan
-List<Product> getPaketMakanan() {
-  return _allProducts
-      .where((p) {
-        try {
-          return int.parse(p.id) >= 100 && 
-              (p.name.toLowerCase().contains('paket lauk') ||
-               p.name.toLowerCase().contains('paket snack') ||
-               p.name.toLowerCase().contains('paket nasi') ||
-               p.name.toLowerCase().contains('paket tumpeng'));
-        } catch (e) {
-          return false;
-        }
-      })
-      .toList();
-}
+    if (currentSale != null && currentSale.isActive) {
+      // Ambil produk berdasarkan productIds dari schedule
+      return _allProducts
+          .where((p) => currentSale.productIds.contains(p.id))
+          .toList();
+    }
+
+    // Jika tidak ada flash sale aktif, tampilkan semua paket
+    return getFlashSalePaketan();
+  }
+
+  // Get harga produk (otomatis cek flash sale)
+  double getProductPrice(String productId) {
+    // Cari produk dulu
+    final product = _allProducts.firstWhere(
+      (p) => p.id == productId,
+      orElse: () => _allProducts.first,
+    );
+
+    // Cek apakah sedang flash sale
+    if (FlashSaleService.isProductOnFlashSale(productId)) {
+      return FlashSaleService.calculateFlashPrice(
+        productId,
+        product.originalPrice ?? product.price,
+      );
+    }
+
+    // Jika tidak flash sale, return harga normal
+    return product.price;
+  }
+
+  double getProductDiscountPercentage(String productId) {
+    final product = _allProducts.firstWhere(
+      (p) => p.id == productId,
+      orElse: () => _allProducts.first,
+    );
+
+    // Cek flash sale dulu
+    final flashDiscount = FlashSaleService.getFlashDiscountPercentage(
+      productId,
+    );
+    if (flashDiscount != null) {
+      return flashDiscount.toDouble();
+    }
+
+    // ⬅️ FIX: Cast ke double langsung
+    return product.discountPercentage?.toDouble() ?? 0.0;
+  }
+
+  // Get paketan by category
+  List<Product> getPaketanByCategory(String category) {
+    final paketan =
+        _allProducts.where((p) {
+          try {
+            return int.parse(p.id) >= 100;
+          } catch (e) {
+            return false;
+          }
+        }).toList();
+
+    if (category == 'Semua') {
+      return paketan;
+    }
+
+    return paketan.where((p) => p.category == category).toList();
+  }
+
+  // Get paket sembako
+  List<Product> getPaketSembako() {
+    return _allProducts.where((p) {
+      try {
+        return int.parse(p.id) >= 100 &&
+            p.name.toLowerCase().contains('paket sembako');
+      } catch (e) {
+        return false;
+      }
+    }).toList();
+  }
+
+  // Get paket makanan
+  List<Product> getPaketMakanan() {
+    return _allProducts.where((p) {
+      try {
+        return int.parse(p.id) >= 100 &&
+            (p.name.toLowerCase().contains('paket lauk') ||
+                p.name.toLowerCase().contains('paket snack') ||
+                p.name.toLowerCase().contains('paket nasi') ||
+                p.name.toLowerCase().contains('paket tumpeng'));
+      } catch (e) {
+        return false;
+      }
+    }).toList();
+  }
 
   // Get produk dengan rating tinggi
   List<Product> getTopRatedProducts() {
