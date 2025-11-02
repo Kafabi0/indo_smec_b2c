@@ -1476,7 +1476,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const SearchScreen(),
+                      builder:
+                          (context) =>
+                              SearchScreen(nearbyKoperasi: _nearbyKoperasi),
                     ),
                   );
                 },

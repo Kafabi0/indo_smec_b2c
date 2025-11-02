@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../services/product_service.dart';
+import '../services/koperasi_service.dart'; // ⭐ TAMBAHKAN
+import '../models/koperasi_model.dart'; // ⭐ TAMBAHKAN
 import 'product_list_screen.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({Key? key}) : super(key: key);
+  final List<Koperasi>? nearbyKoperasi; // ⭐ TAMBAHKAN parameter
+
+  const SearchScreen({Key? key, this.nearbyKoperasi}) : super(key: key);
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -28,8 +32,8 @@ class _SearchScreenState extends State<SearchScreen> {
     'Jamu',
     'Batik',
     'Madu',
-    'Jasa Jahit', // ⭐ TAMBAHKAN
-    'Laundry', // ⭐ TAMBAHKAN
+    'Jasa Jahit',
+    'Laundry',
     'Service AC',
   ];
 
@@ -38,8 +42,41 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    allProducts = _productService.getAllProducts();
+
+    // ⭐ FILTER PRODUK BERDASARKAN KOPERASI
+    _loadFilteredProducts();
+
     _searchController.addListener(_onSearchChanged);
+  }
+
+  // ⭐ TAMBAHKAN METHOD BARU INI
+  void _loadFilteredProducts() {
+    print('🔍 [SEARCH] Loading filtered products...');
+
+    final allAvailableProducts = _productService.getAllProducts();
+
+    if (widget.nearbyKoperasi != null && widget.nearbyKoperasi!.isNotEmpty) {
+      // Filter berdasarkan koperasi
+      final Set<String> allowedProductIds = {};
+      for (var koperasi in widget.nearbyKoperasi!) {
+        allowedProductIds.addAll(koperasi.productIds);
+      }
+
+      allProducts =
+          allAvailableProducts
+              .where((p) => allowedProductIds.contains(p.id))
+              .toList();
+
+      print(
+        '✅ [SEARCH] Filtered ${allProducts.length} products from ${widget.nearbyKoperasi!.length} koperasi',
+      );
+    } else {
+      // Tidak ada filter, tampilkan semua
+      allProducts = allAvailableProducts;
+      print(
+        '⚠️ [SEARCH] No koperasi filter, showing all ${allProducts.length} products',
+      );
+    }
   }
 
   @override
@@ -63,7 +100,7 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {
       isSearching = true;
       searchResults =
-          allProducts
+          allProducts // ⭐ Gunakan allProducts yang sudah difilter
               .where(
                 (product) =>
                     product.name.toLowerCase().contains(query) ||
@@ -90,7 +127,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     // Navigate to ProductListScreen with search results
     final results =
-        allProducts
+        allProducts // ⭐ Gunakan allProducts yang sudah difilter
             .where(
               (product) =>
                   product.name.toLowerCase().contains(query.toLowerCase()) ||
@@ -172,14 +209,6 @@ class _SearchScreenState extends State<SearchScreen> {
             onSubmitted: _performSearch,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.qr_code_scanner, color: Colors.grey[600]),
-            onPressed: () {
-              // TODO: Implement QR scanner
-            },
-          ),
-        ],
       ),
       body:
           isSearching && searchResults.isNotEmpty
@@ -220,7 +249,6 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         child: Row(
           children: [
-            // Product Image
             Container(
               width: 60,
               height: 60,
@@ -246,8 +274,6 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             SizedBox(width: 12),
-
-            // Product Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,7 +305,6 @@ class _SearchScreenState extends State<SearchScreen> {
                 ],
               ),
             ),
-
             Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
           ],
         ),
@@ -318,6 +343,38 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ⭐ TAMBAHKAN INFO KOPERASI
+          if (widget.nearbyKoperasi != null &&
+              widget.nearbyKoperasi!.isNotEmpty) ...[
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.store, color: Colors.blue[700], size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Mencari di: ${widget.nearbyKoperasi!.map((k) => k.name).join(", ")}',
+                      style: TextStyle(
+                        color: Colors.blue[800],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+          ],
+
           // Recent Searches
           if (recentSearches.isNotEmpty) ...[
             Row(
@@ -408,7 +465,6 @@ class _SearchScreenState extends State<SearchScreen> {
                   );
                 }).toList(),
           ),
-
           SizedBox(height: 24),
 
           // Categories Quick Access
@@ -482,11 +538,7 @@ class _SearchScreenState extends State<SearchScreen> {
       {'name': 'Pertanian', 'icon': Icons.agriculture, 'color': Colors.green},
       {'name': 'Herbal', 'icon': Icons.spa, 'color': Colors.teal},
       {'name': 'Kerajinan', 'icon': Icons.handyman, 'color': Colors.brown},
-      {
-        'name': 'Jasa',
-        'icon': Icons.build_circle,
-        'color': Colors.blue,
-      }, // ⭐ TAMBAHKAN INI
+      {'name': 'Jasa', 'icon': Icons.build_circle, 'color': Colors.blue},
     ];
 
     return GridView.builder(
@@ -501,11 +553,15 @@ class _SearchScreenState extends State<SearchScreen> {
       itemCount: categories.length,
       itemBuilder: (context, index) {
         final category = categories[index];
+
+        // ⭐ FILTER PRODUK BY KATEGORI
+        final products =
+            allProducts // ⭐ Gunakan allProducts yang sudah difilter
+                .where((p) => p.category == category['name'])
+                .toList();
+
         return GestureDetector(
           onTap: () {
-            final products = _productService.getProductsByCategory(
-              category['name'] as String,
-            );
             Navigator.push(
               context,
               MaterialPageRoute(
