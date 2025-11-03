@@ -455,118 +455,154 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _loadData() async {
-    if (_isLoadingData) {
-      print('⚠️ [HOME] Data already loading, skipping...');
-      return;
+  if (_isLoadingData) {
+    print('⚠️ [HOME] Data already loading, skipping...');
+    return;
+  }
+
+  setState(() {
+    _isLoadingData = true;
+  });
+
+  try {
+    print('🔄 [HOME] ========== _loadData START ==========');
+    print('📍 [HOME] Nearby koperasi count: ${_nearbyKoperasi.length}');
+    
+    // Debug koperasi
+    for (var k in _nearbyKoperasi) {
+      print('🏪 [HOME] Koperasi: ${k.name}');
+      print('   - Total products: ${k.productIds.length}');
+      print('   - Has 51? ${k.productIds.contains('51')}');
+      print('   - Has 52? ${k.productIds.contains('52')}');
+      print('   - Has 53? ${k.productIds.contains('53')}');
     }
 
-    setState(() {
-      _isLoadingData = true;
-    });
-
-    try {
-      print('🔄 [HOME] Loading data...');
-
-      // ⭐ PERBAIKAN: Gunakan produk dari koperasi yang cocok dengan alamat
-      if (_nearbyKoperasi.isNotEmpty) {
-        // Ambil semua produk dari koperasi yang match
-        final Set<String> allowedProductIds = {};
-        for (var koperasi in _nearbyKoperasi) {
-          allowedProductIds.addAll(koperasi.productIds);
-        }
-
-        final allProducts = _productService.getAllProducts();
-
-        if (selectedCategory == 'Semua') {
-          displayedProducts =
-              allProducts
-                  .where((p) => allowedProductIds.contains(p.id))
-                  .toList();
-        } else {
-          displayedProducts =
-              allProducts
-                  .where(
-                    (p) =>
-                        allowedProductIds.contains(p.id) &&
-                        p.category == selectedCategory,
-                  )
-                  .toList();
-        }
-
-        print(
-          '📦 [HOME] Filtered ${displayedProducts.length} products from koperasi',
-        );
-      } else {
-        // Jika tidak ada koperasi match, tampilkan semua
-        print('⚠️ [HOME] No matching koperasi, showing all products');
-        displayedProducts =
-            selectedCategory == 'Semua'
-                ? _productService.getAllProducts()
-                : _productService.getProductsByCategory(selectedCategory);
+    // Filter produk berdasarkan koperasi
+    if (_nearbyKoperasi.isNotEmpty) {
+      // Kumpulkan semua productIds dari koperasi yang match
+      final Set<String> allowedProductIds = {};
+      for (var koperasi in _nearbyKoperasi) {
+        allowedProductIds.addAll(koperasi.productIds);
       }
 
+      print('📦 [HOME] Total allowed products: ${allowedProductIds.length}');
+      print('🔍 [HOME] Allowed contains 51? ${allowedProductIds.contains('51')}');
+      print('🔍 [HOME] Allowed contains 52? ${allowedProductIds.contains('52')}');
+      print('🔍 [HOME] Allowed contains 53? ${allowedProductIds.contains('53')}');
+
+      // Load produk berdasarkan kategori
+      final allProducts = _productService.getAllProducts();
+
+      if (selectedCategory == 'Semua') {
+        displayedProducts = allProducts
+            .where((p) => allowedProductIds.contains(p.id))
+            .toList();
+      } else {
+        displayedProducts = allProducts
+            .where((p) => allowedProductIds.contains(p.id) && p.category == selectedCategory)
+            .toList();
+      }
+
+      print('📦 [HOME] displayedProducts: ${displayedProducts.length}');
+
+      // Flash Sale Products
       flashSaleProducts = _productService.getActiveFlashSaleProducts();
 
-      // Filter produk lain berdasarkan koperasi
-      if (_nearbyKoperasi.isNotEmpty) {
-        final allowedIds = <String>{};
-        for (var k in _nearbyKoperasi) {
-          allowedIds.addAll(k.productIds);
+      // Top Rated Products (filter berdasarkan koperasi)
+      final filteredProducts = allProducts
+          .where((p) => allowedProductIds.contains(p.id))
+          .toList();
+
+      topRatedProducts = List<Product>.from(filteredProducts)
+        ..sort((a, b) => b.rating.compareTo(a.rating));
+      topRatedProducts = topRatedProducts.take(8).toList();
+
+      // Fresh Products (filter berdasarkan koperasi)
+      print('\n🍹 [HOME] Calling getFreshProducts...');
+      freshProducts = _productService
+          .getFreshProducts()
+          .where((p) => allowedProductIds.contains(p.id))
+          .take(8)
+          .toList();
+      print('📦 [HOME] freshProducts after filter: ${freshProducts.length}');
+
+      // Newest Products (filter berdasarkan koperasi)
+      newestProducts = filteredProducts.take(8).toList();
+
+      // ⭐⭐⭐ BUAH & SAYUR - INI YANG PENTING! ⭐⭐⭐
+      print('\n🍎 [HOME] Calling getFruitAndVeggies...');
+      final allFruitVeggies = _productService.getFruitAndVeggies();
+      
+      print('📊 [HOME] getFruitAndVeggies returned: ${allFruitVeggies.length} products');
+      print('🔍 [HOME] Before filter - Has 51? ${allFruitVeggies.any((p) => p.id == '51')}');
+      print('🔍 [HOME] Before filter - Has 52? ${allFruitVeggies.any((p) => p.id == '52')}');
+      print('🔍 [HOME] Before filter - Has 53? ${allFruitVeggies.any((p) => p.id == '53')}');
+
+      // Filter berdasarkan koperasi
+      fruitAndVeggies = allFruitVeggies.where((p) {
+        final allowed = allowedProductIds.contains(p.id);
+        if (p.id == '51' || p.id == '52' || p.id == '53') {
+          print('🔍 [HOME] Product ${p.id} (${p.name}) allowed? $allowed');
         }
+        return allowed;
+      }).take(8).toList();
 
-        final allProducts = _productService.getAllProducts();
-        final filteredProducts =
-            allProducts.where((p) => allowedIds.contains(p.id)).toList();
-
-        topRatedProducts = List<Product>.from(filteredProducts)
-          ..sort((a, b) => b.rating.compareTo(a.rating));
-        topRatedProducts = topRatedProducts.take(8).toList();
-
-        freshProducts =
-            _productService
-                .getFreshProducts()
-                .where((p) => allowedIds.contains(p.id))
-                .take(8)
-                .toList();
-
-        newestProducts = filteredProducts.take(8).toList();
-
-        fruitAndVeggies =
-            _productService
-                .getFruitAndVeggies()
-                .where((p) => allowedIds.contains(p.id))
-                .take(8)
-                .toList();
-      } else {
-        // Fallback ke semua produk
-        topRatedProducts = List<Product>.from(_productService.getAllProducts())
-          ..sort((a, b) => b.rating.compareTo(a.rating));
-        topRatedProducts = topRatedProducts.take(8).toList();
-
-        freshProducts = _productService.getFreshProducts().take(8).toList();
-        newestProducts = _productService.getAllProducts().take(8).toList();
-        fruitAndVeggies = _productService.getFruitAndVeggies().take(8).toList();
+      print('\n📦 [HOME] ========== FINAL BUAH & SAYUR ==========');
+      print('📊 [HOME] Total: ${fruitAndVeggies.length} products');
+      for (var i = 0; i < fruitAndVeggies.length; i++) {
+        final p = fruitAndVeggies[i];
+        final marker = (p.id == '51' || p.id == '52' || p.id == '53') ? '⭐⭐⭐' : '';
+        print('   ${i + 1}. ID:${p.id} - ${p.name} $marker');
       }
+      
+      final has51 = fruitAndVeggies.any((p) => p.id == '51');
+      final has52 = fruitAndVeggies.any((p) => p.id == '52');
+      final has53 = fruitAndVeggies.any((p) => p.id == '53');
+      
+      print('🎯 [HOME] Has 51 in final list? $has51');
+      print('🎯 [HOME] Has 52 in final list? $has52');
+      print('🎯 [HOME] Has 53 in final list? $has53');
+      print('===================================================\n');
 
-      categoryStores = _productService.getStoresByCategory(selectedCategory);
-      subCategories = _productService.getSubCategories(selectedCategory);
-      flagshipStore = _productService.getFlagshipStore(selectedCategory);
+    } else {
+      // Jika tidak ada koperasi match, tampilkan semua
+      print('⚠️ [HOME] No matching koperasi, showing all products');
+      displayedProducts = selectedCategory == 'Semua'
+          ? _productService.getAllProducts()
+          : _productService.getProductsByCategory(selectedCategory);
 
-      print('✅ [HOME] Data loaded successfully');
+      flashSaleProducts = _productService.getActiveFlashSaleProducts();
+      topRatedProducts = List<Product>.from(_productService.getAllProducts())
+        ..sort((a, b) => b.rating.compareTo(a.rating));
+      topRatedProducts = topRatedProducts.take(8).toList();
 
-      if (mounted) {
-        setState(() {});
-      }
-    } catch (e) {
-      print('❌ Error loading data: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingData = false;
-        });
-      }
+      freshProducts = _productService.getFreshProducts().take(8).toList();
+      newestProducts = _productService.getAllProducts().take(8).toList();
+      fruitAndVeggies = _productService.getFruitAndVeggies().take(8).toList();
+    }
+
+    // Load stores dan subcategories
+    categoryStores = _productService.getStoresByCategory(selectedCategory);
+    subCategories = _productService.getSubCategories(selectedCategory);
+    flagshipStore = _productService.getFlagshipStore(selectedCategory);
+
+    print('✅ [HOME] Data loaded successfully');
+    print('🔄 [HOME] ========== _loadData END ==========\n');
+
+    if (mounted) {
+      setState(() {});
+    }
+  } catch (e, stackTrace) {
+    print('❌ [HOME] Error loading data: $e');
+    print('📜 [HOME] Stack trace: $stackTrace');
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isLoadingData = false;
+      });
     }
   }
+}
 
   // Future<void> _loadAlamatData() async {
   //   print('🔍 [HOME] _loadAlamatData() dipanggil');

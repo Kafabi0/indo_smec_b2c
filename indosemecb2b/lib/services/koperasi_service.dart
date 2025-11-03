@@ -7,7 +7,7 @@ class KoperasiService {
   // ============ DATA KOPERASI (DUMMY) ============
   static final List<Koperasi> _allKoperasi = [
     // KOTA BANDUNG
-    Koperasi(
+        Koperasi(
       id: 'kop1',
       name: 'Koperasi Merah Putih Antapani Kidul',
       kelurahan: 'Antapani Kidul',
@@ -18,9 +18,11 @@ class KoperasiService {
       description: 'Koperasi yang melayani UMKM di wilayah Antapani Kidul',
       productIds: [
         '1', '2', '9', '10', '15', '20', '27', '33', '45', '100',
-        '121', '122', '123', '124', '125',
-        '126', '127', '128', '129', '130', // ⭐ Tambahkan jasa
-        '134', '135', '136', '137', // Jasa Salon
+        '121', '122', '123', '124', '125', '39',
+        '46', '47', '48', '49', '50',
+        '51', '52', '53', '68',
+        '126', '127', '128', '129', '130',
+        '134', '135', '136', '137',
       ],
     ),
 

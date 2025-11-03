@@ -1080,7 +1080,7 @@ class ProductService {
       price: 15000,
       originalPrice: 18000,
       category: 'Food',
-      rating: 4.9,
+      rating: 4.7,
       reviewCount: 345,
       storeName: 'Tropical Drink',
       storeDistance: '0.8 km',
@@ -1245,12 +1245,12 @@ class ProductService {
     ),
     Product(
       id: '51',
-      name: 'Semangka 1buah',
+      name: 'Buah Semangka',
       description: 'Semangka merah segar dan manis',
       price: 20000,
       originalPrice: 25000,
       category: 'Pertanian',
-      rating: 4.7,
+      rating: 4.9,
       reviewCount: 267,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
@@ -1259,12 +1259,12 @@ class ProductService {
     ),
     Product(
       id: '52',
-      name: 'Melon 1buah',
+      name: 'Buah Melon',
       description: 'Melon hijau segar dan manis',
       price: 18000,
       originalPrice: 22000,
       category: 'Pertanian',
-      rating: 4.8,
+      rating: 4.9,
       reviewCount: 298,
       storeName: 'Kebun Segar',
       storeDistance: '2.1 km',
@@ -2254,264 +2254,386 @@ class ProductService {
       imageUrl:
           'https://i.pinimg.com/1200x/0b/4c/d6/0b4cd6fcfde48e5a1845789064f25650.jpg',
     ),
+    Product(
+      id: '200',
+      name: 'Buah ',
+      description: 'Melon hijau segar dan manis',
+      price: 18000,
+      originalPrice: 22000,
+      category: 'Pertanian',
+      rating: 4.9,
+      reviewCount: 298,
+      storeName: 'Kebun Segar',
+      storeDistance: '2.1 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/05/1e/f7/051ef76a110dfd40de4aef4e601c3040.jpg',
+    ),
   ];
 
-  // ============ METHOD UNTUK GET DATA ============
+ // ============================================================
+// SECTION 1: BASIC PRODUCT METHODS
+// ============================================================
 
-  // Get semua produk
-  List<Product> getAllProducts() {
+/// Get semua produk
+List<Product> getAllProducts() {
+  return _allProducts;
+}
+
+/// Get produk berdasarkan kategori
+List<Product> getProductsByCategory(String category) {
+  if (category == 'Semua') {
     return _allProducts;
   }
+  return _allProducts.where((p) => p.category == category).toList();
+}
 
-  // Get produk by kategori
-  List<Product> getProductsByCategory(String category) {
-    if (category == 'Semua') {
-      return _allProducts;
-    }
-    return _allProducts.where((p) => p.category == category).toList();
+/// Search produk berdasarkan query
+List<Product> searchProducts(String query) {
+  if (query.isEmpty) return _allProducts;
+  return _allProducts
+      .where((p) => p.name.toLowerCase().contains(query.toLowerCase()))
+      .toList();
+}
+
+// ============================================================
+// SECTION 2: FLASH SALE METHODS
+// ============================================================
+
+/// Get flash sale products (diskon >= 15%)
+List<Product> getFlashSaleProducts() {
+  final flashSale = _allProducts
+      .where((p) => p.discountPercentage != null && p.discountPercentage! >= 15)
+      .toList();
+
+  // Jika kurang dari 8 produk, tambahkan produk dengan diskon lebih rendah
+  if (flashSale.length < 8) {
+    final otherDiscounted = _allProducts
+        .where((p) => p.discountPercentage != null && p.discountPercentage! < 15)
+        .toList();
+    flashSale.addAll(otherDiscounted);
   }
 
-  // Get flash sale products (diskon >= 15%)
-  List<Product> getFlashSaleProducts() {
-    final flashSale =
-        _allProducts
-            .where(
-              (p) =>
-                  p.discountPercentage != null && p.discountPercentage! >= 15,
-            )
-            .toList();
+  // Urutkan berdasarkan persentase diskon tertinggi
+  flashSale.sort((a, b) => (b.discountPercentage ?? 0).compareTo(a.discountPercentage ?? 0));
 
-    // Jika kurang dari 8 produk, tambahkan produk dengan diskon lebih rendah
-    if (flashSale.length < 8) {
-      final otherDiscounted =
-          _allProducts
-              .where(
-                (p) =>
-                    p.discountPercentage != null && p.discountPercentage! < 15,
-              )
-              .toList();
-      flashSale.addAll(otherDiscounted);
+  // Kembalikan maksimal 12 produk
+  return flashSale.take(12).toList();
+}
+
+/// Get flash sale paketan (KHUSUS PAKET id >= 100)
+List<Product> getFlashSalePaketan() {
+  final paketan = _allProducts.where((p) {
+    try {
+      return int.parse(p.id) >= 100;
+    } catch (e) {
+      return false;
     }
+  }).toList();
 
-    // Urutkan berdasarkan persentase diskon tertinggi
-    flashSale.sort(
-      (a, b) =>
-          (b.discountPercentage ?? 0).compareTo(a.discountPercentage ?? 0),
-    );
+  // Urutkan berdasarkan persentase diskon tertinggi
+  paketan.sort((a, b) => (b.discountPercentage ?? 0).compareTo(a.discountPercentage ?? 0));
 
-    // Kembalikan maksimal 12 produk
-    return flashSale.take(12).toList();
+  return paketan;
+}
+
+/// Get produk flash sale yang sedang aktif
+List<Product> getActiveFlashSaleProducts() {
+  final currentSale = FlashSaleService.getCurrentFlashSale();
+
+  if (currentSale != null && currentSale.isActive) {
+    return _allProducts
+        .where((p) => currentSale.productIds.contains(p.id))
+        .toList();
   }
 
-  // Get flash sale paketan (KHUSUS PAKET id >= 100)
-  List<Product> getFlashSalePaketan() {
-    // Filter produk paketan (ID >= 100)
-    final paketan =
-        _allProducts.where((p) {
-          try {
-            return int.parse(p.id) >= 100;
-          } catch (e) {
-            return false;
-          }
-        }).toList();
+  // Jika tidak ada flash sale aktif, tampilkan semua paket
+  return getFlashSalePaketan();
+}
 
-    // Urutkan berdasarkan persentase diskon tertinggi
-    paketan.sort(
-      (a, b) =>
-          (b.discountPercentage ?? 0).compareTo(a.discountPercentage ?? 0),
+/// Get harga produk (otomatis cek flash sale)
+double getProductPrice(String productId) {
+  final product = _allProducts.firstWhere(
+    (p) => p.id == productId,
+    orElse: () => _allProducts.first,
+  );
+
+  // Cek apakah sedang flash sale
+  if (FlashSaleService.isProductOnFlashSale(productId)) {
+    return FlashSaleService.calculateFlashPrice(
+      productId,
+      product.originalPrice ?? product.price,
     );
+  }
 
+  return product.price;
+}
+
+/// Get persentase diskon produk
+double getProductDiscountPercentage(String productId) {
+  final product = _allProducts.firstWhere(
+    (p) => p.id == productId,
+    orElse: () => _allProducts.first,
+  );
+
+  // Cek flash sale dulu
+  final flashDiscount = FlashSaleService.getFlashDiscountPercentage(productId);
+  if (flashDiscount != null) {
+    return flashDiscount.toDouble();
+  }
+
+  return product.discountPercentage?.toDouble() ?? 0.0;
+}
+
+// ============================================================
+// SECTION 3: PAKET/BUNDLE METHODS
+// ============================================================
+
+/// Get paketan berdasarkan kategori
+List<Product> getPaketanByCategory(String category) {
+  final paketan = _allProducts.where((p) {
+    try {
+      return int.parse(p.id) >= 100;
+    } catch (e) {
+      return false;
+    }
+  }).toList();
+
+  if (category == 'Semua') {
     return paketan;
   }
 
-  List<Product> getActiveFlashSaleProducts() {
-    final currentSale = FlashSaleService.getCurrentFlashSale();
+  return paketan.where((p) => p.category == category).toList();
+}
 
-    if (currentSale != null && currentSale.isActive) {
-      // Ambil produk berdasarkan productIds dari schedule
-      return _allProducts
-          .where((p) => currentSale.productIds.contains(p.id))
-          .toList();
+/// Get paket sembako
+List<Product> getPaketSembako() {
+  return _allProducts.where((p) {
+    try {
+      return int.parse(p.id) >= 100 &&
+          p.name.toLowerCase().contains('paket sembako');
+    } catch (e) {
+      return false;
+    }
+  }).toList();
+}
+
+/// Get paket makanan
+List<Product> getPaketMakanan() {
+  return _allProducts.where((p) {
+    try {
+      return int.parse(p.id) >= 100 &&
+          (p.name.toLowerCase().contains('paket lauk') ||
+              p.name.toLowerCase().contains('paket snack') ||
+              p.name.toLowerCase().contains('paket nasi') ||
+              p.name.toLowerCase().contains('paket tumpeng'));
+    } catch (e) {
+      return false;
+    }
+  }).toList();
+}
+
+// ============================================================
+// SECTION 4: FILTERED PRODUCT LISTS (FOR HOME SCREEN)
+// ============================================================
+
+/// Get produk dengan rating tertinggi (Top 8)
+/// ⚠️ CATATAN: Tetap berdasarkan rating untuk konsistensi UI
+List<Product> getTopRatedProducts() {
+  final sorted = List<Product>.from(_allProducts);
+  sorted.sort((a, b) => b.rating.compareTo(a.rating));
+  return sorted.take(8).toList();
+}
+
+/// Get produk terbaru (berdasarkan ID terbesar)
+/// ✅ FIXED: Semua produk bisa masuk, urut ID besar → kecil
+List<Product> getNewestProducts() {
+  final sorted = List<Product>.from(_allProducts);
+  sorted.sort((a, b) {
+    try {
+      return int.parse(b.id).compareTo(int.parse(a.id));
+    } catch (e) {
+      return b.id.compareTo(a.id);
+    }
+  });
+  return sorted.take(8).toList();
+}
+
+/// Get produk segar (minuman, jelly, jamu, dll - BUKAN buah fisik)
+/// ✅ FIXED: Semua rating bisa masuk, urut berdasarkan ID
+List<Product> getFreshProducts() {
+  
+  final freshCategories = ['Food', 'Grocery', 'Pertanian', 'Herbal'];
+
+  // Filter produk segar berdasarkan kategori
+  final freshProducts = _allProducts
+      .where((p) => freshCategories.contains(p.category))
+      .toList();
+
+  // Filter khusus untuk produk segar (minuman, jelly, dll - BUKAN buah fisik)
+  final specificFresh = freshProducts.where((p) {
+    final name = p.name.toLowerCase();
+    return name.contains('minuman') ||
+        name.contains('es') ||
+        name.contains('teh') ||
+        name.contains('madu') ||
+        name.contains('sari') ||
+        name.contains('jamu') ||
+        name.contains('dawet') ||
+        name.contains('wedang') ||
+        name.contains('bandrek') ||
+        name.contains('sirsak') ||
+        name.contains('kelapa') ||
+        name.contains('jelly') ||
+        name.contains('kopyor') ||
+        name.contains('uwuh') ||
+        name.contains('kelapa') ||
+        name.contains('kacang ijo');
+  }).toList();
+
+  // ⭐ SORTING BERDASARKAN ID (bukan rating)
+  specificFresh.sort((a, b) {
+    try {
+      return int.parse(a.id).compareTo(int.parse(b.id));
+    } catch (e) {
+      return a.id.compareTo(b.id);
+    }
+  });
+
+  // Kembalikan maksimal 8 produk
+  return specificFresh.take(8).toList();
+}
+
+/// Get buah & sayur (buah fisik + sayuran)
+/// ✅ FIXED: Priority IDs (51-53) di depan, sisanya urut ID
+List<Product> getFruitAndVeggies() {
+  // Filter produk buah & sayur berdasarkan nama
+  final fruitVeggieProducts = _allProducts.where((p) {
+    final name = p.name.toLowerCase();
+    return name.contains('sayur') ||
+        name.contains('buah') ||
+        name.contains('pisang') ||
+        name.contains('apel') ||
+        name.contains('tomat') ||
+        name.contains('cabai') ||
+        name.contains('bayam') ||
+        name.contains('brokoli') ||
+        name.contains('wortel') ||
+        name.contains('kentang') ||
+        name.contains('semangka') ||
+        name.contains('melon') ||
+        name.contains('strawberry') ||
+        name.contains('anggur') ||
+        name.contains('mangga') ||
+        name.contains('alpukat') ||
+        name.contains('jeruk') ||
+        name.contains('timun') ||
+        name.contains('salak') ||
+        name.contains('nanas') ||
+        name.contains('jambu') ||
+        name.contains('duku') ||
+        name.contains('srikaya') ||
+        name.contains('manggis') ||
+        name.contains('rambutan') ||
+        name.contains('pepaya') ||
+        name.contains('durian') ||
+        name.contains('lengkeng') ||
+        name.contains('belimbing') ||
+        name.contains('kangkung') ||
+        name.contains('kol') ||
+        name.contains('sawi') ||
+        name.contains('terong') ||
+        name.contains('labu');
+  }).toList();
+
+  // ⭐⭐⭐ PRIORITY SORTING: ID 51 (Semangka), 52 (Melon), 53 (Mangga) selalu di 3 posisi pertama
+  fruitVeggieProducts.sort((a, b) {
+    final priorityIds = ['51', '52', '53'];
+    final aIsPriority = priorityIds.contains(a.id);
+    final bIsPriority = priorityIds.contains(b.id);
+
+    if (aIsPriority && !bIsPriority) return -1;
+    if (!aIsPriority && bIsPriority) return 1;
+    if (aIsPriority && bIsPriority) {
+      return int.parse(a.id).compareTo(int.parse(b.id));
     }
 
-    // Jika tidak ada flash sale aktif, tampilkan semua paket
-    return getFlashSalePaketan();
-  }
-
-  // Get harga produk (otomatis cek flash sale)
-  double getProductPrice(String productId) {
-    // Cari produk dulu
-    final product = _allProducts.firstWhere(
-      (p) => p.id == productId,
-      orElse: () => _allProducts.first,
-    );
-
-    // Cek apakah sedang flash sale
-    if (FlashSaleService.isProductOnFlashSale(productId)) {
-      return FlashSaleService.calculateFlashPrice(
-        productId,
-        product.originalPrice ?? product.price,
-      );
+    // Sisanya urut berdasarkan ID (ascending)
+    try {
+      return int.parse(a.id).compareTo(int.parse(b.id));
+    } catch (e) {
+      return a.id.compareTo(b.id);
     }
+  });
 
-    // Jika tidak flash sale, return harga normal
-    return product.price;
-  }
+  // Ambil maksimal 8 produk
+  return fruitVeggieProducts.take(8).toList();
+}
 
-  double getProductDiscountPercentage(String productId) {
-    final product = _allProducts.firstWhere(
-      (p) => p.id == productId,
-      orElse: () => _allProducts.first,
-    );
+// ============================================================
+// SECTION 5: SPECIFIC CATEGORY FILTERS
+// ============================================================
 
-    // Cek flash sale dulu
-    final flashDiscount = FlashSaleService.getFlashDiscountPercentage(
-      productId,
-    );
-    if (flashDiscount != null) {
-      return flashDiscount.toDouble();
-    }
+/// Get produk buah saja (tanpa sayuran)
+/// ✅ Semua rating bisa masuk
+List<Product> getFruitProducts() {
+  return _allProducts.where((p) {
+    final name = p.name.toLowerCase();
+    return name.contains('pisang') ||
+        name.contains('apel') ||
+        name.contains('semangka') ||
+        name.contains('melon') ||
+        name.contains('mangga') ||
+        name.contains('alpukat') ||
+        name.contains('jeruk') ||
+        name.contains('strawberry') ||
+        name.contains('anggur') ||
+        name.contains('timun') ||
+        name.contains('salak') ||
+        name.contains('nanas') ||
+        name.contains('jambu') ||
+        name.contains('duku') ||
+        name.contains('srikaya') ||
+        name.contains('manggis') ||
+        name.contains('rambutan') ||
+        name.contains('pepaya') ||
+        name.contains('durian') ||
+        name.contains('lengkeng') ||
+        name.contains('belimbing');
+  }).toList();
+}
 
-    // ⬅️ FIX: Cast ke double langsung
-    return product.discountPercentage?.toDouble() ?? 0.0;
-  }
+/// Get produk sayuran saja (tanpa buah)
+/// ✅ Semua rating bisa masuk
+List<Product> getVegetableProducts() {
+  return _allProducts.where((p) {
+    final name = p.name.toLowerCase();
+    return name.contains('sayur') ||
+        name.contains('tomat') ||
+        name.contains('cabai') ||
+        name.contains('bayam') ||
+        name.contains('brokoli') ||
+        name.contains('wortel') ||
+        name.contains('kentang') ||
+        name.contains('kangkung') ||
+        name.contains('kol') ||
+        name.contains('sawi') ||
+        name.contains('terong') ||
+        name.contains('labu');
+  }).toList();
+}
 
-  // Get paketan by category
-  List<Product> getPaketanByCategory(String category) {
-    final paketan =
-        _allProducts.where((p) {
-          try {
-            return int.parse(p.id) >= 100;
-          } catch (e) {
-            return false;
-          }
-        }).toList();
+/// Get produk berdasarkan sub-kategori
+/// ✅ Semua rating bisa masuk
+List<Product> getProductsBySubCategory(String subCategoryName) {
+  return _allProducts.where((p) {
+    final name = p.name.toLowerCase();
+    final subCatLower = subCategoryName.toLowerCase();
 
-    if (category == 'Semua') {
-      return paketan;
-    }
-
-    return paketan.where((p) => p.category == category).toList();
-  }
-
-  // Get paket sembako
-  List<Product> getPaketSembako() {
-    return _allProducts.where((p) {
-      try {
-        return int.parse(p.id) >= 100 &&
-            p.name.toLowerCase().contains('paket sembako');
-      } catch (e) {
-        return false;
-      }
-    }).toList();
-  }
-
-  // Get paket makanan
-  List<Product> getPaketMakanan() {
-    return _allProducts.where((p) {
-      try {
-        return int.parse(p.id) >= 100 &&
-            (p.name.toLowerCase().contains('paket lauk') ||
-                p.name.toLowerCase().contains('paket snack') ||
-                p.name.toLowerCase().contains('paket nasi') ||
-                p.name.toLowerCase().contains('paket tumpeng'));
-      } catch (e) {
-        return false;
-      }
-    }).toList();
-  }
-
-  // Get produk dengan rating tinggi
-  List<Product> getTopRatedProducts() {
-    final sorted = List<Product>.from(_allProducts);
-    sorted.sort((a, b) => b.rating.compareTo(a.rating));
-    return sorted.take(8).toList();
-  }
-
-  // Get produk terbaru (berdasarkan ID terbesar)
-  List<Product> getNewestProducts() {
-    final sorted = List<Product>.from(_allProducts);
-    sorted.sort((a, b) => b.id.compareTo(a.id));
-    return sorted.take(8).toList();
-  }
-
-  // Get produk segar (dari kategori Food, Grocery, Pertanian, Herbal)
-  List<Product> getFreshProducts() {
-    final freshCategories = ['Food', 'Grocery', 'Pertanian', 'Herbal'];
-
-    // Filter produk segar berdasarkan kategori
-    final freshProducts =
-        _allProducts
-            .where((p) => freshCategories.contains(p.category))
-            .toList();
-
-    // Filter khusus untuk produk segar (minuman, jelly, dll)
-    final specificFresh =
-        freshProducts.where((p) {
-          final name = p.name.toLowerCase();
-          return name.contains('minuman') ||
-              name.contains('es') ||
-              name.contains('teh') ||
-              name.contains('madu') ||
-              name.contains('sari') ||
-              name.contains('jamu') ||
-              name.contains('dawet') ||
-              name.contains('wedang') ||
-              name.contains('bandrek') ||
-              name.contains('sirsak') ||
-              name.contains('kelapa') ||
-              name.contains('jelly') ||
-              name.contains('kopyor') ||
-              name.contains('uwuh') ||
-              name.contains('kacang ijo');
-        }).toList();
-
-    // Urutkan berdasarkan rating tertinggi
-    specificFresh.sort((a, b) => b.rating.compareTo(a.rating));
-
-    // Kembalikan maksimal 8 produk
-    return specificFresh.take(8).toList();
-  }
-
-  // Get buah & sayur (dari kategori Pertanian & Grocery)
-  List<Product> getFruitAndVeggies() {
-    // Filter produk yang kemungkinan adalah buah & sayur berdasarkan nama
-    final fruitVeggieProducts =
-        _allProducts.where((p) {
-          final name = p.name.toLowerCase();
-          return name.contains('sayur') ||
-              name.contains('buah') ||
-              name.contains('pisang') ||
-              name.contains('apel') ||
-              name.contains('tomat') ||
-              name.contains('cabai') ||
-              name.contains('bayam') ||
-              name.contains('brokoli') ||
-              name.contains('wortel') ||
-              name.contains('kentang') ||
-              name.contains('semangka') ||
-              name.contains('melon') ||
-              name.contains('strawberry') ||
-              name.contains('anggur') ||
-              name.contains('mangga') ||
-              name.contains('alpukat') ||
-              name.contains('jeruk') ||
-              name.contains('timun');
-        }).toList();
-
-    // Urutkan berdasarkan rating tertinggi
-    fruitVeggieProducts.sort((a, b) => b.rating.compareTo(a.rating));
-
-    // Kembalikan maksimal 8 produk
-    return fruitVeggieProducts.take(8).toList();
-  }
-
-  // Get produk buah saja
-  List<Product> getFruitProducts() {
-    return _allProducts.where((p) {
-      final name = p.name.toLowerCase();
+    // Sub-kategori "Buah"
+    if (subCatLower == 'buah') {
       return name.contains('pisang') ||
           name.contains('apel') ||
+          name.contains('tomat') ||
           name.contains('semangka') ||
           name.contains('melon') ||
           name.contains('mangga') ||
@@ -2526,117 +2648,80 @@ class ProductService {
           name.contains('duku') ||
           name.contains('srikaya') ||
           name.contains('manggis') ||
-          name.contains('rambutan');
-    }).toList();
-  }
-
-  // Get produk sayuran saja
-  List<Product> getVegetableProducts() {
-    return _allProducts.where((p) {
-      final name = p.name.toLowerCase();
+          name.contains('rambutan') ||
+          name.contains('pepaya') ||
+          name.contains('durian') ||
+          name.contains('lengkeng') ||
+          name.contains('belimbing');
+    }
+    
+    // Sub-kategori "Sayuran Organik"
+    else if (subCatLower == 'sayuran organik') {
       return name.contains('sayur') ||
           name.contains('tomat') ||
           name.contains('cabai') ||
           name.contains('bayam') ||
           name.contains('brokoli') ||
           name.contains('wortel') ||
-          name.contains('kentang');
-    }).toList();
-  }
-
-  // Get produk berdasarkan sub-kategori
-  List<Product> getProductsBySubCategory(String subCategoryName) {
-    // Filter produk berdasarkan nama sub-kategori
-    return _allProducts.where((p) {
-      final name = p.name.toLowerCase();
-
-      // Untuk sub-kategori "Buah"
-      if (subCategoryName.toLowerCase() == 'buah') {
-        return name.contains('pisang') ||
-            name.contains('apel') ||
-            name.contains('tomat') ||
-            name.contains('semangka') ||
-            name.contains('melon') ||
-            name.contains('mangga') ||
-            name.contains('alpukat') ||
-            name.contains('jeruk') ||
-            name.contains('strawberry') ||
-            name.contains('anggur') ||
-            name.contains('timun') ||
-            name.contains('salak') ||
-            name.contains('nanas') ||
-            name.contains('jambu') ||
-            name.contains('duku') ||
-            name.contains('srikaya') ||
-            name.contains('manggis') ||
-            name.contains('rambutan');
-      }
-      // Untuk sub-kategori "Sayuran Organik"
-      else if (subCategoryName.toLowerCase() == 'sayuran organik') {
-        return name.contains('sayur') ||
-            name.contains('tomat') ||
-            name.contains('cabai') ||
-            name.contains('bayam') ||
-            name.contains('brokoli') ||
-            name.contains('wortel') ||
-            name.contains('kentang');
-      }
-      // Untuk sub-kategori lainnya
-      else if (subCategoryName.toLowerCase() == 'pupuk') {
-        return name.contains('pupuk');
-      } else if (subCategoryName.toLowerCase() == 'bibit tanaman') {
-        return name.contains('bibit');
-      } else if (subCategoryName.toLowerCase() == 'alat tani') {
-        return name.contains('alat');
-      }
-
-      return false;
-    }).toList();
-  }
-
-  // ============ STORE METHODS ============
-
-  // Get stores by category
-  List<Store> getStoresByCategory(String category) {
-    if (category == 'Semua') {
-      return _allStores;
+          name.contains('kentang') ||
+          name.contains('kangkung') ||
+          name.contains('kol') ||
+          name.contains('sawi') ||
+          name.contains('terong') ||
+          name.contains('labu');
     }
-    return _allStores.where((s) => s.category == category).toList();
-  }
-
-  // Get flagship store for category
-  Store? getFlagshipStore(String category) {
-    if (category == 'Semua') return null;
-
-    try {
-      return _allStores.firstWhere(
-        (s) => s.category == category && s.isFlagship,
-      );
-    } catch (e) {
-      // Jika tidak ada flagship, ambil store pertama dari kategori
-      final stores = getStoresByCategory(category);
-      return stores.isNotEmpty ? stores.first : null;
+    
+    // Sub-kategori lainnya
+    else if (subCatLower == 'pupuk') {
+      return name.contains('pupuk');
+    } else if (subCatLower == 'bibit tanaman') {
+      return name.contains('bibit');
+    } else if (subCatLower == 'alat tani') {
+      return name.contains('alat');
     }
+
+    return false;
+  }).toList();
+}
+
+// ============================================================
+// SECTION 6: STORE METHODS
+// ============================================================
+
+/// Get stores berdasarkan kategori
+List<Store> getStoresByCategory(String category) {
+  if (category == 'Semua') {
+    return _allStores;
   }
+  return _allStores.where((s) => s.category == category).toList();
+}
 
-  // ============ SUB-CATEGORY METHODS ============
+/// Get flagship store untuk kategori tertentu
+Store? getFlagshipStore(String category) {
+  if (category == 'Semua') return null;
 
-  // Get sub-categories by parent category
+  try {
+    return _allStores.firstWhere(
+      (s) => s.category == category && s.isFlagship,
+    );
+  } catch (e) {
+    // Jika tidak ada flagship, ambil store pertama dari kategori
+    final stores = getStoresByCategory(category);
+    return stores.isNotEmpty ? stores.first : null;
+  }
+}
+
+// ============================================================
+// SECTION 7: SUB-CATEGORY METHODS
+// ============================================================
+
+/// Get sub-categories berdasarkan parent category
   List<SubCategory> getSubCategories(String parentCategory) {
     if (parentCategory == 'Semua') {
       return [];
     }
     return _subCategories
         .where((sc) => sc.parentCategory == parentCategory)
-        .toList();
-  }
-
-  // Search produk
-  List<Product> searchProducts(String query) {
-    if (query.isEmpty) return _allProducts;
-
-    return _allProducts
-        .where((p) => p.name.toLowerCase().contains(query.toLowerCase()))
         .toList();
   }
 }
