@@ -2398,6 +2398,45 @@ double getProductDiscountPercentage(String productId) {
   return product.discountPercentage?.toDouble() ?? 0.0;
 }
 
+/// Get flash sale products yang tersedia di koperasi tertentu
+List<Product> getFlashSaleProductsByKoperasi(List<String> allowedProductIds) {
+  print('\n📦 [PRODUCT_SERVICE] ========== getFlashSaleProductsByKoperasi ==========');
+  print('📥 [PRODUCT_SERVICE] Allowed product IDs: ${allowedProductIds.length}');
+  
+  final flashSaleProductIds = FlashSaleService.getFlashSaleProductsByKoperasi(
+    allowedProductIds,
+  );
+  
+  print('🔙 [PRODUCT_SERVICE] Got ${flashSaleProductIds.length} flash sale product IDs from service');
+  
+  if (flashSaleProductIds.isEmpty) {
+    print('❌ [PRODUCT_SERVICE] No flash sale products in koperasi');
+    print('========================================================\n');
+    return [];
+  }
+  
+  print('🔍 [PRODUCT_SERVICE] Looking up products in database...');
+  final products = _allProducts
+      .where((p) => flashSaleProductIds.contains(p.id))
+      .toList();
+  
+  print('✅ [PRODUCT_SERVICE] Found ${products.length} products');
+  
+  if (products.isNotEmpty) {
+    print('\n📋 [PRODUCT_SERVICE] Flash sale products details:');
+    for (var p in products) {
+      print('   - ID: ${p.id} | Name: ${p.name} | Price: ${p.price}');
+    }
+  } else {
+    print('⚠️ [PRODUCT_SERVICE] Products not found in database!');
+    print('   Flash sale IDs: ${flashSaleProductIds.join(", ")}');
+  }
+  
+  print('========================================================\n');
+  return products;
+}
+
+
 // ============================================================
 // SECTION 3: PAKET/BUNDLE METHODS
 // ============================================================

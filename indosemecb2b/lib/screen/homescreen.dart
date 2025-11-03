@@ -601,8 +601,36 @@ void _loadData() async {
 
       print('📦 [HOME] displayedProducts: ${displayedProducts.length}');
 
-      // Flash Sale Products
-      flashSaleProducts = _productService.getActiveFlashSaleProducts();
+      // ⭐⭐⭐ GANTI BAGIAN INI ⭐⭐⭐
+      // Flash Sale Products (filter by koperasi)
+      print('\n🏠 [HOME] ========== LOADING FLASH SALE ==========');
+      print('📍 [HOME] Nearby koperasi: ${_nearbyKoperasi.length}');
+
+      if (_nearbyKoperasi.isNotEmpty) {
+        print('🏪 [HOME] Koperasi name: ${_nearbyKoperasi.first.name}');
+        print('📦 [HOME] Koperasi products: ${_nearbyKoperasi.first.productIds.length}');
+        print('   Sample IDs: ${_nearbyKoperasi.first.productIds.take(10).join(", ")}');
+      }
+
+      print('📥 [HOME] Allowed product IDs: ${allowedProductIds.length}');
+      print('   Sample: ${allowedProductIds.take(10).join(", ")}');
+
+      flashSaleProducts = _productService.getFlashSaleProductsByKoperasi(
+        allowedProductIds.toList(),
+      );
+
+      print('✅ [HOME] Flash sale products loaded: ${flashSaleProducts.length}');
+
+      if (flashSaleProducts.isNotEmpty) {
+        print('📋 [HOME] Flash sale products:');
+        for (var p in flashSaleProducts) {
+          print('   - ${p.id}: ${p.name}');
+        }
+      } else {
+        print('⚠️ [HOME] NO FLASH SALE PRODUCTS!');
+      }
+
+      print('========================================================\n');
 
       // Top Rated Products (filter berdasarkan koperasi)
       final filteredProducts = allProducts
@@ -1870,42 +1898,94 @@ void _loadData() async {
 
           // ⭐ INFO KOPERASI DARI ALAMAT YANG DIPILIH
           if (_nearbyKoperasi.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.green[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green[200]!),
-              ),
-              child: Row(
+              const SizedBox(height: 8),
+              Column(
                 children: [
-                  Icon(Icons.store, color: Colors.green[700], size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Belanja dari: ${_nearbyKoperasi.first.name}',
-                      style: TextStyle(
-                        color: Colors.green[800],
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.green[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.green[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.store, color: Colors.green[700], size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Belanja dari: ${_nearbyKoperasi.first.name}',
+                            style: TextStyle(
+                              color: Colors.green[800],
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          '${_nearbyKoperasi.first.productIds.length} produk',
+                          style: TextStyle(
+                            color: Colors.green[600],
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Text(
-                    '${_nearbyKoperasi.first.productIds.length} produk',
-                    style: TextStyle(
-                      color: Colors.green[600],
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  
+                  // ⭐ FLASH SALE INFO
+                  // if (flashSaleProducts.isNotEmpty) ...[
+                  //   const SizedBox(height: 6),
+                  //   Container(
+                  //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  //     decoration: BoxDecoration(
+                  //       gradient: LinearGradient(
+                  //         colors: [Colors.red[50]!, Colors.orange[50]!],
+                  //       ),
+                  //       borderRadius: BorderRadius.circular(8),
+                  //       border: Border.all(color: Colors.red[200]!),
+                  //     ),
+                  //     // child: Row(
+                  //     //   children: [
+                  //     //     Icon(Icons.local_fire_department, color: Colors.red[700], size: 16),
+                  //     //     const SizedBox(width: 8),
+                  //     //     // Expanded(
+                  //     //     //   child: Text(
+                  //     //     //     '${flashSaleProducts.length} produk Flash Sale tersedia!',
+                  //     //     //     style: TextStyle(
+                  //     //     //       color: Colors.red[800],
+                  //     //     //       fontSize: 11,
+                  //     //     //       fontWeight: FontWeight.w600,
+                  //     //     //     ),
+                  //     //     //   ),
+                  //     //     // ),
+                  //     //     if (currentFlashSale != null)
+                  //     //       Container(
+                  //     //         padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  //     //         decoration: BoxDecoration(
+                  //     //           color: Colors.red[700],
+                  //     //           borderRadius: BorderRadius.circular(4),
+                  //     //         ),
+                  //     //         child: Text(
+                  //     //           '${currentFlashSale!.discountPercentage}%',
+                  //     //           style: TextStyle(
+                  //     //             color: Colors.white,
+                  //     //             fontSize: 9,
+                  //     //             fontWeight: FontWeight.bold,
+                  //     //           ),
+                  //     //         ),
+                  //     //       ),
+                  //     //   ],
+                  //     // ),
+                  //   ),
+                  // ],
                 ],
               ),
-            ),
-          ] else if (_savedAlamat != null) ...[
+            ]
+            else if (_savedAlamat != null) ...[
             // Jika alamat dipilih tapi tidak ada koperasi match
             const SizedBox(height: 8),
             Container(
@@ -2468,86 +2548,95 @@ void _loadData() async {
   }
 
   Widget _buildFlashSaleCard(Product product) {
-    final isFlashActive = FlashSaleService.isProductOnFlashSale(product.id);
-    final flashDiscountPercent = FlashSaleService.getFlashDiscountPercentage(
-      product.id,
-    );
+  // ⭐ CEK: Apakah flash sale AKTIF untuk produk ini
+  final isFlashActive = FlashSaleService.isProductOnFlashSale(product.id);
+  final flashDiscountPercent = FlashSaleService.getFlashDiscountPercentage(product.id);
 
-    final displayPrice =
-        isFlashActive
-            ? FlashSaleService.calculateFlashPrice(
-              product.id,
-              product.originalPrice ?? product.price,
-            )
-            : product.price;
+  // ⭐ HARGA:
+  // - Jika flash sale AKTIF → harga diskon
+  // - Jika BELUM aktif → harga normal
+  final displayPrice = isFlashActive
+      ? FlashSaleService.calculateFlashPrice(
+          product.id,
+          product.originalPrice ?? product.price,
+        )
+      : (product.originalPrice ?? product.price);
 
-    final originalPrice = product.originalPrice ?? product.price;
+  final originalPrice = product.originalPrice ?? product.price;
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProductDetailPage(product: product),
-          ),
-        );
-      },
-      child: Container(
-        width: 120,
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 12,
-              offset: Offset(0, 4),
-            ),
-          ],
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProductDetailPage(product: product),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                Container(
-                  height: 100,
-                  child: ClipRRect(
-                    child: Image.network(
-                      product.imageUrl ?? '',
-                      width: double.infinity,
-                      height: 100,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[200],
-                          child: Center(
-                            child: Icon(
-                              Icons.image_rounded,
-                              size: 40,
-                              color: Colors.grey[400],
-                            ),
+      );
+    },
+    child: Container(
+      width: 120,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              Container(
+                height: 100,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                  child: Image.network(
+                    product.imageUrl ?? '',
+                    width: double.infinity,
+                    height: 100,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[200],
+                        child: Center(
+                          child: Icon(
+                            Icons.image_rounded,
+                            size: 40,
+                            color: Colors.grey[400],
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
                 ),
+              ),
 
-                if (isFlashActive)
-                  Positioned(
-                    top: 4,
-                    left: 4,
-                    child: Container(
+              // ⭐ BADGE: Tampilkan meski belum aktif
+              Positioned(
+                top: 4,
+                left: 4,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Flash Sale Badge
+                    Container(
                       padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [Colors.red[600]!, Colors.red[800]!],
+                          colors: isFlashActive 
+                              ? [Colors.red[600]!, Colors.red[800]!] // Aktif: merah
+                              : [Colors.orange[400]!, Colors.orange[600]!], // Belum: orange
                         ),
                         borderRadius: BorderRadius.circular(4),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.red.withOpacity(0.4),
+                            color: (isFlashActive ? Colors.red : Colors.orange).withOpacity(0.4),
                             blurRadius: 4,
                             offset: Offset(0, 2),
                           ),
@@ -2557,13 +2646,15 @@ void _loadData() async {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.local_fire_department,
+                            isFlashActive ? Icons.local_fire_department : Icons.access_time,
                             color: Colors.white,
                             size: 10,
                           ),
                           SizedBox(width: 2),
                           Text(
-                            '${flashDiscountPercent}%',
+                            isFlashActive 
+                                ? '${flashDiscountPercent}%' 
+                                : 'Soon',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 9,
@@ -2573,120 +2664,134 @@ void _loadData() async {
                         ],
                       ),
                     ),
-                  ),
-              ],
-            ),
-
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        product.name,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w600,
-                          height: 1.2,
+                    
+                    // Koperasi Badge
+                    if (_nearbyKoperasi.isNotEmpty)
+                      Container(
+                        margin: EdgeInsets.only(top: 4),
+                        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: Colors.green[700],
+                          borderRadius: BorderRadius.circular(3),
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.star_rounded,
-                          color: Colors.amber[700],
-                          size: 10,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${product.rating}',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          '(${product.reviewCount})',
-                          style: TextStyle(
-                            fontSize: 8,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _formatPrice(displayPrice),
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color:
-                                isFlashActive
-                                    ? Colors.red[700]
-                                    : Colors.blue[700],
-                          ),
-                        ),
-
-                        if (displayPrice < originalPrice)
-                          Row(
-                            children: [
-                              Text(
-                                _formatPrice(originalPrice),
-                                style: TextStyle(
-                                  decoration: TextDecoration.lineThrough,
-                                  color: Colors.grey[400],
-                                  fontSize: 9,
-                                ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.store, color: Colors.white, size: 8),
+                            SizedBox(width: 2),
+                            Text(
+                              'Lokal',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 7,
+                                fontWeight: FontWeight.bold,
                               ),
-                              if (isFlashActive) ...[
-                                SizedBox(width: 4),
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 3,
-                                    vertical: 1,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red[50],
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                  child: Text(
-                                    '-${flashDiscountPercent}%',
-                                    style: TextStyle(
-                                      color: Colors.red[700],
-                                      fontSize: 8,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                      ],
-                    ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
+            ],
+          ),
+
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      product.name,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+
+                  Row(
+                    children: [
+                      Icon(Icons.star_rounded, color: Colors.amber[700], size: 10),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${product.rating}',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        '(${product.reviewCount})',
+                        style: TextStyle(fontSize: 8, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _formatPrice(displayPrice),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: isFlashActive ? Colors.red[700] : Colors.blue[700],
+                        ),
+                      ),
+
+                      // ⭐ TAMPILKAN CORET + DISKON HANYA JIKA AKTIF
+                      if (isFlashActive && displayPrice < originalPrice)
+                        Row(
+                          children: [
+                            Text(
+                              _formatPrice(originalPrice),
+                              style: TextStyle(
+                                decoration: TextDecoration.lineThrough,
+                                color: Colors.grey[400],
+                                fontSize: 9,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: Colors.red[50],
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                              child: Text(
+                                '-${flashDiscountPercent}%',
+                                style: TextStyle(
+                                  color: Colors.red[700],
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   String _formatPrice(double price) {
     final priceInt = price.toInt();

@@ -1,4 +1,5 @@
 import '../models/flash_sale_model.dart';
+import '../models/product_model.dart';
 
 class FlashSaleService {
   // ⭐ DATA JADWAL FLASH SALE (disesuaikan dengan produk ID 100-120)
@@ -171,4 +172,68 @@ class FlashSaleService {
     }
     return null;
   }
+
+/// Get flash sale product IDs yang tersedia di koperasi tertentu
+static List<String> getFlashSaleProductsByKoperasi(
+  List<String> allowedProductIds,
+) {
+  print('\n🔥 [FLASH_SALE_SERVICE] ========== getFlashSaleProductsByKoperasi ==========');
+  print('📥 [FLASH_SALE_SERVICE] Input allowedProductIds: ${allowedProductIds.length} items');
+  print('   First 10: ${allowedProductIds.take(10).join(", ")}');
+  
+  // ⭐ PERBAIKAN: Ambil current ATAU next flash sale
+  var sale = getCurrentFlashSale();
+  
+  if (sale == null) {
+    print('⏰ [FLASH_SALE_SERVICE] No active flash sale, checking next...');
+    sale = getNextFlashSale();
+  }
+  
+  if (sale == null) {
+    print('❌ [FLASH_SALE_SERVICE] No flash sale schedule available');
+    print('========================================================\n');
+    return [];
+  }
+  
+  // ⭐ INFO: Flash sale aktif atau upcoming
+  if (sale.isActive) {
+    print('✅ [FLASH_SALE_SERVICE] Active flash sale: ${sale.title}');
+  } else {
+    print('⏳ [FLASH_SALE_SERVICE] Upcoming flash sale: ${sale.title}');
+  }
+  
+  print('   Discount: ${sale.discountPercentage}%');
+  print('   Time: ${sale.startTime.hour}:${sale.startTime.minute.toString().padLeft(2, '0')} - ${sale.endTime.hour}:${sale.endTime.minute.toString().padLeft(2, '0')}');
+  print('   Total flash sale products: ${sale.productIds.length}');
+  print('   Flash sale product IDs: ${sale.productIds.join(", ")}');
+  
+  // Filter produk flash sale yang ada di koperasi
+  final filteredIds = sale.productIds
+      .where((id) => allowedProductIds.contains(id))
+      .toList();
+  
+  print('\n🎯 [FLASH_SALE_SERVICE] Filtering results:');
+  print('   Products in flash sale: ${sale.productIds.length}');
+  print('   Products in koperasi: ${allowedProductIds.length}');
+  print('   ✅ MATCHED products: ${filteredIds.length}');
+  
+  if (filteredIds.isNotEmpty) {
+    print('\n📦 [FLASH_SALE_SERVICE] Matched product IDs:');
+    for (var id in filteredIds) {
+      print('   ✓ Product ID: $id');
+    }
+  } else {
+    print('\n⚠️ [FLASH_SALE_SERVICE] NO MATCHING PRODUCTS!');
+    print('   Checking why:');
+    
+    // Debug: cek beberapa ID flash sale ada di koperasi atau tidak
+    for (var fsId in sale.productIds.take(5)) {
+      final exists = allowedProductIds.contains(fsId);
+      print('   - Flash sale product $fsId in koperasi? $exists');
+    }
+  }
+  
+  print('========================================================\n');
+  return filteredIds;
+}
 }
