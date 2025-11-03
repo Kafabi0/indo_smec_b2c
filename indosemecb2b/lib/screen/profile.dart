@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/screen/bantuan.dart';
 import 'package:indosemecb2b/screen/daftar_alamat.dart';
 import 'package:indosemecb2b/screen/edit_profile_screen.dart';
 import 'package:indosemecb2b/screen/notification_provider.dart';
@@ -703,7 +704,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _menuItem(
                   'Bantuan',
                   'Informasi lebih lanjut terkait pertanyaanmu',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const BantuanScreen()),
+                    );
+                  },
                 ),
+
                 _menuItem('Resolusi Komplain', 'Daftar Komplain'),
                 _menuItem(
                   'Review Aplikasi',
