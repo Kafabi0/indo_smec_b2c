@@ -2707,7 +2707,7 @@ void _loadData() async {
                     child: Text(
                       product.name,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         color: Colors.black87,
                         fontWeight: FontWeight.w600,
                         height: 1.2,
@@ -2725,7 +2725,7 @@ void _loadData() async {
                       Text(
                         '${product.rating}',
                         style: TextStyle(
-                          fontSize: 9,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: Colors.grey[700],
                         ),
@@ -2774,7 +2774,7 @@ void _loadData() async {
                                 '-${flashDiscountPercent}%',
                                 style: TextStyle(
                                   color: Colors.red[700],
-                                  fontSize: 8,
+                                  fontSize: 9,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
