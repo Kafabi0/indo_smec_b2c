@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/daftar_alamat.dart';
 import 'package:indosemecb2b/screen/edit_profile_screen.dart';
@@ -25,6 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? userEmail;
   String? userName;
   String? userLogin;
+  String? imagePath; // ✅ Tambahkan ini
 
   // ✅ TAMBAHKAN STATE UNTUK SALDO KLIK
   bool _isSaldoKlikActive = false;
@@ -54,6 +57,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isSaldoActive = await SaldoKlikManager.isActive();
     final saldo = await SaldoKlikManager.getSaldo();
 
+    // ✅ MUAT PROFIL USER DARI UserDataManager
+    String? imgPath;
+    if (login != null) {
+      final profile = await UserDataManager.getUserProfile(login);
+      imgPath = profile?['imagePath'];
+    }
+
     setState(() {
       isLoggedIn = loggedIn;
       userEmail = email;
@@ -61,6 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       userLogin = login;
       _isSaldoKlikActive = isSaldoActive;
       _saldoKlik = saldo;
+      imagePath = imgPath; // ✅ Simpan path foto
     });
   }
 
@@ -286,10 +297,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const CircleAvatar(
+                      CircleAvatar(
                         radius: 30,
                         backgroundColor: Colors.white,
-                        child: Icon(Icons.person, size: 40, color: Colors.grey),
+                        backgroundImage:
+                            (imagePath != null && File(imagePath!).existsSync())
+                                ? FileImage(File(imagePath!))
+                                : null,
+                        child:
+                            (imagePath == null ||
+                                    !File(imagePath!).existsSync())
+                                ? const Icon(
+                                  Icons.person,
+                                  size: 40,
+                                  color: Colors.grey,
+                                )
+                                : null,
                       ),
                       const SizedBox(width: 16),
                       Column(

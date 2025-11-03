@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import '../utils/user_data_manager.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({Key? key}) : super(key: key);
@@ -15,41 +17,53 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController birthdateController = TextEditingController();
 
   String? phoneNumber;
-  String? gender; // "L" atau "P"
+  String? gender;
+  String? imagePath; // ✅ path foto profil user
 
   @override
   void initState() {
     super.initState();
-    loadUserData();
+    _loadProfile();
   }
 
-  Future<void> loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> _loadProfile() async {
+    final loginValue = await UserDataManager.getCurrentUserLogin();
+    if (loginValue == null) return;
+
+    final profile = await UserDataManager.getUserProfile(loginValue);
     setState(() {
-      phoneNumber = prefs.getString('userLogin');
-      emailController.text = prefs.getString('userEmail') ?? '';
-      nameController.text = prefs.getString('userName') ?? '';
-      gender = prefs.getString('userGender');
-      birthdateController.text = prefs.getString('userBirthdate') ?? '';
+      phoneNumber = loginValue;
+      emailController.text = profile?['email'] ?? '';
+      nameController.text = profile?['name'] ?? '';
+      gender = profile?['gender'];
+      birthdateController.text = profile?['birthdate'] ?? '';
+      imagePath = profile?['imagePath'];
     });
   }
 
-  Future<void> saveProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('userEmail', emailController.text);
-    await prefs.setString('userName', nameController.text);
-    if (gender != null) await prefs.setString('userGender', gender!);
-    if (birthdateController.text.isNotEmpty) {
-      await prefs.setString('userBirthdate', birthdateController.text);
-    }
+  Future<void> _saveProfile() async {
+    final loginValue = await UserDataManager.getCurrentUserLogin();
+    if (loginValue == null) return;
 
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Profil berhasil disimpan")),
-    );
+    final profileData = {
+      'email': emailController.text,
+      'name': nameController.text,
+      'gender': gender,
+      'birthdate': birthdateController.text,
+      'imagePath': imagePath,
+    };
+
+    await UserDataManager.saveUserProfile(loginValue, profileData);
+
+    if (mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Profil berhasil disimpan")));
+    }
   }
 
-  Future<void> pickDate() async {
+  Future<void> _pickDate() async {
     DateTime? selected = await showDatePicker(
       context: context,
       initialDate: DateTime(2000),
@@ -63,8 +77,44 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text("Pilih Foto Profil"),
+            content: const Text(
+              "Ambil foto dari kamera atau pilih dari galeri.",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, ImageSource.camera),
+                child: const Text("Kamera"),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, ImageSource.gallery),
+                child: const Text("Galeri"),
+              ),
+            ],
+          ),
+    );
+
+    if (source == null) return;
+
+    final picked = await picker.pickImage(source: source, imageQuality: 70);
+    if (picked != null) {
+      setState(() {
+        imagePath = picked.path;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final hasImage = imagePath != null && File(imagePath!).existsSync();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Ubah Profil"),
@@ -79,15 +129,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           children: [
             Center(
               child: Column(
-                children: const [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: Colors.grey,
-                    child: Icon(Icons.person, size: 50, color: Colors.white),
+                children: [
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: CircleAvatar(
+                      radius: 45,
+                      backgroundColor: Colors.grey[300],
+                      backgroundImage:
+                          hasImage ? FileImage(File(imagePath!)) : null,
+                      child:
+                          !hasImage
+                              ? const Icon(
+                                Icons.person,
+                                size: 50,
+                                color: Colors.white,
+                              )
+                              : null,
+                    ),
                   ),
-                  SizedBox(height: 8),
-                  Text("Ubah Foto Profil",
-                      style: TextStyle(color: Colors.grey, fontSize: 13))
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Ubah Foto Profil",
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
                 ],
               ),
             ),
@@ -100,11 +164,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             inputField("Masukkan Email Kamu", emailController),
 
             infoBox(
-              "Melalui email, kamu bisa melakukan masuk akun dan menerima informasi promo"
+              "Melalui email, kamu bisa menerima info promo dan login akun.",
             ),
 
-            fieldLabel("Nama"),
-            inputField("Nama Kamu", nameController),
+            // fieldLabel("Nama"),
+            // inputField("Nama Kamu", nameController),
 
             fieldLabel("Jenis Kelamin"),
             Row(
@@ -117,10 +181,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
             fieldLabel("Tanggal Lahir"),
             GestureDetector(
-              onTap: pickDate,
+              onTap: _pickDate,
               child: AbsorbPointer(
-                child: inputField("DD-MM-YYYY", birthdateController,
-                    suffix: const Icon(Icons.calendar_month)),
+                child: inputField(
+                  "DD-MM-YYYY",
+                  birthdateController,
+                  suffix: const Icon(Icons.calendar_month),
+                ),
               ),
             ),
 
@@ -128,17 +195,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: saveProfile,
+                onPressed: _saveProfile,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
                 child: const Text(
                   "Simpan Profil",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -150,7 +221,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     child: Text(text, style: const TextStyle(fontWeight: FontWeight.w600)),
   );
 
-  Widget inputField(String hint, TextEditingController controller, {Widget? suffix}) {
+  Widget inputField(
+    String hint,
+    TextEditingController controller, {
+    Widget? suffix,
+  }) {
     return TextField(
       controller: controller,
       decoration: InputDecoration(
@@ -200,9 +275,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         children: [
           const Icon(Icons.info_outline, size: 16, color: Colors.grey),
           const SizedBox(width: 6),
-          Expanded(
-            child: Text(text, style: const TextStyle(fontSize: 12)),
-          ),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 12))),
         ],
       ),
     );
