@@ -39,11 +39,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
     symbol: 'Rp',
     decimalDigits: 0,
   );
+  double profileProgress = 0.0;
+  int completedSteps = 0;
 
   @override
   void initState() {
     super.initState();
     _loadLoginStatus();
+    _loadProfileProgress();
+  }
+
+  Future<void> _loadProfileProgress() async {
+    final loginValue = await UserDataManager.getCurrentUserLogin();
+    final profile = await UserDataManager.getUserProfile(loginValue!);
+    if (profile == null) return;
+
+    int filled = 0;
+    if ((profile['name'] ?? '').toString().trim().isNotEmpty) filled++;
+    if ((profile['email'] ?? '').toString().trim().isNotEmpty) filled++;
+    if (loginValue.isNotEmpty) filled++;
+    if (profile['gender'] != null && profile['gender'].toString().isNotEmpty)
+      filled++;
+    if ((profile['birthdate'] ?? '').toString().trim().isNotEmpty) filled++;
+    if (profile['imagePath'] != null && File(profile['imagePath']).existsSync())
+      filled++;
+
+    setState(() {
+      profileProgress = filled / 6;
+      completedSteps = filled;
+    });
+  }
+
+  String _getProfileHintText() {
+    if (profileProgress == 1) {
+      return 'Profil kamu sudah lengkap! 🎉';
+    } else {
+      return 'Lengkapi data seperti Email, Jenis Kelamin, Tanggal Lahir, dan Foto Profil kamu.';
+    }
   }
 
   Future<void> _loadLoginStatus() async {
@@ -76,6 +108,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _saldoKlik = saldo;
       imagePath = imgPath;
     });
+  }
+
+  Future<double> _getProfileCompletion() async {
+    final loginValue = await UserDataManager.getCurrentUserLogin();
+    if (loginValue == null) return 0;
+
+    final profile = await UserDataManager.getUserProfile(loginValue);
+    if (profile == null) return 0;
+
+    int filled = 0;
+    int total = 6;
+
+    // ✅ Nama
+    if ((profile['name'] ?? '').toString().trim().isNotEmpty) filled++;
+
+    // ✅ Email
+    if ((profile['email'] ?? '').toString().trim().isNotEmpty) filled++;
+
+    // ✅ Nomor HP
+    if (loginValue.isNotEmpty) filled++;
+
+    // ✅ Jenis Kelamin
+    if (profile['gender'] != null && profile['gender'].toString().isNotEmpty) {
+      filled++;
+    }
+
+    // ✅ Tanggal Lahir
+    if ((profile['birthdate'] ?? '').toString().trim().isNotEmpty) filled++;
+
+    // ✅ Foto Profil
+    if (profile['imagePath'] != null &&
+        File(profile['imagePath']).existsSync()) {
+      filled++;
+    }
+
+    return filled / total; // contoh hasil 0.5 berarti 50%
   }
 
   Future<void> _logout() async {
@@ -514,51 +582,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+              child: GestureDetector(
+                onTap: () async {
+                  // Buka halaman edit profil
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const EditProfileScreen(),
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Lengkapi profil kamu',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
+                  );
+
+                  // Setelah user kembali dari halaman edit, update progress
+                  _loadProfileProgress();
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    LinearProgressIndicator(
-                      value: 2 / 6,
-                      color: Colors.blue[600],
-                      backgroundColor: Colors.grey[200],
-                      minHeight: 6,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      '2/6',
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Tambahkan Email, Jenis Kelamin, Tanggal Lahir, Foto Profil kamu di pengaturan profil.',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Lengkapi profil kamu',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      LinearProgressIndicator(
+                        value: profileProgress, // ✅ nilai dinamis dari state
+                        color: Colors.blue[600],
+                        backgroundColor: Colors.grey[200],
+                        minHeight: 6,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '$completedSteps/6',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _getProfileHintText(),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
+
             const SizedBox(height: 16),
             _buildMenuSection(
               title: 'Pengaturan Akun',
