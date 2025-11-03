@@ -576,7 +576,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   const Text(
-                                    'Kumpulan kupon yang kamu punya',
+                                    'Kumpulan Voucher yang kamu punya',
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: Colors.grey,
