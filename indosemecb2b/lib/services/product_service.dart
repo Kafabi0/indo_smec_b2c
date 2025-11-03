@@ -1497,6 +1497,34 @@ class ProductService {
       imageUrl:
           'https://i.pinimg.com/736x/5c/79/5a/5c795af37a63ed75f733d5543dfd64c9.jpg',
     ),
+    Product(
+      id: '69',
+      name: 'Buah Naga Segar',
+      description: 'Buah Naga Segar',
+      price: 18000,
+      originalPrice: 22000,
+      category: 'Pertanian',
+      rating: 4.7,
+      reviewCount: 298,
+      storeName: 'Kebun Segar',
+      storeDistance: '1.1 km',
+      imageUrl:
+          'https://i.pinimg.com/1200x/96/d8/9f/96d89ffa06df1f3892d23f84eba165b5.jpg',
+    ),
+    Product(
+      id: '70',
+      name: 'Cabai Rawit Merah',
+      description: 'Cabai Rawit Merah Segar ',
+      price: 15000,
+      originalPrice: 20000,
+      category: 'Pertanian',
+      rating: 4.7,
+      reviewCount: 298,
+      storeName: 'Kebun Segar',
+      storeDistance: '1.1 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/b1/89/6f/b1896ff335654b5a929a86aa0de16e8b.jpg',
+    ),
     // PAKET SEMBAKO
     Product(
       id: '100',
@@ -2254,20 +2282,6 @@ class ProductService {
       imageUrl:
           'https://i.pinimg.com/1200x/0b/4c/d6/0b4cd6fcfde48e5a1845789064f25650.jpg',
     ),
-    Product(
-      id: '200',
-      name: 'Buah ',
-      description: 'Melon hijau segar dan manis',
-      price: 18000,
-      originalPrice: 22000,
-      category: 'Pertanian',
-      rating: 4.9,
-      reviewCount: 298,
-      storeName: 'Kebun Segar',
-      storeDistance: '2.1 km',
-      imageUrl:
-          'https://i.pinimg.com/736x/05/1e/f7/051ef76a110dfd40de4aef4e601c3040.jpg',
-    ),
   ];
 
  // ============================================================
@@ -2505,6 +2519,7 @@ List<Product> getFreshProducts() {
 
 /// Get buah & sayur (buah fisik + sayuran)
 /// ✅ FIXED: Priority IDs (51-53) di depan, sisanya urut ID
+/// Get buah & sayur (buah fisik + sayuran)
 List<Product> getFruitAndVeggies() {
   // Filter produk buah & sayur berdasarkan nama
   final fruitVeggieProducts = _allProducts.where((p) {
@@ -2542,31 +2557,29 @@ List<Product> getFruitAndVeggies() {
         name.contains('kol') ||
         name.contains('sawi') ||
         name.contains('terong') ||
+        name.contains('naga') ||
         name.contains('labu');
   }).toList();
 
-  // ⭐⭐⭐ PRIORITY SORTING: ID 51 (Semangka), 52 (Melon), 53 (Mangga) selalu di 3 posisi pertama
-  fruitVeggieProducts.sort((a, b) {
-    final priorityIds = ['51', '52', '53'];
-    final aIsPriority = priorityIds.contains(a.id);
-    final bIsPriority = priorityIds.contains(b.id);
+  // ⭐ TAMBAHKAN DEBUG UNTUK MELIHAT SEMUA PRODUK YANG TERFILTER ⭐
+  print('🔍 [ProductService] ========== SEMUA PRODUK YANG TERFILTER DI getFruitAndVeggies ==========');
+  print('📊 [ProductService] Total produk yang terfilter: ${fruitVeggieProducts.length}');
+  print('   ╔═════════╦═════════════════════════════════════╦═════════════╗');
+  print('   ║   ID    ║             NAMA PRODUK              ║  KATEGORI   ║');
+  print('   ╠═════════╬═════════════════════════════════════╬═════════════╣');
+  for (var product in fruitVeggieProducts) {
+    final idStr = product.id.padRight(7);
+    final nameStr = product.name.length > 35 
+        ? product.name.substring(0, 32) + '...' 
+        : product.name.padRight(35);
+    final categoryStr = product.category.padRight(11);
+    print('   ║ $idStr ║ $nameStr ║ $categoryStr ║');
+  }
+  print('   ╚═════════╩═════════════════════════════════════╩═════════════╝');
+  print('   =============================================================\n');
 
-    if (aIsPriority && !bIsPriority) return -1;
-    if (!aIsPriority && bIsPriority) return 1;
-    if (aIsPriority && bIsPriority) {
-      return int.parse(a.id).compareTo(int.parse(b.id));
-    }
-
-    // Sisanya urut berdasarkan ID (ascending)
-    try {
-      return int.parse(a.id).compareTo(int.parse(b.id));
-    } catch (e) {
-      return a.id.compareTo(b.id);
-    }
-  });
-
-  // Ambil maksimal 8 produk
-  return fruitVeggieProducts.take(8).toList();
+  // Kembalikan SEMUA produk tanpa sorting dan limit
+  return fruitVeggieProducts;
 }
 
 // ============================================================

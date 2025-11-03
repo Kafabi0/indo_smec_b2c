@@ -454,7 +454,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _loadData() async {
+void _loadData() async {
   if (_isLoadingData) {
     print('⚠️ [HOME] Data already loading, skipping...');
     return;
@@ -474,7 +474,103 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       print('   - Total products: ${k.productIds.length}');
       print('   - Has 51? ${k.productIds.contains('51')}');
       print('   - Has 52? ${k.productIds.contains('52')}');
-      print('   - Has 53? ${k.productIds.contains('53')}');
+      print('   - Has 69? ${k.productIds.contains('69')}'); // Perbaikan: 200 -> 69
+      
+      // ⭐ DEBUG SEMUA 35 PRODUK DI KOPERASI MERAH PUTIH ANTAPANI KIDUL ⭐
+      if (k.name == 'Koperasi Merah Putih Antapani Kidul') {
+        print('\n   🔍 [HOME] ========== SEMUA 35 PRODUK DI KOPERASI MERAH PUTIH ==========');
+        final allProducts = _productService.getAllProducts();
+        final allFruitVeggies = _productService.getFruitAndVeggies();
+        
+        print('   📊 [HOME] Total produk di database: ${allProducts.length}');
+        print('   📊 [HOME] Total produk di getFruitAndVeggies: ${allFruitVeggies.length}\n');
+        
+        // Header tabel
+        print('   ╔═════════╦═════════════════════════════════════╦═════════╦═════════════════╦═════════════╗');
+        print('   ║   ID    ║             NAMA PRODUK              ║  ADA?   ║ BUAH/ SAYUR?   ║  KATEGORI   ║');
+        print('   ╠═════════╬═════════════════════════════════════╬═════════╬═════════════════╬═════════════╣');
+        
+        // Periksa setiap produk
+        for (var productId in k.productIds) {
+          // Cek apakah produk ada di database
+          final productExists = allProducts.any((p) => p.id == productId);
+          
+          // Dapatkan detail produk
+          final product = allProducts.firstWhere(
+            (p) => p.id == productId,
+            orElse: () => Product(
+              id: 'not_found',
+              name: 'NOT FOUND',
+              description: '',
+              price: 0,
+              originalPrice: 0,
+              category: '',
+              rating: 0,
+              reviewCount: 0,
+              storeName: '',
+              storeDistance: '',
+              imageUrl: '',
+            ),
+          );
+          
+          // Cek apakah produk termasuk dalam kategori fruit & veggies
+          final isInFruitVeggies = allFruitVeggies.any((p) => p.id == productId);
+          
+          // Format output
+          final idStr = productId.padRight(7);
+          final nameStr = product.name.length > 35 
+              ? product.name.substring(0, 32) + '...' 
+              : product.name.padRight(35);
+          final existsStr = productExists ? '✅ TRUE' : '❌ FALSE';
+          final fruitVegStr = isInFruitVeggies ? '✅ TRUE' : '❌ FALSE';
+          final categoryStr = product.category.padRight(11);
+          
+          print('   ║ $idStr ║ $nameStr ║ $existsStr ║ $fruitVegStr ║ $categoryStr ║');
+        }
+        
+        print('   ╚═════════╩═════════════════════════════════════╩═════════╩═════════════════╩═════════════╝');
+        
+        // ⭐ DETAIL KHUSUS PRODUK 69 (BUAH NAGA) ⭐
+        print('\n   🔍 [HOME] ========== KHUSUS PRODUK 69 (BUAH NAGA) ==========');
+        final product69 = allProducts.firstWhere(
+          (p) => p.id == '69',
+          orElse: () => Product(
+            id: 'not_found',
+            name: 'NOT FOUND',
+            description: '',
+            price: 0,
+            originalPrice: 0,
+            category: '',
+            rating: 0,
+            reviewCount: 0,
+            storeName: '',
+            storeDistance: '',
+            imageUrl: '',
+          ),
+        );
+        
+        print('   📦 [HOME] Product 69 Details:');
+        print('      - ID: ${product69.id}');
+        print('      - Name: "${product69.name}"');
+        print('      - Name Length: ${product69.name.length}');
+        print('      - Name (lowercase): "${product69.name.toLowerCase()}"');
+        print('      - Category: ${product69.category}');
+        print('      - In Fruit&Veggies: ${allFruitVeggies.any((p) => p.id == '69')}');
+        
+        // Test filter secara manual
+        final name69 = product69.name.toLowerCase();
+        final containsNaga = name69.contains('naga');
+        final containsBuah = name69.contains('buah');
+        print('      - Contains "naga": $containsNaga');
+        print('      - Contains "buah": $containsBuah');
+        
+        // Cek apakah ada spasi ekstra di nama
+        print('      - First char: "${product69.name[0]}"');
+        print('      - Last char: "${product69.name[product69.name.length - 1]}"');
+        print('      - Has trailing space: ${product69.name.endsWith(' ')}');
+        
+        print('   =============================================================\n');
+      }
     }
 
     // Filter produk berdasarkan koperasi
@@ -488,7 +584,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       print('📦 [HOME] Total allowed products: ${allowedProductIds.length}');
       print('🔍 [HOME] Allowed contains 51? ${allowedProductIds.contains('51')}');
       print('🔍 [HOME] Allowed contains 52? ${allowedProductIds.contains('52')}');
-      print('🔍 [HOME] Allowed contains 53? ${allowedProductIds.contains('53')}');
+      print('🔍 [HOME] Allowed contains 69? ${allowedProductIds.contains('69')}');
 
       // Load produk berdasarkan kategori
       final allProducts = _productService.getAllProducts();
@@ -536,32 +632,35 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       print('📊 [HOME] getFruitAndVeggies returned: ${allFruitVeggies.length} products');
       print('🔍 [HOME] Before filter - Has 51? ${allFruitVeggies.any((p) => p.id == '51')}');
       print('🔍 [HOME] Before filter - Has 52? ${allFruitVeggies.any((p) => p.id == '52')}');
-      print('🔍 [HOME] Before filter - Has 53? ${allFruitVeggies.any((p) => p.id == '53')}');
+      print('🔍 [HOME] Before filter - Has 69? ${allFruitVeggies.any((p) => p.id == '69')}');
 
       // Filter berdasarkan koperasi
       fruitAndVeggies = allFruitVeggies.where((p) {
         final allowed = allowedProductIds.contains(p.id);
-        if (p.id == '51' || p.id == '52' || p.id == '53') {
+        if (p.id == '51' || p.id == '52' || p.id == '69') {
           print('🔍 [HOME] Product ${p.id} (${p.name}) allowed? $allowed');
         }
         return allowed;
-      }).take(8).toList();
+      }).toList(); // HAPUS .take(8) DI SINI
+
+      // Tambahkan sorting berdasarkan rating (tertinggi ke terendah)
+      fruitAndVeggies.sort((a, b) => b.rating.compareTo(a.rating));
 
       print('\n📦 [HOME] ========== FINAL BUAH & SAYUR ==========');
       print('📊 [HOME] Total: ${fruitAndVeggies.length} products');
       for (var i = 0; i < fruitAndVeggies.length; i++) {
         final p = fruitAndVeggies[i];
-        final marker = (p.id == '51' || p.id == '52' || p.id == '53') ? '⭐⭐⭐' : '';
-        print('   ${i + 1}. ID:${p.id} - ${p.name} $marker');
+        final marker = (p.id == '51' || p.id == '52' || p.id == '69') ? '⭐⭐⭐' : '';
+        print('   ${i + 1}. ID:${p.id} - ${p.name} (${p.rating}) $marker');
       }
       
       final has51 = fruitAndVeggies.any((p) => p.id == '51');
       final has52 = fruitAndVeggies.any((p) => p.id == '52');
-      final has53 = fruitAndVeggies.any((p) => p.id == '53');
+      final has69 = fruitAndVeggies.any((p) => p.id == '69');
       
       print('🎯 [HOME] Has 51 in final list? $has51');
       print('🎯 [HOME] Has 52 in final list? $has52');
-      print('🎯 [HOME] Has 53 in final list? $has53');
+      print('🎯 [HOME] Has 69 in final list? $has69');
       print('===================================================\n');
 
     } else {
