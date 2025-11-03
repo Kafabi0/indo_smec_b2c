@@ -1694,8 +1694,8 @@ class ProductService {
     ),
     Product(
       id: '111',
-      name: 'Paket Buah Tropis Premium',
-      description: 'Mangga, Manggis, Rambutan, Salak, Duku - Total 5kg',
+      name: 'Parcel Buah',
+      description: 'Pir, Apel, Anggur Hijau, Jeruk, Buavita Guava',
       price: 125000,
       originalPrice: 175000,
       category: 'Pertanian',
