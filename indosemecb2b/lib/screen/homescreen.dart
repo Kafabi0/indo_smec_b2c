@@ -1905,7 +1905,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         'Dikirim ke',
                         style: TextStyle(
                           color: Colors.grey[600],
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1914,7 +1914,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         _savedAlamat!['label'] ?? 'Rumah',
                         style: TextStyle(
                           color: Colors.black87,
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
