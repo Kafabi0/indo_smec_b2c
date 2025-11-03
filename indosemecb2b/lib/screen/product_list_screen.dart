@@ -345,7 +345,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ProductDetailPage(product: product),
+            builder:
+                (context) => ProductDetailPage(
+                  product: product,
+                  // userKoperasi:
+                  //     nearbyKoperasi.isNotEmpty ? nearbyKoperasi.first : null,
+                ),
           ),
         );
       },

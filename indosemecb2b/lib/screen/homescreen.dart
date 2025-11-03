@@ -179,19 +179,42 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _updateLocationFromAddress(Map<String, dynamic> alamat) async {
     print('📍 [HOME] ========== UPDATE LOCATION FROM ADDRESS ==========');
     print('📦 [HOME] Raw alamat data: $alamat');
-    print('🏠 [HOME] Kelurahan: ${alamat['kelurahan']}');
-    print('🏠 [HOME] Kecamatan: ${alamat['kecamatan']}');
-    print('🏠 [HOME] Kota: ${alamat['kota']}');
 
     setState(() {
       _isLoadingLocation = true;
     });
 
     try {
-      // ⭐ Set lokasi dari alamat yang dipilih
-      final kelurahan = (alamat['kelurahan'] ?? 'Unknown').toString().trim();
-      final kecamatan = (alamat['kecamatan'] ?? 'Unknown').toString().trim();
-      final kota = (alamat['kota'] ?? 'Unknown').toString().trim();
+      // ⭐ NORMALISASI YANG LEBIH KETAT
+      String normalize(String text) {
+        return text
+            .toLowerCase()
+            .trim()
+            .replaceAll(RegExp(r'\s+'), ' ') // Multiple spaces → 1 space
+            .replaceAll(RegExp(r'[^\w\s]'), '') // Remove special chars
+            // ⭐ HAPUS SEMUA PREFIX YANG MUNGKIN
+            .replaceAll(
+              RegExp(
+                r'^(kecamatan|kelurahan|kota|kabupaten|desa)\s+',
+                caseSensitive: false,
+              ),
+              '',
+            );
+      }
+
+      // ⭐ Get data dari alamat
+      final kelurahan = normalize(
+        (alamat['kelurahan'] ?? 'Unknown').toString(),
+      );
+      final kecamatan = normalize(
+        (alamat['kecamatan'] ?? 'Unknown').toString(),
+      );
+      final kota = normalize((alamat['kota'] ?? 'Unknown').toString());
+
+      print('\n🔍 [HOME] ========== NORMALIZED ALAMAT USER ==========');
+      print('   Kelurahan: "$kelurahan"');
+      print('   Kecamatan: "$kecamatan"');
+      print('   Kota: "$kota"');
 
       final locationFromAddress = {
         'kelurahan': kelurahan,
@@ -202,96 +225,67 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         'longitude': alamat['longitude'] ?? 107.653267,
       };
 
-      print('🔄 [HOME] Processed location data:');
-      print('   Kelurahan: "$kelurahan"');
-      print('   Kecamatan: "$kecamatan"');
-      print('   Kota: "$kota"');
-
       // ⭐ Cari koperasi berdasarkan alamat yang dipilih
       final koperasiList = KoperasiService.getAllKoperasi();
-      print('📋 [HOME] Total koperasi available: ${koperasiList.length}');
+      print('\n📋 [HOME] Total koperasi available: ${koperasiList.length}');
 
-      // ⭐ Debug: Print semua koperasi
+      // ⭐ DEBUG: Print semua koperasi (NORMALIZED)
+      print('\n🏪 [HOME] ========== DATA KOPERASI (NORMALIZED) ==========');
       for (var k in koperasiList) {
-        print('   - ${k.name}:');
-        print('     Kelurahan: "${k.kelurahan}"');
-        print('     Kecamatan: "${k.kecamatan}"');
-        print('     Kota: "${k.kota}"');
+        final kKelurahan = normalize(k.kelurahan);
+        final kKecamatan = normalize(k.kecamatan);
+        final kKota = normalize(k.kota);
+
+        print('   ${k.name}:');
+        print('      Kelurahan: "$kKelurahan" (original: "${k.kelurahan}")');
+        print('      Kecamatan: "$kKecamatan" (original: "${k.kecamatan}")');
+        print('      Kota: "$kKota" (original: "${k.kota}")');
       }
 
-      // ⭐ PERBAIKAN: Smart Matching dengan normalisasi yang lebih baik
+      // ⭐ SMART MATCHING DENGAN PRIORITAS JELAS
       final matchedKoperasi =
           koperasiList.where((k) {
-            // ⭐ NORMALISASI YANG LEBIH KETAT + REMOVE PREFIX
-            String normalize(String text) {
-              return text
-                  .toLowerCase()
-                  .trim()
-                  .replaceAll(RegExp(r'\s+'), ' ') // Multiple spaces → 1 space
-                  .replaceAll(RegExp(r'[^\w\s]'), '') // Remove special chars
-                  .replaceAll(
-                    RegExp(r'^kecamatan\s+'),
-                    '',
-                  ) // ⭐ Remove "kecamatan " prefix
-                  .replaceAll(
-                    RegExp(r'^kelurahan\s+'),
-                    '',
-                  ) // ⭐ Remove "kelurahan " prefix
-                  .replaceAll(
-                    RegExp(r'^kota\s+'),
-                    '',
-                  ) // ⭐ Remove "kota " prefix
-                  .replaceAll(
-                    RegExp(r'^kabupaten\s+'),
-                    '',
-                  ); // ⭐ Remove "kabupaten " prefix
-            }
-
             final kKelurahan = normalize(k.kelurahan);
             final kKecamatan = normalize(k.kecamatan);
             final kKota = normalize(k.kota);
 
-            final aKelurahan = normalize(kelurahan);
-            final aKecamatan = normalize(kecamatan);
-            final aKota = normalize(kota);
+            print('\n🔍 [HOME] Checking ${k.name}:');
+            print('   Kelurahan: "$kKelurahan" == "$kelurahan"');
+            print('   Kecamatan: "$kKecamatan" == "$kecamatan"');
+            print('   Kota: "$kKota" == "$kota"');
 
-            print('🔍 [HOME] Checking ${k.name}:');
-            print('   Kelurahan: "$kKelurahan" == "$aKelurahan"');
-            print('   Kecamatan: "$kKecamatan" == "$aKecamatan"');
-            print('   Kota: "$kKota" == "$aKota"');
-
-            // ⭐ SMART MATCHING LOGIC:
-
-            // 1. EXACT MATCH: Kelurahan cocok persis
-            if (kKelurahan == aKelurahan) {
-              print('   ✅ Result: EXACT MATCH (Kelurahan)');
+            // ⭐ PRIORITAS 1: EXACT MATCH KELURAHAN (PALING AKURAT!)
+            if (kKelurahan == kelurahan && kKecamatan == kecamatan) {
+              print('   ✅ Result: EXACT MATCH (Kelurahan + Kecamatan)');
               return true;
             }
 
-            // 2. SMART MATCH: Kelurahan berbeda tapi masih satu kecamatan
-            if (kKecamatan == aKecamatan && kKota == aKota) {
-              // ⭐ Cek apakah kelurahan user adalah bagian dari kecamatan koperasi
-              final kecamatanBase = kKecamatan.split(' ').first;
-
-              if (aKelurahan.startsWith(kecamatanBase) ||
-                  kKelurahan.startsWith(kecamatanBase)) {
-                print('   ✅ Result: SMART MATCH (Same Kecamatan: $kKecamatan)');
-                return true;
-              }
-
-              print('   ✅ Result: MATCH (Kecamatan + Kota)');
+            // ⭐ PRIORITAS 2: KELURAHAN SAMA (meski beda kecamatan, tapi masih relevan)
+            if (kKelurahan == kelurahan) {
+              print('   ⚠️ Result: PARTIAL MATCH (Kelurahan only)');
               return true;
             }
 
-            // 3. PARTIAL MATCH: Hanya Kecamatan cocok
-            if (kKecamatan == aKecamatan) {
-              print('   ⚠️ Result: PARTIAL MATCH (Kecamatan only)');
+            // ⭐ PRIORITAS 3: KECAMATAN + KOTA SAMA
+            if (kKecamatan == kecamatan && kKota == kota) {
+              print('   ⚠️ Result: MATCH (Kecamatan + Kota, beda kelurahan)');
               return true;
             }
 
             print('   ❌ Result: NO MATCH');
             return false;
           }).toList();
+
+      // ⭐ SORTING BERDASARKAN PRIORITAS (Kelurahan exact match di depan)
+      matchedKoperasi.sort((a, b) {
+        final aKelurahan = normalize(a.kelurahan);
+        final bKelurahan = normalize(b.kelurahan);
+
+        final aExact = (aKelurahan == kelurahan) ? 0 : 1;
+        final bExact = (bKelurahan == kelurahan) ? 0 : 1;
+
+        return aExact.compareTo(bExact);
+      });
 
       if (!mounted) return;
 
@@ -301,16 +295,20 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _isLoadingLocation = false;
       });
 
-      print('✅ [HOME] Location updated from address');
-      print('🏪 [HOME] Found ${_nearbyKoperasi.length} matching koperasi');
+      print('\n✅ [HOME] ========== MATCHING RESULT ==========');
+      print('🏪 [HOME] Found ${_nearbyKoperasi.length} matching koperasi:');
       if (_nearbyKoperasi.isNotEmpty) {
-        for (var k in _nearbyKoperasi) {
-          print('   ✓ ${k.name} (${k.productIds.length} produk)');
+        for (var i = 0; i < _nearbyKoperasi.length; i++) {
+          final k = _nearbyKoperasi[i];
+          print('   ${i + 1}. ${k.name}');
+          print('      - Kelurahan: ${k.kelurahan}');
+          print('      - Produk: ${k.productIds.length}');
         }
       } else {
         print('❌ [HOME] NO MATCHING KOPERASI FOUND!');
+        print('   User alamat: $kelurahan, $kecamatan, $kota');
       }
-      print('========================================================');
+      print('========================================================\n');
 
       // ⭐ Reload produk berdasarkan koperasi baru
       _loadData();
@@ -454,282 +452,341 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-void _loadData() async {
-  if (_isLoadingData) {
-    print('⚠️ [HOME] Data already loading, skipping...');
-    return;
-  }
+  void _loadData() async {
+    if (_isLoadingData) {
+      print('⚠️ [HOME] Data already loading, skipping...');
+      return;
+    }
 
-  setState(() {
-    _isLoadingData = true;
-  });
+    setState(() {
+      _isLoadingData = true;
+    });
 
-  try {
-    print('🔄 [HOME] ========== _loadData START ==========');
-    print('📍 [HOME] Nearby koperasi count: ${_nearbyKoperasi.length}');
-    
-    // Debug koperasi
-    for (var k in _nearbyKoperasi) {
-      print('🏪 [HOME] Koperasi: ${k.name}');
-      print('   - Total products: ${k.productIds.length}');
-      print('   - Has 51? ${k.productIds.contains('51')}');
-      print('   - Has 52? ${k.productIds.contains('52')}');
-      print('   - Has 69? ${k.productIds.contains('69')}'); // Perbaikan: 200 -> 69
-      
-      // ⭐ DEBUG SEMUA 35 PRODUK DI KOPERASI MERAH PUTIH ANTAPANI KIDUL ⭐
-      if (k.name == 'Koperasi Merah Putih Antapani Kidul') {
-        print('\n   🔍 [HOME] ========== SEMUA 35 PRODUK DI KOPERASI MERAH PUTIH ==========');
-        final allProducts = _productService.getAllProducts();
-        final allFruitVeggies = _productService.getFruitAndVeggies();
-        
-        print('   📊 [HOME] Total produk di database: ${allProducts.length}');
-        print('   📊 [HOME] Total produk di getFruitAndVeggies: ${allFruitVeggies.length}\n');
-        
-        // Header tabel
-        print('   ╔═════════╦═════════════════════════════════════╦═════════╦═════════════════╦═════════════╗');
-        print('   ║   ID    ║             NAMA PRODUK              ║  ADA?   ║ BUAH/ SAYUR?   ║  KATEGORI   ║');
-        print('   ╠═════════╬═════════════════════════════════════╬═════════╬═════════════════╬═════════════╣');
-        
-        // Periksa setiap produk
-        for (var productId in k.productIds) {
-          // Cek apakah produk ada di database
-          final productExists = allProducts.any((p) => p.id == productId);
-          
-          // Dapatkan detail produk
-          final product = allProducts.firstWhere(
-            (p) => p.id == productId,
-            orElse: () => Product(
-              id: 'not_found',
-              name: 'NOT FOUND',
-              description: '',
-              price: 0,
-              originalPrice: 0,
-              category: '',
-              rating: 0,
-              reviewCount: 0,
-              storeName: '',
-              storeDistance: '',
-              imageUrl: '',
-            ),
+    try {
+      print('🔄 [HOME] ========== _loadData START ==========');
+      print('📍 [HOME] Nearby koperasi count: ${_nearbyKoperasi.length}');
+
+      // Debug koperasi
+      for (var k in _nearbyKoperasi) {
+        print('🏪 [HOME] Koperasi: ${k.name}');
+        print('   - Total products: ${k.productIds.length}');
+        print('   - Has 51? ${k.productIds.contains('51')}');
+        print('   - Has 52? ${k.productIds.contains('52')}');
+        print(
+          '   - Has 69? ${k.productIds.contains('69')}',
+        ); // Perbaikan: 200 -> 69
+
+        // ⭐ DEBUG SEMUA 35 PRODUK DI KOPERASI MERAH PUTIH ANTAPANI KIDUL ⭐
+        if (k.name == 'Koperasi Merah Putih Antapani Kidul') {
+          print(
+            '\n   🔍 [HOME] ========== SEMUA 35 PRODUK DI KOPERASI MERAH PUTIH ==========',
           );
-          
-          // Cek apakah produk termasuk dalam kategori fruit & veggies
-          final isInFruitVeggies = allFruitVeggies.any((p) => p.id == productId);
-          
-          // Format output
-          final idStr = productId.padRight(7);
-          final nameStr = product.name.length > 35 
-              ? product.name.substring(0, 32) + '...' 
-              : product.name.padRight(35);
-          final existsStr = productExists ? '✅ TRUE' : '❌ FALSE';
-          final fruitVegStr = isInFruitVeggies ? '✅ TRUE' : '❌ FALSE';
-          final categoryStr = product.category.padRight(11);
-          
-          print('   ║ $idStr ║ $nameStr ║ $existsStr ║ $fruitVegStr ║ $categoryStr ║');
+          final allProducts = _productService.getAllProducts();
+          final allFruitVeggies = _productService.getFruitAndVeggies();
+
+          print('   📊 [HOME] Total produk di database: ${allProducts.length}');
+          print(
+            '   📊 [HOME] Total produk di getFruitAndVeggies: ${allFruitVeggies.length}\n',
+          );
+
+          // Header tabel
+          print(
+            '   ╔═════════╦═════════════════════════════════════╦═════════╦═════════════════╦═════════════╗',
+          );
+          print(
+            '   ║   ID    ║             NAMA PRODUK              ║  ADA?   ║ BUAH/ SAYUR?   ║  KATEGORI   ║',
+          );
+          print(
+            '   ╠═════════╬═════════════════════════════════════╬═════════╬═════════════════╬═════════════╣',
+          );
+
+          // Periksa setiap produk
+          for (var productId in k.productIds) {
+            // Cek apakah produk ada di database
+            final productExists = allProducts.any((p) => p.id == productId);
+
+            // Dapatkan detail produk
+            final product = allProducts.firstWhere(
+              (p) => p.id == productId,
+              orElse:
+                  () => Product(
+                    id: 'not_found',
+                    name: 'NOT FOUND',
+                    description: '',
+                    price: 0,
+                    originalPrice: 0,
+                    category: '',
+                    rating: 0,
+                    reviewCount: 0,
+                    storeName: '',
+                    storeDistance: '',
+                    imageUrl: '',
+                  ),
+            );
+
+            // Cek apakah produk termasuk dalam kategori fruit & veggies
+            final isInFruitVeggies = allFruitVeggies.any(
+              (p) => p.id == productId,
+            );
+
+            // Format output
+            final idStr = productId.padRight(7);
+            final nameStr =
+                product.name.length > 35
+                    ? product.name.substring(0, 32) + '...'
+                    : product.name.padRight(35);
+            final existsStr = productExists ? '✅ TRUE' : '❌ FALSE';
+            final fruitVegStr = isInFruitVeggies ? '✅ TRUE' : '❌ FALSE';
+            final categoryStr = product.category.padRight(11);
+
+            print(
+              '   ║ $idStr ║ $nameStr ║ $existsStr ║ $fruitVegStr ║ $categoryStr ║',
+            );
+          }
+
+          print(
+            '   ╚═════════╩═════════════════════════════════════╩═════════╩═════════════════╩═════════════╝',
+          );
+
+          // ⭐ DETAIL KHUSUS PRODUK 69 (BUAH NAGA) ⭐
+          print(
+            '\n   🔍 [HOME] ========== KHUSUS PRODUK 69 (BUAH NAGA) ==========',
+          );
+          final product69 = allProducts.firstWhere(
+            (p) => p.id == '69',
+            orElse:
+                () => Product(
+                  id: 'not_found',
+                  name: 'NOT FOUND',
+                  description: '',
+                  price: 0,
+                  originalPrice: 0,
+                  category: '',
+                  rating: 0,
+                  reviewCount: 0,
+                  storeName: '',
+                  storeDistance: '',
+                  imageUrl: '',
+                ),
+          );
+
+          print('   📦 [HOME] Product 69 Details:');
+          print('      - ID: ${product69.id}');
+          print('      - Name: "${product69.name}"');
+          print('      - Name Length: ${product69.name.length}');
+          print('      - Name (lowercase): "${product69.name.toLowerCase()}"');
+          print('      - Category: ${product69.category}');
+          print(
+            '      - In Fruit&Veggies: ${allFruitVeggies.any((p) => p.id == '69')}',
+          );
+
+          // Test filter secara manual
+          final name69 = product69.name.toLowerCase();
+          final containsNaga = name69.contains('naga');
+          final containsBuah = name69.contains('buah');
+          print('      - Contains "naga": $containsNaga');
+          print('      - Contains "buah": $containsBuah');
+
+          // Cek apakah ada spasi ekstra di nama
+          print('      - First char: "${product69.name[0]}"');
+          print(
+            '      - Last char: "${product69.name[product69.name.length - 1]}"',
+          );
+          print('      - Has trailing space: ${product69.name.endsWith(' ')}');
+
+          print(
+            '   =============================================================\n',
+          );
         }
-        
-        print('   ╚═════════╩═════════════════════════════════════╩═════════╩═════════════════╩═════════════╝');
-        
-        // ⭐ DETAIL KHUSUS PRODUK 69 (BUAH NAGA) ⭐
-        print('\n   🔍 [HOME] ========== KHUSUS PRODUK 69 (BUAH NAGA) ==========');
-        final product69 = allProducts.firstWhere(
-          (p) => p.id == '69',
-          orElse: () => Product(
-            id: 'not_found',
-            name: 'NOT FOUND',
-            description: '',
-            price: 0,
-            originalPrice: 0,
-            category: '',
-            rating: 0,
-            reviewCount: 0,
-            storeName: '',
-            storeDistance: '',
-            imageUrl: '',
-          ),
-        );
-        
-        print('   📦 [HOME] Product 69 Details:');
-        print('      - ID: ${product69.id}');
-        print('      - Name: "${product69.name}"');
-        print('      - Name Length: ${product69.name.length}');
-        print('      - Name (lowercase): "${product69.name.toLowerCase()}"');
-        print('      - Category: ${product69.category}');
-        print('      - In Fruit&Veggies: ${allFruitVeggies.any((p) => p.id == '69')}');
-        
-        // Test filter secara manual
-        final name69 = product69.name.toLowerCase();
-        final containsNaga = name69.contains('naga');
-        final containsBuah = name69.contains('buah');
-        print('      - Contains "naga": $containsNaga');
-        print('      - Contains "buah": $containsBuah');
-        
-        // Cek apakah ada spasi ekstra di nama
-        print('      - First char: "${product69.name[0]}"');
-        print('      - Last char: "${product69.name[product69.name.length - 1]}"');
-        print('      - Has trailing space: ${product69.name.endsWith(' ')}');
-        
-        print('   =============================================================\n');
-      }
-    }
-
-    // Filter produk berdasarkan koperasi
-    if (_nearbyKoperasi.isNotEmpty) {
-      // Kumpulkan semua productIds dari koperasi yang match
-      final Set<String> allowedProductIds = {};
-      for (var koperasi in _nearbyKoperasi) {
-        allowedProductIds.addAll(koperasi.productIds);
       }
 
-      print('📦 [HOME] Total allowed products: ${allowedProductIds.length}');
-      print('🔍 [HOME] Allowed contains 51? ${allowedProductIds.contains('51')}');
-      print('🔍 [HOME] Allowed contains 52? ${allowedProductIds.contains('52')}');
-      print('🔍 [HOME] Allowed contains 69? ${allowedProductIds.contains('69')}');
-
-      // Load produk berdasarkan kategori
-      final allProducts = _productService.getAllProducts();
-
-      if (selectedCategory == 'Semua') {
-        displayedProducts = allProducts
-            .where((p) => allowedProductIds.contains(p.id))
-            .toList();
-      } else {
-        displayedProducts = allProducts
-            .where((p) => allowedProductIds.contains(p.id) && p.category == selectedCategory)
-            .toList();
-      }
-
-      print('📦 [HOME] displayedProducts: ${displayedProducts.length}');
-
-      // ⭐⭐⭐ GANTI BAGIAN INI ⭐⭐⭐
-      // Flash Sale Products (filter by koperasi)
-      print('\n🏠 [HOME] ========== LOADING FLASH SALE ==========');
-      print('📍 [HOME] Nearby koperasi: ${_nearbyKoperasi.length}');
-
+      // Filter produk berdasarkan koperasi
       if (_nearbyKoperasi.isNotEmpty) {
-        print('🏪 [HOME] Koperasi name: ${_nearbyKoperasi.first.name}');
-        print('📦 [HOME] Koperasi products: ${_nearbyKoperasi.first.productIds.length}');
-        print('   Sample IDs: ${_nearbyKoperasi.first.productIds.take(10).join(", ")}');
-      }
-
-      print('📥 [HOME] Allowed product IDs: ${allowedProductIds.length}');
-      print('   Sample: ${allowedProductIds.take(10).join(", ")}');
-
-      flashSaleProducts = _productService.getFlashSaleProductsByKoperasi(
-        allowedProductIds.toList(),
-      );
-
-      print('✅ [HOME] Flash sale products loaded: ${flashSaleProducts.length}');
-
-      if (flashSaleProducts.isNotEmpty) {
-        print('📋 [HOME] Flash sale products:');
-        for (var p in flashSaleProducts) {
-          print('   - ${p.id}: ${p.name}');
+        // Kumpulkan semua productIds dari koperasi yang match
+        final Set<String> allowedProductIds = {};
+        for (var koperasi in _nearbyKoperasi) {
+          allowedProductIds.addAll(koperasi.productIds);
         }
+
+        print('📦 [HOME] Total allowed products: ${allowedProductIds.length}');
+        print(
+          '🔍 [HOME] Allowed contains 51? ${allowedProductIds.contains('51')}',
+        );
+        print(
+          '🔍 [HOME] Allowed contains 52? ${allowedProductIds.contains('52')}',
+        );
+        print(
+          '🔍 [HOME] Allowed contains 69? ${allowedProductIds.contains('69')}',
+        );
+
+        // Load produk berdasarkan kategori
+        final allProducts = _productService.getAllProducts();
+
+        if (selectedCategory == 'Semua') {
+          displayedProducts =
+              allProducts
+                  .where((p) => allowedProductIds.contains(p.id))
+                  .toList();
+        } else {
+          displayedProducts =
+              allProducts
+                  .where(
+                    (p) =>
+                        allowedProductIds.contains(p.id) &&
+                        p.category == selectedCategory,
+                  )
+                  .toList();
+        }
+
+        print('📦 [HOME] displayedProducts: ${displayedProducts.length}');
+
+        // ⭐⭐⭐ GANTI BAGIAN INI ⭐⭐⭐
+        // Flash Sale Products (filter by koperasi)
+        print('\n🏠 [HOME] ========== LOADING FLASH SALE ==========');
+        print('📍 [HOME] Nearby koperasi: ${_nearbyKoperasi.length}');
+
+        if (_nearbyKoperasi.isNotEmpty) {
+          print('🏪 [HOME] Koperasi name: ${_nearbyKoperasi.first.name}');
+          print(
+            '📦 [HOME] Koperasi products: ${_nearbyKoperasi.first.productIds.length}',
+          );
+          print(
+            '   Sample IDs: ${_nearbyKoperasi.first.productIds.take(10).join(", ")}',
+          );
+        }
+
+        print('📥 [HOME] Allowed product IDs: ${allowedProductIds.length}');
+        print('   Sample: ${allowedProductIds.take(10).join(", ")}');
+
+        flashSaleProducts = _productService.getFlashSaleProductsByKoperasi(
+          allowedProductIds.toList(),
+        );
+
+        print(
+          '✅ [HOME] Flash sale products loaded: ${flashSaleProducts.length}',
+        );
+
+        if (flashSaleProducts.isNotEmpty) {
+          print('📋 [HOME] Flash sale products:');
+          for (var p in flashSaleProducts) {
+            print('   - ${p.id}: ${p.name}');
+          }
+        } else {
+          print('⚠️ [HOME] NO FLASH SALE PRODUCTS!');
+        }
+
+        print('========================================================\n');
+
+        // Top Rated Products (filter berdasarkan koperasi)
+        final filteredProducts =
+            allProducts.where((p) => allowedProductIds.contains(p.id)).toList();
+
+        topRatedProducts = List<Product>.from(filteredProducts)
+          ..sort((a, b) => b.rating.compareTo(a.rating));
+        topRatedProducts = topRatedProducts.take(8).toList();
+
+        // Fresh Products (filter berdasarkan koperasi)
+        print('\n🍹 [HOME] Calling getFreshProducts...');
+        freshProducts =
+            _productService
+                .getFreshProducts()
+                .where((p) => allowedProductIds.contains(p.id))
+                .take(8)
+                .toList();
+        print('📦 [HOME] freshProducts after filter: ${freshProducts.length}');
+
+        // Newest Products (filter berdasarkan koperasi)
+        newestProducts = filteredProducts.take(8).toList();
+
+        // ⭐⭐⭐ BUAH & SAYUR - INI YANG PENTING! ⭐⭐⭐
+        print('\n🍎 [HOME] Calling getFruitAndVeggies...');
+        final allFruitVeggies = _productService.getFruitAndVeggies();
+
+        print(
+          '📊 [HOME] getFruitAndVeggies returned: ${allFruitVeggies.length} products',
+        );
+        print(
+          '🔍 [HOME] Before filter - Has 51? ${allFruitVeggies.any((p) => p.id == '51')}',
+        );
+        print(
+          '🔍 [HOME] Before filter - Has 52? ${allFruitVeggies.any((p) => p.id == '52')}',
+        );
+        print(
+          '🔍 [HOME] Before filter - Has 69? ${allFruitVeggies.any((p) => p.id == '69')}',
+        );
+
+        // Filter berdasarkan koperasi
+        fruitAndVeggies =
+            allFruitVeggies.where((p) {
+              final allowed = allowedProductIds.contains(p.id);
+              if (p.id == '51' || p.id == '52' || p.id == '69') {
+                print(
+                  '🔍 [HOME] Product ${p.id} (${p.name}) allowed? $allowed',
+                );
+              }
+              return allowed;
+            }).toList(); // HAPUS .take(8) DI SINI
+
+        // Tambahkan sorting berdasarkan rating (tertinggi ke terendah)
+        fruitAndVeggies.sort((a, b) => b.rating.compareTo(a.rating));
+
+        print('\n📦 [HOME] ========== FINAL BUAH & SAYUR ==========');
+        print('📊 [HOME] Total: ${fruitAndVeggies.length} products');
+        for (var i = 0; i < fruitAndVeggies.length; i++) {
+          final p = fruitAndVeggies[i];
+          final marker =
+              (p.id == '51' || p.id == '52' || p.id == '69') ? '⭐⭐⭐' : '';
+          print('   ${i + 1}. ID:${p.id} - ${p.name} (${p.rating}) $marker');
+        }
+
+        final has51 = fruitAndVeggies.any((p) => p.id == '51');
+        final has52 = fruitAndVeggies.any((p) => p.id == '52');
+        final has69 = fruitAndVeggies.any((p) => p.id == '69');
+
+        print('🎯 [HOME] Has 51 in final list? $has51');
+        print('🎯 [HOME] Has 52 in final list? $has52');
+        print('🎯 [HOME] Has 69 in final list? $has69');
+        print('===================================================\n');
       } else {
-        print('⚠️ [HOME] NO FLASH SALE PRODUCTS!');
+        // Jika tidak ada koperasi match, tampilkan semua
+        print('⚠️ [HOME] No matching koperasi, showing all products');
+        displayedProducts =
+            selectedCategory == 'Semua'
+                ? _productService.getAllProducts()
+                : _productService.getProductsByCategory(selectedCategory);
+
+        flashSaleProducts = _productService.getActiveFlashSaleProducts();
+        topRatedProducts = List<Product>.from(_productService.getAllProducts())
+          ..sort((a, b) => b.rating.compareTo(a.rating));
+        topRatedProducts = topRatedProducts.take(8).toList();
+
+        freshProducts = _productService.getFreshProducts().take(8).toList();
+        newestProducts = _productService.getAllProducts().take(8).toList();
+        fruitAndVeggies = _productService.getFruitAndVeggies().take(8).toList();
       }
 
-      print('========================================================\n');
+      // Load stores dan subcategories
+      categoryStores = _productService.getStoresByCategory(selectedCategory);
+      subCategories = _productService.getSubCategories(selectedCategory);
+      flagshipStore = _productService.getFlagshipStore(selectedCategory);
 
-      // Top Rated Products (filter berdasarkan koperasi)
-      final filteredProducts = allProducts
-          .where((p) => allowedProductIds.contains(p.id))
-          .toList();
+      print('✅ [HOME] Data loaded successfully');
+      print('🔄 [HOME] ========== _loadData END ==========\n');
 
-      topRatedProducts = List<Product>.from(filteredProducts)
-        ..sort((a, b) => b.rating.compareTo(a.rating));
-      topRatedProducts = topRatedProducts.take(8).toList();
-
-      // Fresh Products (filter berdasarkan koperasi)
-      print('\n🍹 [HOME] Calling getFreshProducts...');
-      freshProducts = _productService
-          .getFreshProducts()
-          .where((p) => allowedProductIds.contains(p.id))
-          .take(8)
-          .toList();
-      print('📦 [HOME] freshProducts after filter: ${freshProducts.length}');
-
-      // Newest Products (filter berdasarkan koperasi)
-      newestProducts = filteredProducts.take(8).toList();
-
-      // ⭐⭐⭐ BUAH & SAYUR - INI YANG PENTING! ⭐⭐⭐
-      print('\n🍎 [HOME] Calling getFruitAndVeggies...');
-      final allFruitVeggies = _productService.getFruitAndVeggies();
-      
-      print('📊 [HOME] getFruitAndVeggies returned: ${allFruitVeggies.length} products');
-      print('🔍 [HOME] Before filter - Has 51? ${allFruitVeggies.any((p) => p.id == '51')}');
-      print('🔍 [HOME] Before filter - Has 52? ${allFruitVeggies.any((p) => p.id == '52')}');
-      print('🔍 [HOME] Before filter - Has 69? ${allFruitVeggies.any((p) => p.id == '69')}');
-
-      // Filter berdasarkan koperasi
-      fruitAndVeggies = allFruitVeggies.where((p) {
-        final allowed = allowedProductIds.contains(p.id);
-        if (p.id == '51' || p.id == '52' || p.id == '69') {
-          print('🔍 [HOME] Product ${p.id} (${p.name}) allowed? $allowed');
-        }
-        return allowed;
-      }).toList(); // HAPUS .take(8) DI SINI
-
-      // Tambahkan sorting berdasarkan rating (tertinggi ke terendah)
-      fruitAndVeggies.sort((a, b) => b.rating.compareTo(a.rating));
-
-      print('\n📦 [HOME] ========== FINAL BUAH & SAYUR ==========');
-      print('📊 [HOME] Total: ${fruitAndVeggies.length} products');
-      for (var i = 0; i < fruitAndVeggies.length; i++) {
-        final p = fruitAndVeggies[i];
-        final marker = (p.id == '51' || p.id == '52' || p.id == '69') ? '⭐⭐⭐' : '';
-        print('   ${i + 1}. ID:${p.id} - ${p.name} (${p.rating}) $marker');
+      if (mounted) {
+        setState(() {});
       }
-      
-      final has51 = fruitAndVeggies.any((p) => p.id == '51');
-      final has52 = fruitAndVeggies.any((p) => p.id == '52');
-      final has69 = fruitAndVeggies.any((p) => p.id == '69');
-      
-      print('🎯 [HOME] Has 51 in final list? $has51');
-      print('🎯 [HOME] Has 52 in final list? $has52');
-      print('🎯 [HOME] Has 69 in final list? $has69');
-      print('===================================================\n');
-
-    } else {
-      // Jika tidak ada koperasi match, tampilkan semua
-      print('⚠️ [HOME] No matching koperasi, showing all products');
-      displayedProducts = selectedCategory == 'Semua'
-          ? _productService.getAllProducts()
-          : _productService.getProductsByCategory(selectedCategory);
-
-      flashSaleProducts = _productService.getActiveFlashSaleProducts();
-      topRatedProducts = List<Product>.from(_productService.getAllProducts())
-        ..sort((a, b) => b.rating.compareTo(a.rating));
-      topRatedProducts = topRatedProducts.take(8).toList();
-
-      freshProducts = _productService.getFreshProducts().take(8).toList();
-      newestProducts = _productService.getAllProducts().take(8).toList();
-      fruitAndVeggies = _productService.getFruitAndVeggies().take(8).toList();
-    }
-
-    // Load stores dan subcategories
-    categoryStores = _productService.getStoresByCategory(selectedCategory);
-    subCategories = _productService.getSubCategories(selectedCategory);
-    flagshipStore = _productService.getFlagshipStore(selectedCategory);
-
-    print('✅ [HOME] Data loaded successfully');
-    print('🔄 [HOME] ========== _loadData END ==========\n');
-
-    if (mounted) {
-      setState(() {});
-    }
-  } catch (e, stackTrace) {
-    print('❌ [HOME] Error loading data: $e');
-    print('📜 [HOME] Stack trace: $stackTrace');
-  } finally {
-    if (mounted) {
-      setState(() {
-        _isLoadingData = false;
-      });
+    } catch (e, stackTrace) {
+      print('❌ [HOME] Error loading data: $e');
+      print('📜 [HOME] Stack trace: $stackTrace');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingData = false;
+        });
+      }
     }
   }
-}
 
   // Future<void> _loadAlamatData() async {
   //   print('🔍 [HOME] _loadAlamatData() dipanggil');
@@ -1898,94 +1955,96 @@ void _loadData() async {
 
           // ⭐ INFO KOPERASI DARI ALAMAT YANG DIPILIH
           if (_nearbyKoperasi.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.green[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.green[200]!),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.store, color: Colors.green[700], size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Belanja dari: ${_nearbyKoperasi.first.name}',
-                            style: TextStyle(
-                              color: Colors.green[800],
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Text(
-                          '${_nearbyKoperasi.first.productIds.length} produk',
-                          style: TextStyle(
-                            color: Colors.green[600],
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
+            const SizedBox(height: 8),
+            Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
                   ),
-                  
-                  // ⭐ FLASH SALE INFO
-                  // if (flashSaleProducts.isNotEmpty) ...[
-                  //   const SizedBox(height: 6),
-                  //   Container(
-                  //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  //     decoration: BoxDecoration(
-                  //       gradient: LinearGradient(
-                  //         colors: [Colors.red[50]!, Colors.orange[50]!],
-                  //       ),
-                  //       borderRadius: BorderRadius.circular(8),
-                  //       border: Border.all(color: Colors.red[200]!),
-                  //     ),
-                  //     // child: Row(
-                  //     //   children: [
-                  //     //     Icon(Icons.local_fire_department, color: Colors.red[700], size: 16),
-                  //     //     const SizedBox(width: 8),
-                  //     //     // Expanded(
-                  //     //     //   child: Text(
-                  //     //     //     '${flashSaleProducts.length} produk Flash Sale tersedia!',
-                  //     //     //     style: TextStyle(
-                  //     //     //       color: Colors.red[800],
-                  //     //     //       fontSize: 11,
-                  //     //     //       fontWeight: FontWeight.w600,
-                  //     //     //     ),
-                  //     //     //   ),
-                  //     //     // ),
-                  //     //     if (currentFlashSale != null)
-                  //     //       Container(
-                  //     //         padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  //     //         decoration: BoxDecoration(
-                  //     //           color: Colors.red[700],
-                  //     //           borderRadius: BorderRadius.circular(4),
-                  //     //         ),
-                  //     //         child: Text(
-                  //     //           '${currentFlashSale!.discountPercentage}%',
-                  //     //           style: TextStyle(
-                  //     //             color: Colors.white,
-                  //     //             fontSize: 9,
-                  //     //             fontWeight: FontWeight.bold,
-                  //     //           ),
-                  //     //         ),
-                  //     //       ),
-                  //     //   ],
-                  //     // ),
-                  //   ),
-                  // ],
-                ],
-              ),
-            ]
-            else if (_savedAlamat != null) ...[
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.store, color: Colors.green[700], size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Belanja dari: ${_nearbyKoperasi.first.name}',
+                          style: TextStyle(
+                            color: Colors.green[800],
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        '${_nearbyKoperasi.first.productIds.length} produk',
+                        style: TextStyle(
+                          color: Colors.green[600],
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ⭐ FLASH SALE INFO
+                // if (flashSaleProducts.isNotEmpty) ...[
+                //   const SizedBox(height: 6),
+                //   Container(
+                //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                //     decoration: BoxDecoration(
+                //       gradient: LinearGradient(
+                //         colors: [Colors.red[50]!, Colors.orange[50]!],
+                //       ),
+                //       borderRadius: BorderRadius.circular(8),
+                //       border: Border.all(color: Colors.red[200]!),
+                //     ),
+                //     // child: Row(
+                //     //   children: [
+                //     //     Icon(Icons.local_fire_department, color: Colors.red[700], size: 16),
+                //     //     const SizedBox(width: 8),
+                //     //     // Expanded(
+                //     //     //   child: Text(
+                //     //     //     '${flashSaleProducts.length} produk Flash Sale tersedia!',
+                //     //     //     style: TextStyle(
+                //     //     //       color: Colors.red[800],
+                //     //     //       fontSize: 11,
+                //     //     //       fontWeight: FontWeight.w600,
+                //     //     //     ),
+                //     //     //   ),
+                //     //     // ),
+                //     //     if (currentFlashSale != null)
+                //     //       Container(
+                //     //         padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                //     //         decoration: BoxDecoration(
+                //     //           color: Colors.red[700],
+                //     //           borderRadius: BorderRadius.circular(4),
+                //     //         ),
+                //     //         child: Text(
+                //     //           '${currentFlashSale!.discountPercentage}%',
+                //     //           style: TextStyle(
+                //     //             color: Colors.white,
+                //     //             fontSize: 9,
+                //     //             fontWeight: FontWeight.bold,
+                //     //           ),
+                //     //         ),
+                //     //       ),
+                //     //   ],
+                //     // ),
+                //   ),
+                // ],
+              ],
+            ),
+          ] else if (_savedAlamat != null) ...[
             // Jika alamat dipilih tapi tidak ada koperasi match
             const SizedBox(height: 8),
             Container(
@@ -2548,250 +2607,293 @@ void _loadData() async {
   }
 
   Widget _buildFlashSaleCard(Product product) {
-  // ⭐ CEK: Apakah flash sale AKTIF untuk produk ini
-  final isFlashActive = FlashSaleService.isProductOnFlashSale(product.id);
-  final flashDiscountPercent = FlashSaleService.getFlashDiscountPercentage(product.id);
+    // ⭐ CEK: Apakah flash sale AKTIF untuk produk ini
+    final isFlashActive = FlashSaleService.isProductOnFlashSale(product.id);
+    final flashDiscountPercent = FlashSaleService.getFlashDiscountPercentage(
+      product.id,
+    );
 
-  // ⭐ HARGA:
-  // - Jika flash sale AKTIF → harga diskon
-  // - Jika BELUM aktif → harga normal
-  final displayPrice = isFlashActive
-      ? FlashSaleService.calculateFlashPrice(
-          product.id,
-          product.originalPrice ?? product.price,
-        )
-      : (product.originalPrice ?? product.price);
+    // ⭐ HARGA:
+    // - Jika flash sale AKTIF → harga diskon
+    // - Jika BELUM aktif → harga normal
+    final displayPrice =
+        isFlashActive
+            ? FlashSaleService.calculateFlashPrice(
+              product.id,
+              product.originalPrice ?? product.price,
+            )
+            : (product.originalPrice ?? product.price);
 
-  final originalPrice = product.originalPrice ?? product.price;
+    final originalPrice = product.originalPrice ?? product.price;
 
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ProductDetailPage(product: product),
-        ),
-      );
-    },
-    child: Container(
-      width: 120,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              Container(
-                height: 100,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                  child: Image.network(
-                    product.imageUrl ?? '',
-                    width: double.infinity,
-                    height: 100,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey[200],
-                        child: Center(
-                          child: Icon(
-                            Icons.image_rounded,
-                            size: 40,
-                            color: Colors.grey[400],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => ProductDetailPage(
+                  product: product,
+                  userKoperasi:
+                      _nearbyKoperasi.isNotEmpty
+                          ? _nearbyKoperasi.first
+                          : null, // ⭐ TAMBAH INI
                 ),
-              ),
-
-              // ⭐ BADGE: Tampilkan meski belum aktif
-              Positioned(
-                top: 4,
-                left: 4,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Flash Sale Badge
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: isFlashActive 
-                              ? [Colors.red[600]!, Colors.red[800]!] // Aktif: merah
-                              : [Colors.orange[400]!, Colors.orange[600]!], // Belum: orange
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (isFlashActive ? Colors.red : Colors.orange).withOpacity(0.4),
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            isFlashActive ? Icons.local_fire_department : Icons.access_time,
-                            color: Colors.white,
-                            size: 10,
-                          ),
-                          SizedBox(width: 2),
-                          Text(
-                            isFlashActive 
-                                ? '${flashDiscountPercent}%' 
-                                : 'Soon',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
+          ),
+        );
+      },
+      child: Container(
+        width: 120,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                Container(
+                  height: 100,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                    child: Image.network(
+                      product.imageUrl ?? '',
+                      width: double.infinity,
+                      height: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[200],
+                          child: Center(
+                            child: Icon(
+                              Icons.image_rounded,
+                              size: 40,
+                              color: Colors.grey[400],
                             ),
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                    
-                    // Koperasi Badge
-                    if (_nearbyKoperasi.isNotEmpty)
+                  ),
+                ),
+
+                // ⭐ BADGE: Tampilkan meski belum aktif
+                Positioned(
+                  top: 4,
+                  left: 4,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Flash Sale Badge
                       Container(
-                        margin: EdgeInsets.only(top: 4),
-                        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: Colors.green[700],
-                          borderRadius: BorderRadius.circular(3),
+                          gradient: LinearGradient(
+                            colors:
+                                isFlashActive
+                                    ? [
+                                      Colors.red[600]!,
+                                      Colors.red[800]!,
+                                    ] // Aktif: merah
+                                    : [
+                                      Colors.orange[400]!,
+                                      Colors.orange[600]!,
+                                    ], // Belum: orange
+                          ),
+                          borderRadius: BorderRadius.circular(4),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (isFlashActive
+                                      ? Colors.red
+                                      : Colors.orange)
+                                  .withOpacity(0.4),
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.store, color: Colors.white, size: 8),
+                            Icon(
+                              isFlashActive
+                                  ? Icons.local_fire_department
+                                  : Icons.access_time,
+                              color: Colors.white,
+                              size: 10,
+                            ),
                             SizedBox(width: 2),
                             Text(
-                              'Lokal',
+                              isFlashActive
+                                  ? '${flashDiscountPercent}%'
+                                  : 'Soon',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 7,
+                                fontSize: 9,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
                       ),
-                  ],
-                ),
-              ),
-            ],
-          ),
 
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      product.name,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w600,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-
-                  Row(
-                    children: [
-                      Icon(Icons.star_rounded, color: Colors.amber[700], size: 10),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${product.rating}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        '(${product.reviewCount})',
-                        style: TextStyle(fontSize: 8, color: Colors.grey[500]),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _formatPrice(displayPrice),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: isFlashActive ? Colors.red[700] : Colors.blue[700],
-                        ),
-                      ),
-
-                      // ⭐ TAMPILKAN CORET + DISKON HANYA JIKA AKTIF
-                      if (isFlashActive && displayPrice < originalPrice)
-                        Row(
-                          children: [
-                            Text(
-                              _formatPrice(originalPrice),
-                              style: TextStyle(
-                                decoration: TextDecoration.lineThrough,
-                                color: Colors.grey[400],
-                                fontSize: 9,
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: Colors.red[50],
-                                borderRadius: BorderRadius.circular(3),
-                              ),
-                              child: Text(
-                                '-${flashDiscountPercent}%',
+                      // Koperasi Badge
+                      if (_nearbyKoperasi.isNotEmpty)
+                        Container(
+                          margin: EdgeInsets.only(top: 4),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green[700],
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.store, color: Colors.white, size: 8),
+                              SizedBox(width: 2),
+                              Text(
+                                'Lokal',
                                 style: TextStyle(
-                                  color: Colors.red[700],
-                                  fontSize: 9,
+                                  color: Colors.white,
+                                  fontSize: 7,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                     ],
                   ),
-                ],
+                ),
+              ],
+            ),
+
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        product.name,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.star_rounded,
+                          color: Colors.amber[700],
+                          size: 10,
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${product.rating}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          '(${product.reviewCount})',
+                          style: TextStyle(
+                            fontSize: 8,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _formatPrice(displayPrice),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color:
+                                isFlashActive
+                                    ? Colors.red[700]
+                                    : Colors.blue[700],
+                          ),
+                        ),
+
+                        // ⭐ TAMPILKAN CORET + DISKON HANYA JIKA AKTIF
+                        if (isFlashActive && displayPrice < originalPrice)
+                          Row(
+                            children: [
+                              Text(
+                                _formatPrice(originalPrice),
+                                style: TextStyle(
+                                  decoration: TextDecoration.lineThrough,
+                                  color: Colors.grey[400],
+                                  fontSize: 9,
+                                ),
+                              ),
+                              SizedBox(width: 4),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 3,
+                                  vertical: 1,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red[50],
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                                child: Text(
+                                  '-${flashDiscountPercent}%',
+                                  style: TextStyle(
+                                    color: Colors.red[700],
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   String _formatPrice(double price) {
     final priceInt = price.toInt();
@@ -3524,7 +3626,14 @@ void _loadData() async {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ProductDetailPage(product: product),
+                builder:
+                    (context) => ProductDetailPage(
+                      product: product,
+                      userKoperasi:
+                          _nearbyKoperasi.isNotEmpty
+                              ? _nearbyKoperasi.first
+                              : null, // ⭐ TAMBAH INI
+                    ),
               ),
             );
           },

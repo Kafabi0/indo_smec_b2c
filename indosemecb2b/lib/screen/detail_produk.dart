@@ -11,8 +11,13 @@ import '../services/koperasi_service.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
+  final Koperasi? userKoperasi; // ⭐ TAMBAH PARAMETER INI
 
-  const ProductDetailPage({super.key, required this.product});
+  const ProductDetailPage({
+    super.key,
+    required this.product,
+    this.userKoperasi,
+  });
 
   @override
   State<ProductDetailPage> createState() => _ProductDetailPageState();
@@ -65,108 +70,125 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Future<Koperasi?> _getProductKoperasi() async {
+    // ⭐ PRIORITAS 1: Gunakan koperasi yang di-pass dari home
+    if (widget.userKoperasi != null) {
+      // Cek apakah koperasi ini punya produk ini
+      if (widget.userKoperasi!.productIds.contains(widget.product.id)) {
+        print(
+          '✅ [DETAIL] Using koperasi from home: ${widget.userKoperasi!.name}',
+        );
+        return widget.userKoperasi;
+      }
+    }
+
+    // ⭐ PRIORITAS 2: Fallback ke pencarian manual
+    print(
+      '⚠️ [DETAIL] User koperasi not provided or product not found, searching...',
+    );
     final allKoperasi = KoperasiService.getAllKoperasi();
-    
+
     for (var koperasi in allKoperasi) {
       if (koperasi.productIds.contains(widget.product.id)) {
+        print('✅ [DETAIL] Found koperasi: ${koperasi.name}');
         return koperasi;
       }
     }
-    
+
+    print('❌ [DETAIL] No koperasi found for product ${widget.product.id}');
     return null;
   }
 
   void _showKoperasiDetail(Koperasi koperasi) {
-  showModalBottomSheet(
-    context: context,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (context) {
-      return Container(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(12),
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.store, color: Colors.blue[700], size: 28),
                   ),
-                  child: Icon(Icons.store, color: Colors.blue[700], size: 28),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        koperasi.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.star, color: Colors.amber, size: 16),
-                          SizedBox(width: 4),
-                          Text(
-                            '${koperasi.rating}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          koperasi.name,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.star, color: Colors.amber, size: 16),
+                            SizedBox(width: 4),
+                            Text(
+                              '${koperasi.rating}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
+                ],
+              ),
+              SizedBox(height: 16),
+              Divider(),
+              SizedBox(height: 16),
+              Row(
+                children: [
+                  Icon(Icons.location_on, color: Colors.grey[600], size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      koperasi.fullAddress,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                    ),
+                  ),
+                ],
+              ),
+              if (koperasi.description != null) ...[
+                SizedBox(height: 12),
+                Text(
+                  koperasi.description!,
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 ),
               ],
-            ),
-            SizedBox(height: 16),
-            Divider(),
-            SizedBox(height: 16),
-            Row(
-              children: [
-                Icon(Icons.location_on, color: Colors.grey[600], size: 20),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    koperasi.fullAddress,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                  ),
-                ),
-              ],
-            ),
-            if (koperasi.description != null) ...[
-              SizedBox(height: 12),
+              SizedBox(height: 16),
               Text(
-                koperasi.description!,
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                koperasi.info,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.blue[700],
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
-            SizedBox(height: 16),
-            Text(
-              koperasi.info,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.blue[700],
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
+          ),
+        );
+      },
+    );
+  }
 
   Future<void> _addToCart() async {
     final userLogin = await UserDataManager.getCurrentUserLogin();
@@ -244,9 +266,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (context) => const MainNavigationWithCart(),
-      ),
+      MaterialPageRoute(builder: (context) => const MainNavigationWithCart()),
       (route) => false,
     );
   }
@@ -254,9 +274,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     // ✅ HITUNG HARGA FLASH SALE
-    final displayPrice = _productService.getProductPrice(
-      widget.product.id
-    );
+    final displayPrice = _productService.getProductPrice(widget.product.id);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -369,7 +387,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     final product = widget.product;
                     // ✅ FIX 1: Share dengan harga flash sale
                     final sharePrice = _productService.getProductPrice(
-                      product.id
+                      product.id,
                     );
 
                     final productUrl =
@@ -495,8 +513,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     child: FutureBuilder<Koperasi?>(
                       future: _getProductKoperasi(),
                       builder: (context, snapshot) {
-                        final koperasiName = snapshot.data?.name ?? 'Koperasi Merah Putih';
-                        
+                        final koperasiName =
+                            snapshot.data?.name ?? 'Koperasi Merah Putih';
+
                         return OutlinedButton.icon(
                           onPressed: () {
                             if (snapshot.data != null) {
@@ -593,10 +612,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               itemCount: similarProducts.length,
                               itemBuilder: (context, index) {
                                 final product = similarProducts[index];
-                                final productPrice = _productService.getProductPrice(
-                                  product.id
-                                );
-                                
+                                final productPrice = _productService
+                                    .getProductPrice(product.id);
+
                                 return GestureDetector(
                                   onTap: () {
                                     Navigator.pushReplacement(
@@ -605,6 +623,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                         builder:
                                             (context) => ProductDetailPage(
                                               product: product,
+                                              userKoperasi:
+                                                  widget
+                                                      .userKoperasi, // ⭐ PASS KE PRODUK SERUPA
                                             ),
                                       ),
                                     );
