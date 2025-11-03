@@ -284,46 +284,42 @@ class _TambahAlamatManualScreenState extends State<TambahAlamatManualScreen> {
 
             const SizedBox(height: 16),
 
-            Row(
-              children: [
-                Expanded(
-                  child: _buildDropdown(
-                    label: 'Kelurahan',
-                    value: _selectedKelurahan,
-                    items:
-                        _selectedKecamatan != null
-                            ? (_kelurahanList[_selectedKecamatan!] ?? [])
-                            : [],
-                    hint: 'Pilih Kelurahan',
-                    enabled: _selectedKecamatan != null,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedKelurahan = value;
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildDropdown(
-                    label: 'Kode Pos',
-                    value: _selectedKodepos,
-                    items: _kodeposList,
-                    hint: 'Pilih Kode Pos',
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedKodepos = value;
-                      });
-                    },
-                  ),
-                ),
-              ],
+            Expanded(
+              child: _buildDropdown(
+                label: 'Kelurahan',
+                value: _selectedKelurahan,
+                items:
+                    _selectedKecamatan != null
+                        ? (_kelurahanList[_selectedKecamatan!] ?? [])
+                        : [],
+                hint: 'Pilih Kelurahan',
+                enabled: _selectedKecamatan != null,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedKelurahan = value;
+                  });
+                },
+              ),
             ),
-
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            Expanded(
+              child: _buildDropdown(
+                label: 'Kode Pos',
+                value: _selectedKodepos,
+                items: _kodeposList,
+                hint: 'Pilih Kode Pos',
+                onChanged: (value) {
+                  setState(() {
+                    _selectedKodepos = value;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
+
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -456,7 +452,7 @@ class _TambahAlamatManualScreenState extends State<TambahAlamatManualScreen> {
           text: TextSpan(
             text: label,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 12,
               color: Colors.black87,
               fontWeight: FontWeight.w500,
             ),
