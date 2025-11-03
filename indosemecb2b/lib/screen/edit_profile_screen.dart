@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/user_data_manager.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -54,6 +55,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     };
 
     await UserDataManager.saveUserProfile(loginValue, profileData);
+
+    // ✅ Sinkronkan juga nama ke SharedPreferences global
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userName', nameController.text);
 
     if (mounted) {
       Navigator.pop(context);
@@ -167,9 +172,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               "Melalui email, kamu bisa menerima info promo dan login akun.",
             ),
 
-            // fieldLabel("Nama"),
-            // inputField("Nama Kamu", nameController),
-
+            fieldLabel("Nama"),
+            inputField("Nama Kamu", nameController),
             fieldLabel("Jenis Kelamin"),
             Row(
               children: [

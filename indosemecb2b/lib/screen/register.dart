@@ -313,6 +313,20 @@ class _RegisterPageState extends State<RegisterPage> {
       await prefs.setString('userName', name);
       await prefs.setBool('isLoggedIn', true);
 
+      // ✅ Tentukan apakah user daftar pakai nomor telepon
+      final isPhone =
+          emailOrPhone.startsWith('08') || emailOrPhone.startsWith('+62');
+
+      // ✅ Simpan profil awal user (minimal nama & email/phone)
+      await UserDataManager.saveUserProfile(emailOrPhone, {
+        'name': name,
+        'email': isPhone ? '' : emailOrPhone,
+        'phone': isPhone ? emailOrPhone : '',
+        'gender': null,
+        'birthdate': '',
+        'imagePath': null,
+      });
+
       // ✅ Cek mounted lagi sebelum menggunakan context
       if (!mounted) return;
 

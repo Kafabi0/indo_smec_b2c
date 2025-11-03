@@ -58,20 +58,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final saldo = await SaldoKlikManager.getSaldo();
 
     // ✅ MUAT PROFIL USER DARI UserDataManager
+    // ✅ MUAT PROFIL USER DARI UserDataManager
     String? imgPath;
+    String? updatedName;
     if (login != null) {
       final profile = await UserDataManager.getUserProfile(login);
       imgPath = profile?['imagePath'];
+      updatedName = profile?['name'];
     }
 
     setState(() {
       isLoggedIn = loggedIn;
       userEmail = email;
-      userName = name;
+      userName = updatedName ?? name; // ✅ gunakan nama profil jika tersedia
       userLogin = login;
       _isSaldoKlikActive = isSaldoActive;
       _saldoKlik = saldo;
-      imagePath = imgPath; // ✅ Simpan path foto
+      imagePath = imgPath;
     });
   }
 
@@ -599,6 +602,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _menuItem(
                   'Rekening Bank',
                   'Tarik Saldo Klik ke rekening tujuan',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SaldoKlikScreen(),
+                      ),
+                    ).then((_) => _loadLoginStatus());
+                  },
                 ),
                 _menuItem(
                   'Bantuan',
