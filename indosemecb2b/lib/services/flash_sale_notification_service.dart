@@ -4,10 +4,11 @@ import 'package:timezone/timezone.dart' as tz;
 import '../models/flash_sale_model.dart';
 import '../services/flash_sale_service.dart';
 import '../screen/notification_provider.dart';
+import 'package:flutter/services.dart';
 import '../models/notification_model.dart';
 
 class FlashSaleNotificationService {
-  static final FlashSaleNotificationService _instance = 
+  static final FlashSaleNotificationService _instance =
       FlashSaleNotificationService._internal();
   factory FlashSaleNotificationService() => _instance;
   FlashSaleNotificationService._internal();
@@ -19,14 +20,21 @@ class FlashSaleNotificationService {
   Future<void> scheduleAllFlashSaleNotifications(
     NotificationProvider notifProvider,
   ) async {
+    final hasPermission = await ensureExactAlarmPermission();
+    if (!hasPermission) {
+      print(
+        '⚠️ [FlashSale] Tidak bisa menjadwalkan notifikasi karena izin belum diberikan.',
+      );
+      return;
+    }
+
     final schedules = FlashSaleService.getFlashSaleSchedules();
-    
     print('📅 [FlashSale] Scheduling ${schedules.length} flash sales');
-    
+
     for (var schedule in schedules) {
       await _scheduleFlashSaleNotifications(schedule, notifProvider);
     }
-    
+
     print('✅ [FlashSale] All notifications scheduled');
   }
 
@@ -36,16 +44,20 @@ class FlashSaleNotificationService {
     NotificationProvider notifProvider,
   ) async {
     final now = DateTime.now();
-    
+
     // ⭐ 1. NOTIFIKASI FLASH SALE DIMULAI
     if (schedule.startTime.isAfter(now)) {
       await _scheduleFlashSaleStartNotification(schedule, notifProvider);
     } else {
-      print('⏭️ [FlashSale] ${schedule.title} already started, skipping start notification');
+      print(
+        '⏭️ [FlashSale] ${schedule.title} already started, skipping start notification',
+      );
     }
-    
+
     // ⭐ 2. NOTIFIKASI HAMPIR BERAKHIR (10 menit sebelum selesai)
-    final almostEndTime = schedule.endTime.subtract(const Duration(minutes: 10));
+    final almostEndTime = schedule.endTime.subtract(
+      const Duration(minutes: 10),
+    );
     if (almostEndTime.isAfter(now)) {
       await _scheduleFlashSaleEndingSoonNotification(schedule, notifProvider);
     } else {
@@ -59,7 +71,7 @@ class FlashSaleNotificationService {
     NotificationProvider notifProvider,
   ) async {
     final scheduledTime = tz.TZDateTime.from(schedule.startTime, tz.local);
-    
+
     final androidDetails = AndroidNotificationDetails(
       'flash_sale_channel',
       'Flash Sale Notifications',
@@ -85,7 +97,8 @@ class FlashSaleNotificationService {
       iOS: iosDetails,
     );
 
-    final notificationId = schedule.id.hashCode + 1; // +1 untuk start notification
+    final notificationId =
+        schedule.id.hashCode + 1; // +1 untuk start notification
 
     await _notifications.zonedSchedule(
       notificationId,
@@ -97,13 +110,39 @@ class FlashSaleNotificationService {
     );
 
     // ✅ Tambahkan ke NotificationProvider juga (akan muncul di list notifikasi)
-    _scheduleInAppNotification(
-      schedule,
-      notifProvider,
-      isStarting: true,
-    );
+    _scheduleInAppNotification(schedule, notifProvider, isStarting: true);
 
-    print('🔔 [FlashSale] Scheduled START notification for ${schedule.title} at ${schedule.startTime}');
+    print(
+      '🔔 [FlashSale] Scheduled START notification for ${schedule.title} at ${schedule.startTime}',
+    );
+  }
+
+  Future<bool> ensureExactAlarmPermission() async {
+    try {
+      final androidPlugin =
+          _notifications
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >();
+
+      if (androidPlugin == null) {
+        print('⚠️ [FlashSale] Android plugin not available.');
+        return false;
+      }
+
+      final canSchedule = await androidPlugin.canScheduleExactNotifications();
+
+      if (!(canSchedule ?? false)) {
+        await androidPlugin.requestExactAlarmsPermission();
+        print('⚠️ Harap aktifkan izin "Exact alarm" di pengaturan aplikasi.');
+        return false;
+      }
+
+      return true;
+    } on PlatformException catch (e) {
+      print('❌ [FlashSale] Cek izin exact alarm gagal: $e');
+      return false;
+    }
   }
 
   // 📢 Notifikasi: Flash Sale HAMPIR BERAKHIR
@@ -111,9 +150,11 @@ class FlashSaleNotificationService {
     FlashSaleSchedule schedule,
     NotificationProvider notifProvider,
   ) async {
-    final endingSoonTime = schedule.endTime.subtract(const Duration(minutes: 10));
+    final endingSoonTime = schedule.endTime.subtract(
+      const Duration(minutes: 10),
+    );
     final scheduledTime = tz.TZDateTime.from(endingSoonTime, tz.local);
-    
+
     final androidDetails = AndroidNotificationDetails(
       'flash_sale_channel',
       'Flash Sale Notifications',
@@ -139,7 +180,8 @@ class FlashSaleNotificationService {
       iOS: iosDetails,
     );
 
-    final notificationId = schedule.id.hashCode + 2; // +2 untuk ending notification
+    final notificationId =
+        schedule.id.hashCode + 2; // +2 untuk ending notification
 
     await _notifications.zonedSchedule(
       notificationId,
@@ -151,24 +193,23 @@ class FlashSaleNotificationService {
     );
 
     // ✅ Tambahkan ke NotificationProvider juga
-    _scheduleInAppNotification(
-      schedule,
-      notifProvider,
-      isStarting: false,
-    );
+    _scheduleInAppNotification(schedule, notifProvider, isStarting: false);
 
-    print('🔔 [FlashSale] Scheduled ENDING notification for ${schedule.title} at $endingSoonTime');
+    print(
+      '🔔 [FlashSale] Scheduled ENDING notification for ${schedule.title} at $endingSoonTime',
+    );
   }
 
   // ✅ Tambahkan notifikasi ke in-app notification list
   Future<void> _scheduleInAppNotification(
     FlashSaleSchedule schedule,
-    NotificationProvider notifProvider,
-    {required bool isStarting}
-  ) async {
-    final triggerTime = isStarting 
-        ? schedule.startTime 
-        : schedule.endTime.subtract(const Duration(minutes: 10));
+    NotificationProvider notifProvider, {
+    required bool isStarting,
+  }) async {
+    final triggerTime =
+        isStarting
+            ? schedule.startTime
+            : schedule.endTime.subtract(const Duration(minutes: 10));
 
     // Hitung delay sampai waktu trigger
     final now = DateTime.now();
@@ -184,12 +225,14 @@ class FlashSaleNotificationService {
       final notification = AppNotification(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         type: NotifType.informasi,
-        title: isStarting 
-            ? '🔥 ${schedule.title} DIMULAI!' 
-            : '⏰ ${schedule.title} HAMPIR BERAKHIR!',
-        message: isStarting
-            ? 'Diskon ${schedule.discountPercentage}% untuk ${schedule.productIds.length} produk pilihan! Buruan cek sekarang!'
-            : 'Tinggal 10 menit! Jangan sampai ketinggalan diskon ${schedule.discountPercentage}%',
+        title:
+            isStarting
+                ? '🔥 ${schedule.title} DIMULAI!'
+                : '⏰ ${schedule.title} HAMPIR BERAKHIR!',
+        message:
+            isStarting
+                ? 'Diskon ${schedule.discountPercentage}% untuk ${schedule.productIds.length} produk pilihan! Buruan cek sekarang!'
+                : 'Tinggal 10 menit! Jangan sampai ketinggalan diskon ${schedule.discountPercentage}%',
         date: DateTime.now(),
         isRead: false,
         detailButtonText: 'Lihat Produk',
@@ -199,20 +242,22 @@ class FlashSaleNotificationService {
       print('✅ [FlashSale] In-app notification added: ${notification.title}');
     });
 
-    print('📅 [FlashSale] Scheduled in-app notification in ${delay.inMinutes} minutes');
+    print(
+      '📅 [FlashSale] Scheduled in-app notification in ${delay.inMinutes} minutes',
+    );
   }
 
   // ✅ Cancel semua flash sale notifications
   Future<void> cancelAllFlashSaleNotifications() async {
     final schedules = FlashSaleService.getFlashSaleSchedules();
-    
+
     for (var schedule in schedules) {
       // Cancel start notification
       await _notifications.cancel(schedule.id.hashCode + 1);
       // Cancel ending notification
       await _notifications.cancel(schedule.id.hashCode + 2);
     }
-    
+
     print('🗑️ [FlashSale] All flash sale notifications cancelled');
   }
 
