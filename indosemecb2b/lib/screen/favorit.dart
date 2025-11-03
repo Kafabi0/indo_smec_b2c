@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/screen/detail_produk.dart';
 import '../models/product_model.dart';
 import '../services/product_service.dart';
 import '../services/favorite_service.dart';
@@ -334,136 +335,151 @@ class _FavoritScreenState extends State<FavoritScreen> {
 
   // 🔹 Kartu produk gaya e-commerce
   Widget _buildFavoriteCard(Product product) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductDetailPage(product: product),
           ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 🔸 Gambar produk
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10),
-                  ),
-                  child: Container(
-                    color: Colors.grey[200],
-                    width: double.infinity,
-                    child: Image.network(
-                      product.imageUrl ?? '',
-                      fit: BoxFit.cover,
-                      errorBuilder:
-                          (context, error, stackTrace) => const Icon(
-                            Icons.image,
-                            size: 60,
-                            color: Colors.grey,
-                          ),
+        );
+      },
+
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 🔸 Gambar produk
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10),
+                    ),
+                    child: Container(
+                      color: Colors.grey[200],
+                      width: double.infinity,
+                      child: Image.network(
+                        product.imageUrl ?? '',
+                        fit: BoxFit.cover,
+                        errorBuilder:
+                            (context, error, stackTrace) => const Icon(
+                              Icons.image,
+                              size: 60,
+                              color: Colors.grey,
+                            ),
+                      ),
                     ),
                   ),
                 ),
-              ),
 
-              // 🔸 Informasi produk
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                // 🔸 Informasi produk
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      formatRupiah(product.price),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                      const SizedBox(height: 4),
+                      Text(
+                        formatRupiah(product.price),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
                       ),
-                    ),
-                    if (product.originalPrice != null &&
-                        product.originalPrice! > product.price) ...[
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Text(
-                            formatRupiah(product.originalPrice!),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                              decoration: TextDecoration.lineThrough,
+                      if (product.originalPrice != null &&
+                          product.originalPrice! > product.price) ...[
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Text(
+                              formatRupiah(product.originalPrice!),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[500],
+                                decoration: TextDecoration.lineThrough,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${(((product.originalPrice! - product.price) / product.originalPrice!) * 100).toStringAsFixed(0)}%',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.red,
-                              fontWeight: FontWeight.w600,
+                            const SizedBox(width: 4),
+                            Text(
+                              '${(((product.originalPrice! - product.price) / product.originalPrice!) * 100).toStringAsFixed(0)}%',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.red,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          // 🔸 Tombol favorit (hati)
-          Positioned(
-            top: 6,
-            right: 6,
-            child: GestureDetector(
-              onTap: () => _removeFavorite(product.id),
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
+            // 🔸 Tombol favorit (hati)
+            Positioned(
+              top: 6,
+              right: 6,
+              child: GestureDetector(
+                onTap: () => _removeFavorite(product.id),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.favorite,
+                    color: Colors.red,
+                    size: 18,
+                  ),
                 ),
-                child: const Icon(Icons.favorite, color: Colors.red, size: 18),
               ),
             ),
-          ),
 
-          // 🔸 Tombol tambah (+) - ⭐ UPDATED
-          Positioned(
-            top: 6,
-            right: 36,
-            child: GestureDetector(
-              onTap: () => _addToCart(product), // ⭐ Panggil fungsi _addToCart
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  color: Colors.blue,
-                  shape: BoxShape.circle,
+            // 🔸 Tombol tambah (+) - ⭐ UPDATED
+            Positioned(
+              top: 6,
+              right: 36,
+              child: GestureDetector(
+                onTap: () => _addToCart(product), // ⭐ Panggil fungsi _addToCart
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.blue,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.add, color: Colors.white, size: 18),
                 ),
-                child: const Icon(Icons.add, color: Colors.white, size: 18),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
