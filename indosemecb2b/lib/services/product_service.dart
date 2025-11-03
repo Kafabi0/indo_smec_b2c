@@ -1572,18 +1572,18 @@ class ProductService {
     ),
     Product(
       id: '103',
-      name: 'Paket Sembako Ramadhan',
+      name: 'Paket Sembako Komplit',
       description:
-          'Beras 5kg + Kurma 500gr + Minyak 2L + Tepung 1kg + Gula 2kg + Susu 2L',
+          'Beras 5kg + Minyak 2L + Tepung 1kg + Gula 2kg + Susu 2L',
       price: 195000,
-      originalPrice: 270000,
+      originalPrice: 220000,
       category: 'Grocery',
       rating: 4.8,
       reviewCount: 512,
       storeName: 'Toko Sumber Rezeki',
       storeDistance: '0.7 km',
       imageUrl:
-          'https://www.static-src.com/wcsstore/Indraprastha/images/catalog/full//102/MTA-51199076/no_brand_paket_ramadhan_sembako_1_full01_uitvmwss.jpg',
+          'https://down-id.img.susercontent.com/file/id-11134207-7qul6-lf059vr2tv9jc8@resize_w900_nl.webp',
     ),
 
     // PAKET LAUK PAUK
@@ -1704,7 +1704,7 @@ class ProductService {
       storeName: 'Gudang Buah Nusantara',
       storeDistance: '2.3 km',
       imageUrl:
-          'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&h=400&fit=crop',
+          'https://i.pinimg.com/736x/30/06/a2/3006a25d6bbf14a71aa86f8035372b2e.jpg',
     ),
 
     // PAKET HERBAL & KESEHATAN
