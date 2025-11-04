@@ -84,6 +84,7 @@ class TransactionItem {
   final double price;
   final int quantity;
   final String? imageUrl;
+  final String? category; // ⭐ TAMBAHKAN INI
 
   TransactionItem({
     required this.productId,
@@ -91,6 +92,7 @@ class TransactionItem {
     required this.price,
     required this.quantity,
     this.imageUrl,
+    this.category,
   });
 
   Map<String, dynamic> toMap() {
@@ -100,6 +102,7 @@ class TransactionItem {
       'price': price,
       'quantity': quantity,
       'imageUrl': imageUrl,
+      'category': category, // ⭐ TAMBAHKAN INI
     };
   }
 
@@ -110,6 +113,7 @@ class TransactionItem {
       price: (map['price'] ?? 0).toDouble(),
       quantity: map['quantity'] ?? 1,
       imageUrl: map['imageUrl'],
+      category: map['category'], // ⭐ TAMBAHKAN INI
     );
   }
 

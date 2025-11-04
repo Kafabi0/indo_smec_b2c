@@ -40,12 +40,17 @@ class _TransaksiScreenState extends State<TransaksiScreen>
 
   final List<String> kategoriList = [
     'Semua',
-    'Xtra',
-    'Xpress',
-    'Food',
-    'Virtual',
-    'Merchant',
-    'Top-Up',
+    'Xtra', // Delivery option: xtra
+    'Xpress', // Delivery option: xpress
+    'Top-Up', // Delivery option: topup
+    'Food', // Kategori produk: Food
+    'Grocery', // Kategori produk: Grocery
+    'Fashion', // Kategori produk: Fashion
+    'Herbal', // Kategori produk: Herbal
+    'Kerajinan', // Kategori produk: Kerajinan
+    'Pertanian', // Kategori produk: Pertanian
+    'Kreatif', // Kategori produk: Kreatif
+    'Jasa', // Kategori produk: Jasa ⭐ TAMBAHAN INI
   ];
 
   @override
@@ -123,11 +128,13 @@ class _TransaksiScreenState extends State<TransaksiScreen>
 
     List<Transaction> filtered = List.from(_allTransactions);
 
+    // Filter by Status
     if (selectedStatus != 'Semua Status') {
       filtered = filtered.where((t) => t.status == selectedStatus).toList();
       print('📊 After status filter ($selectedStatus): ${filtered.length}');
     }
 
+    // Filter by Date
     if (selectedTanggal != 'Semua Tanggal') {
       final now = DateTime.now();
       DateTime startDate;
@@ -144,24 +151,37 @@ class _TransaksiScreenState extends State<TransaksiScreen>
       print('📊 After date filter ($selectedTanggal): ${filtered.length}');
     }
 
+    // ⭐ Filter by Category
     if (selectedKategori != 'Semua') {
-      String? deliveryOption;
+      // Kategori berdasarkan Delivery Option
       if (selectedKategori == 'Xpress') {
-        deliveryOption = 'xpress';
+        filtered = filtered.where((t) => t.deliveryOption == 'xpress').toList();
       } else if (selectedKategori == 'Xtra') {
-        deliveryOption = 'xtra';
+        filtered = filtered.where((t) => t.deliveryOption == 'xtra').toList();
       } else if (selectedKategori == 'Top-Up') {
-        // ✅ ADD
-        deliveryOption = 'topup';
+        filtered = filtered.where((t) => t.deliveryOption == 'topup').toList();
+      }
+      // ⭐ Kategori berdasarkan Product Category
+      else {
+        print('🔍 Filtering by category: $selectedKategori');
+        filtered =
+            filtered.where((t) {
+              // Debug: print items di transaksi ini
+              print('  Checking transaction ${t.id}:');
+              for (var item in t.items) {
+                print('    - Item: ${item.name}, Category: ${item.category}');
+              }
+
+              // Cek apakah ada item yang kategorinya sesuai
+              final hasMatch = t.items.any(
+                (item) => item.category == selectedKategori,
+              );
+              print('  Match found: $hasMatch');
+              return hasMatch;
+            }).toList();
       }
 
-      if (deliveryOption != null) {
-        filtered =
-            filtered.where((t) => t.deliveryOption == deliveryOption).toList();
-        print(
-          '📊 After category filter ($selectedKategori): ${filtered.length}',
-        );
-      }
+      print('📊 After category filter ($selectedKategori): ${filtered.length}');
     }
 
     setState(() {
@@ -1123,27 +1143,32 @@ class _TransaksiScreenState extends State<TransaksiScreen>
 
   Widget _buildKategoriChip(String item, bool isSelected) {
     IconData? icon;
-    switch (item) {
-      case 'Xtra':
-        icon = Icons.inventory_2_outlined;
-        break;
-      case 'Xpress':
-        icon = Icons.flash_on;
-        break;
-      case 'Food':
-        icon = Icons.restaurant_outlined;
-        break;
-      case 'Virtual':
-        icon = Icons.devices_other_outlined;
-        break;
-      case 'Merchant':
-        icon = Icons.store_mall_directory_outlined;
-        break;
-      case 'Top-Up': // ✅ ADD
-        icon = Icons.account_balance_wallet;
-        break;
-      default:
-        icon = null;
+
+    // Icons untuk Delivery Options
+    if (item == 'Xtra') {
+      icon = Icons.inventory_2_outlined;
+    } else if (item == 'Xpress') {
+      icon = Icons.flash_on;
+    } else if (item == 'Top-Up') {
+      icon = Icons.account_balance_wallet;
+    }
+    // Icons untuk Product Categories
+    else if (item == 'Food') {
+      icon = Icons.restaurant_outlined;
+    } else if (item == 'Grocery') {
+      icon = Icons.shopping_basket_outlined;
+    } else if (item == 'Fashion') {
+      icon = Icons.checkroom_outlined;
+    } else if (item == 'Herbal') {
+      icon = Icons.local_pharmacy_outlined;
+    } else if (item == 'Kerajinan') {
+      icon = Icons.handyman_outlined;
+    } else if (item == 'Pertanian') {
+      icon = Icons.agriculture_outlined;
+    } else if (item == 'Kreatif') {
+      icon = Icons.palette_outlined;
+    } else if (item == 'Jasa') {
+      icon = Icons.room_service_outlined; // ⭐ ICON JASA
     }
 
     return ChoiceChip(

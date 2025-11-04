@@ -12,6 +12,7 @@ class CartManager {
     double? originalPrice,
     int? discountPercentage,
     String? imageUrl,
+    String? category, // ✅ TAMBAHKAN PARAMETER INI
     int quantity = 1,
   }) async {
     try {
@@ -45,6 +46,7 @@ class CartManager {
             discountPercentage: discountPercentage,
             imageUrl: imageUrl,
             quantity: quantity,
+            category: category, // ✅ SIMPAN CATEGORY
           ),
         );
       }

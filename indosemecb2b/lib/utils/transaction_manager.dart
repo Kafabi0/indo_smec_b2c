@@ -54,6 +54,8 @@ class TransactionManager {
               price: cartItem.price,
               quantity: cartItem.quantity,
               imageUrl: cartItem.imageUrl,
+              category: cartItem.category,
+              
             );
           }).toList();
 
