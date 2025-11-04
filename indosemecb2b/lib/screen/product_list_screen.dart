@@ -5,6 +5,8 @@ import '../services/favorite_service.dart';
 import '../utils/cart_manager.dart';
 import '../utils/user_data_manager.dart';
 import 'detail_produk.dart';
+import '../services/flash_sale_service.dart';
+import '../services/product_service.dart';
 import 'package:intl/intl.dart';
 
 class ProductListScreen extends StatefulWidget {
@@ -31,6 +33,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   bool isGridView = true;
   String sortBy = 'default';
   List<Product> displayedProducts = [];
+  final ProductService _productService = ProductService();
 
   @override
   void initState() {
@@ -456,318 +459,395 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   Widget _buildProductGridCard(Product product) {
-    final isFavorite = favoriteStatus[product.id] ?? false;
-    final quantity = cartQuantities[product.id] ?? 0;
+  final isFavorite = favoriteStatus[product.id] ?? false;
+  final quantity = cartQuantities[product.id] ?? 0;
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => ProductDetailPage(
-                  product: product,
-                  userKoperasi:
-                      widget.nearbyKoperasi.isNotEmpty
-                          ? widget.nearbyKoperasi.first
-                          : null,
-                ),
+  // ⭐ CEK FLASH SALE STATUS
+  final isFlashSaleActive = FlashSaleService.isProductOnFlashSale(product.id);
+  final flashDiscountPercent = FlashSaleService.getFlashDiscountPercentage(product.id);
+  
+  // ⭐ HITUNG HARGA REAL-TIME
+  final displayPrice = _productService.getProductPrice(product.id);
+  final originalPrice = product.originalPrice ?? product.price;
+  
+  // ⭐ TENTUKAN DISKON YANG DITAMPILKAN
+  final discountToShow = isFlashSaleActive ? flashDiscountPercent : product.discountPercentage;
+
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProductDetailPage(
+            product: product,
+            userKoperasi: widget.nearbyKoperasi.isNotEmpty
+                ? widget.nearbyKoperasi.first
+                : null,
           ),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                Container(
-                  height: 140,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                  ),
-                  child: Center(
-                    child: Image.network(
-                      product.imageUrl ?? '',
-                      height: 140,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
+      );
+    },
+    child: Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              Container(
+                height: 140,
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(12),
                   ),
                 ),
+                child: Center(
+                  child: Image.network(
+                    product.imageUrl ?? '',
+                    height: 140,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              
+              // ⭐ BADGE FLASH SALE
+              if (isFlashSaleActive)
                 Positioned(
                   top: 8,
-                  right: 8,
-                  child: _buildAddButton(product, quantity),
-                ),
-              ],
-            ),
-
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.name,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                  left: 8,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                    SizedBox(height: 4),
-                    Row(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.star_rounded,
-                          color: Colors.amber[700],
-                          size: 12,
-                        ),
+                        Icon(Icons.local_fire_department, color: Colors.white, size: 10),
                         SizedBox(width: 2),
                         Text(
-                          '${product.rating}',
+                          'FLASH',
                           style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        SizedBox(width: 2),
-                        Text(
-                          '(${product.reviewCount})',
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: Colors.grey[500],
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 4),
-                    Text(
-                      formatRupiah(product.price),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    if (product.originalPrice != null) ...[
-                      SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Text(
-                            formatRupiah(product.originalPrice!),
-                            style: TextStyle(
-                              fontSize: 10,
-                              decoration: TextDecoration.lineThrough,
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                          SizedBox(width: 4),
-                          if (product.discountPercentage != null)
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.red[50],
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                '${product.discountPercentage}%',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
+              
+              Positioned(
+                top: 8,
+                right: 8,
+                child: _buildAddButton(product, quantity),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProductListCard(Product product) {
-    final isFavorite = favoriteStatus[product.id] ?? false;
-    final quantity = cartQuantities[product.id] ?? 0;
-
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => ProductDetailPage(
-                  product: product,
-                  userKoperasi:
-                      widget.nearbyKoperasi.isNotEmpty
-                          ? widget.nearbyKoperasi.first
-                          : null,
-                ),
+            ],
           ),
-        );
-      },
-      child: Container(
-        margin: EdgeInsets.only(bottom: 12),
-        padding: EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(product.imageUrl ?? '', fit: BoxFit.cover),
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
+
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     product.name,
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(
-                        Icons.star_rounded,
-                        color: Colors.amber[700],
-                        size: 12,
-                      ),
+                      Icon(Icons.star_rounded, color: Colors.amber[700], size: 12),
                       SizedBox(width: 2),
                       Text(
                         '${product.rating}',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10,
                           fontWeight: FontWeight.w600,
                           color: Colors.grey[700],
                         ),
                       ),
-                      SizedBox(width: 4),
+                      SizedBox(width: 2),
                       Text(
                         '(${product.reviewCount})',
-                        style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                        style: TextStyle(fontSize: 9, color: Colors.grey[500]),
                       ),
                     ],
                   ),
-                  SizedBox(height: 6),
+                  SizedBox(height: 4),
+                  
+                  // ⭐ HARGA DENGAN FLASH SALE
                   Text(
-                    formatRupiah(product.price),
+                    formatRupiah(displayPrice),
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: isFlashSaleActive ? Colors.red[700] : Colors.blue[700],
                     ),
                   ),
-                  if (product.originalPrice != null) ...[
+                  
+                  if (discountToShow != null) ...[
                     SizedBox(height: 2),
                     Row(
                       children: [
                         Text(
-                          formatRupiah(product.originalPrice!),
+                          formatRupiah(originalPrice),
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 10,
                             decoration: TextDecoration.lineThrough,
                             color: Colors.grey[400],
                           ),
                         ),
-                        SizedBox(width: 6),
-                        if (product.discountPercentage != null)
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red[50],
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              '${product.discountPercentage}%',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.red,
-                              ),
+                        SizedBox(width: 4),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isFlashSaleActive ? Colors.red : Colors.blue[50],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '$discountToShow%',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: isFlashSaleActive ? Colors.white : Colors.blue[700],
                             ),
                           ),
+                        ),
                       ],
                     ),
                   ],
                 ],
               ),
             ),
-            Column(
-              children: [
-                GestureDetector(
-                  onTap: () => _toggleFavorite(product.id, product.name),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+  Widget _buildProductListCard(Product product) {
+  final isFavorite = favoriteStatus[product.id] ?? false;
+  final quantity = cartQuantities[product.id] ?? 0;
+
+  // ⭐ CEK FLASH SALE STATUS
+  final isFlashSaleActive = FlashSaleService.isProductOnFlashSale(product.id);
+  final flashDiscountPercent = FlashSaleService.getFlashDiscountPercentage(product.id);
+  
+  // ⭐ HITUNG HARGA REAL-TIME
+  final displayPrice = _productService.getProductPrice(product.id);
+  final originalPrice = product.originalPrice ?? product.price;
+  
+  // ⭐ TENTUKAN DISKON YANG DITAMPILKAN
+  final discountToShow = isFlashSaleActive ? flashDiscountPercent : product.discountPercentage;
+
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProductDetailPage(
+            product: product,
+            userKoperasi: widget.nearbyKoperasi.isNotEmpty
+                ? widget.nearbyKoperasi.first
+                : null,
+          ),
+        ),
+      );
+    },
+    child: Container(
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Stack(
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(product.imageUrl ?? '', fit: BoxFit.cover),
+                ),
+              ),
+              
+              // ⭐ BADGE FLASH SALE
+              if (isFlashSaleActive)
+                Positioned(
+                  top: 4,
+                  left: 4,
                   child: Container(
-                    padding: EdgeInsets.all(6),
+                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                     decoration: BoxDecoration(
-                      color: isFavorite ? Colors.red[50] : Colors.grey[100],
-                      shape: BoxShape.circle,
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(3),
                     ),
-                    child: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorite ? Colors.red : Colors.grey[600],
-                      size: 18,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.local_fire_department, color: Colors.white, size: 8),
+                        SizedBox(width: 1),
+                        Text(
+                          'FLASH',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 7,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                SizedBox(height: 8),
-                _buildAddButton(product, quantity),
+            ],
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.star_rounded, color: Colors.amber[700], size: 12),
+                    SizedBox(width: 2),
+                    Text(
+                      '${product.rating}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      '(${product.reviewCount})',
+                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 6),
+                
+                // ⭐ HARGA DENGAN FLASH SALE
+                Text(
+                  formatRupiah(displayPrice),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: isFlashSaleActive ? Colors.red[700] : Colors.blue[700],
+                  ),
+                ),
+                
+                if (discountToShow != null) ...[
+                  SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Text(
+                        formatRupiah(originalPrice),
+                        style: TextStyle(
+                          fontSize: 11,
+                          decoration: TextDecoration.lineThrough,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isFlashSaleActive ? Colors.red : Colors.blue[50],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isFlashSaleActive) ...[
+                              Icon(Icons.local_fire_department, color: Colors.white, size: 8),
+                              SizedBox(width: 2),
+                            ],
+                            Text(
+                              '$discountToShow%',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: isFlashSaleActive ? Colors.white : Colors.blue[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
-          ],
-        ),
+          ),
+          Column(
+            children: [
+              GestureDetector(
+                onTap: () => _toggleFavorite(product.id, product.name),
+                child: Container(
+                  padding: EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: isFavorite ? Colors.red[50] : Colors.grey[100],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorite ? Colors.red : Colors.grey[600],
+                    size: 18,
+                  ),
+                ),
+              ),
+              SizedBox(height: 8),
+              _buildAddButton(product, quantity),
+            ],
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildAddButton(Product product, int quantity) {
     return AnimatedSwitcher(

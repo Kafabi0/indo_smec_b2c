@@ -2683,45 +2683,37 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Text(
-                              'UMKM',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 7,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
                           ],
                         ),
                       ),
 
-                      if (_nearbyKoperasi.isNotEmpty)
-                        Container(
-                          margin: EdgeInsets.only(top: 4),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.green[700],
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.store, color: Colors.white, size: 8),
-                              SizedBox(width: 2),
-                              Text(
-                                'Lokal',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 7,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      // if (_nearbyKoperasi.isNotEmpty)
+                      //   Container(
+                      //     margin: EdgeInsets.only(top: 4),
+                      //     padding: EdgeInsets.symmetric(
+                      //       horizontal: 4,
+                      //       vertical: 1,
+                      //     ),
+                      //     decoration: BoxDecoration(
+                      //       color: Colors.green[700],
+                      //       borderRadius: BorderRadius.circular(3),
+                      //     ),
+                      //     child: Row(
+                      //       mainAxisSize: MainAxisSize.min,
+                      //       children: [
+                      //         Icon(Icons.store, color: Colors.white, size: 8),
+                      //         SizedBox(width: 2),
+                      //         Text(
+                      //           'UMKM',
+                      //           style: TextStyle(
+                      //             color: Colors.white,
+                      //             fontSize: 7,
+                      //             fontWeight: FontWeight.bold,
+                      //           ),
+                      //         ),
+                      //       ],
+                      //     ),
+                      //   ),
                     ],
                   ),
                 ),
@@ -3607,6 +3599,17 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final isFavorite = favoriteStatus[product.id] ?? false;
     int quantity = 0;
 
+    // ⭐ CEK FLASH SALE STATUS
+    final isFlashSaleActive = FlashSaleService.isProductOnFlashSale(product.id);
+    final flashDiscountPercent = FlashSaleService.getFlashDiscountPercentage(product.id);
+    
+    // ⭐ HITUNG HARGA REAL-TIME
+    final displayPrice = _productService.getProductPrice(product.id);
+    final originalPrice = product.originalPrice ?? product.price;
+    
+    // ⭐ TENTUKAN DISKON YANG DITAMPILKAN
+    final discountToShow = isFlashSaleActive ? flashDiscountPercent : product.discountPercentage;
+
     return StatefulBuilder(
       builder: (context, setState) {
         return GestureDetector(
@@ -3614,14 +3617,12 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder:
-                    (context) => ProductDetailPage(
-                      product: product,
-                      userKoperasi:
-                          _nearbyKoperasi.isNotEmpty
-                              ? _nearbyKoperasi.first
-                              : null, // ⭐ TAMBAH INI
-                    ),
+                builder: (context) => ProductDetailPage(
+                  product: product,
+                  userKoperasi: _nearbyKoperasi.isNotEmpty
+                      ? _nearbyKoperasi.first
+                      : null,
+                ),
               ),
             );
           },
@@ -3663,120 +3664,113 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       ),
                     ),
 
+                    // ⭐ BADGE FLASH SALE
+                    if (isFlashSaleActive)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.red[600]!, Colors.red[800]!],
+                            ),
+                            borderRadius: BorderRadius.circular(4),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.red.withOpacity(0.4),
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.local_fire_department, color: Colors.white, size: 10),
+                              SizedBox(width: 2),
+                              Text(
+                                'FLASH',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
                     Positioned(
                       top: 8,
                       right: 8,
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 200),
-                        transitionBuilder:
-                            (child, animation) =>
-                                ScaleTransition(scale: animation, child: child),
-                        child:
-                            quantity == 0
-                                ? GestureDetector(
-                                  key: const ValueKey('addButton'),
-                                  onTap: () async {
-                                    final userLogin =
-                                        await UserDataManager.getCurrentUserLogin();
-                                    if (userLogin == null) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Silakan login terlebih dahulu',
-                                          ),
-                                          backgroundColor: Colors.orange,
-                                          duration: Duration(seconds: 2),
-                                        ),
-                                      );
-                                      return;
-                                    }
-
-                                    final success = await CartManager.addToCart(
-                                      productId: product.id,
-                                      name: product.name,
-                                      price: product.price,
-                                      originalPrice: product.originalPrice,
-                                      discountPercentage:
-                                          product.discountPercentage,
-                                      imageUrl: product.imageUrl,
-                                      category:
-                                          product.category, // ✅ TAMBAHKAN INI
+                        transitionBuilder: (child, animation) =>
+                            ScaleTransition(scale: animation, child: child),
+                        child: quantity == 0
+                            ? GestureDetector(
+                                key: const ValueKey('addButton'),
+                                onTap: () async {
+                                  final userLogin = await UserDataManager.getCurrentUserLogin();
+                                  if (userLogin == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Silakan login terlebih dahulu'),
+                                        backgroundColor: Colors.orange,
+                                        duration: Duration(seconds: 2),
+                                      ),
                                     );
+                                    return;
+                                  }
 
-                                    if (success) {
-                                      setState(() {
-                                        quantity = 1;
-                                      });
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.check_circle,
-                                                color: Colors.white,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: Text(
-                                                  '${product.name} ditambahkan ke keranjang',
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          backgroundColor: Colors.green,
-                                          duration: const Duration(
-                                            milliseconds: 1500,
-                                          ),
-                                          behavior: SnackBarBehavior.floating,
+                                  final success = await CartManager.addToCart(
+                                    productId: product.id,
+                                    name: product.name,
+                                    price: product.price,
+                                    originalPrice: product.originalPrice,
+                                    discountPercentage: product.discountPercentage,
+                                    imageUrl: product.imageUrl,
+                                    category: product.category,
+                                  );
+
+                                  if (success) {
+                                    setState(() {
+                                      quantity = 1;
+                                    });
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Row(
+                                          children: [
+                                            const Icon(Icons.check_circle, color: Colors.white),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text('${product.name} ditambahkan ke keranjang'),
+                                            ),
+                                          ],
                                         ),
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Gagal menambahkan ke keranjang',
-                                          ),
-                                          backgroundColor: Colors.red,
-                                          duration: Duration(seconds: 2),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  child: Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.15),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Icon(
-                                      Icons.add,
-                                      color: Colors.white,
-                                      size: 18,
-                                    ),
-                                  ),
-                                )
-                                : Container(
-                                  key: const ValueKey('counter'),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                  ),
+                                        backgroundColor: Colors.green,
+                                        duration: const Duration(milliseconds: 1500),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Gagal menambahkan ke keranjang'),
+                                        backgroundColor: Colors.red,
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: Container(
+                                  width: 32,
+                                  height: 32,
                                   decoration: BoxDecoration(
                                     color: Colors.blue,
-                                    borderRadius: BorderRadius.circular(30),
+                                    shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
                                         color: Colors.black.withOpacity(0.15),
@@ -3785,72 +3779,74 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                       ),
                                     ],
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      GestureDetector(
-                                        onTap: () {
-                                          if (quantity > 1) {
-                                            setState(() {
-                                              quantity--;
-                                            });
-                                          } else {
-                                            setState(() {
-                                              quantity = 0;
-                                            });
-                                          }
-                                        },
-                                        child: const Icon(
-                                          Icons.remove,
-                                          color: Colors.white,
-                                          size: 16,
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                        ),
-                                        child: Text(
-                                          '$quantity',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          final success =
-                                              await CartManager.addToCart(
-                                                productId: product.id,
-                                                name: product.name,
-                                                price: product.price,
-                                                originalPrice:
-                                                    product.originalPrice,
-                                                discountPercentage:
-                                                    product.discountPercentage,
-                                                imageUrl: product.imageUrl,
-                                                category:
-                                                    product
-                                                        .category, // ✅ TAMBAHKAN INI
-                                              );
-
-                                          if (success) {
-                                            setState(() {
-                                              quantity++;
-                                            });
-                                          }
-                                        },
-                                        child: const Icon(
-                                          Icons.add,
-                                          color: Colors.white,
-                                          size: 16,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                  child: const Icon(Icons.add, color: Colors.white, size: 18),
                                 ),
+                              )
+                            : Container(
+                                key: const ValueKey('counter'),
+                                padding: const EdgeInsets.symmetric(horizontal: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue,
+                                  borderRadius: BorderRadius.circular(30),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.15),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () {
+                                        if (quantity > 1) {
+                                          setState(() {
+                                            quantity--;
+                                          });
+                                        } else {
+                                          setState(() {
+                                            quantity = 0;
+                                          });
+                                        }
+                                      },
+                                      child: const Icon(Icons.remove, color: Colors.white, size: 16),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                                      child: Text(
+                                        '$quantity',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () async {
+                                        final success = await CartManager.addToCart(
+                                          productId: product.id,
+                                          name: product.name,
+                                          price: product.price,
+                                          originalPrice: product.originalPrice,
+                                          discountPercentage: product.discountPercentage,
+                                          imageUrl: product.imageUrl,
+                                          category: product.category,
+                                        );
+
+                                        if (success) {
+                                          setState(() {
+                                            quantity++;
+                                          });
+                                        }
+                                      },
+                                      child: const Icon(Icons.add, color: Colors.white, size: 16),
+                                    ),
+                                  ],
+                                ),
+                              ),
                       ),
                     ),
                   ],
@@ -3876,11 +3872,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
                         Row(
                           children: [
-                            Icon(
-                              Icons.star_rounded,
-                              color: Colors.amber[700],
-                              size: 14,
-                            ),
+                            Icon(Icons.star_rounded, color: Colors.amber[700], size: 14),
                             const SizedBox(width: 2),
                             Text(
                               '${product.rating}',
@@ -3893,57 +3885,63 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             const SizedBox(width: 4),
                             Text(
                               '(${product.reviewCount})',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[500],
-                              ),
+                              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                             ),
                           ],
                         ),
 
                         const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              _formatPrice(product.price),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: Colors.blue[700],
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            if (product.originalPrice != null)
+                        
+                        // ⭐ HARGA DENGAN FLASH SALE
+                        Text(
+                          _formatPrice(displayPrice),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: isFlashSaleActive ? Colors.red[700] : Colors.blue[700],
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 2),
+                        
+                        if (discountToShow != null)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
                               Text(
-                                _formatPrice(product.originalPrice!),
+                                _formatPrice(originalPrice),
                                 style: TextStyle(
                                   decoration: TextDecoration.lineThrough,
                                   color: Colors.grey[400],
                                   fontSize: 10,
                                 ),
                               ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        if (product.discountPercentage != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 1,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red[50],
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              '${product.discountPercentage}%',
-                              style: const TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 9,
+                              const SizedBox(width: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: isFlashSaleActive ? Colors.red : Colors.blue[50],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (isFlashSaleActive) ...[
+                                      Icon(Icons.local_fire_department, color: Colors.white, size: 7),
+                                      SizedBox(width: 1),
+                                    ],
+                                    Text(
+                                      '$discountToShow%',
+                                      style: TextStyle(
+                                        color: isFlashSaleActive ? Colors.white : Colors.blue[700],
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 9,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                       ],
                     ),
