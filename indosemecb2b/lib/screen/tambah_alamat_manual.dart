@@ -284,38 +284,39 @@ class _TambahAlamatManualScreenState extends State<TambahAlamatManualScreen> {
 
             const SizedBox(height: 16),
 
-            Expanded(
-              child: _buildDropdown(
-                label: 'Kelurahan',
-                value: _selectedKelurahan,
-                items:
-                    _selectedKecamatan != null
-                        ? (_kelurahanList[_selectedKecamatan!] ?? [])
-                        : [],
-                hint: 'Pilih Kelurahan',
-                enabled: _selectedKecamatan != null,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedKelurahan = value;
-                  });
-                },
-              ),
+            // ✅ BENAR - Tanpa Expanded
+            _buildDropdown(
+              label: 'Kelurahan',
+              value: _selectedKelurahan,
+              items:
+                  _selectedKecamatan != null
+                      ? (_kelurahanList[_selectedKecamatan!] ?? [])
+                      : [],
+              hint: 'Pilih Kelurahan',
+              enabled: _selectedKecamatan != null,
+              onChanged: (value) {
+                setState(() {
+                  _selectedKelurahan = value;
+                });
+              },
             ),
+
             const SizedBox(height: 16),
-            Expanded(
-              child: _buildDropdown(
-                label: 'Kode Pos',
-                value: _selectedKodepos,
-                items: _kodeposList,
-                hint: 'Pilih Kode Pos',
-                onChanged: (value) {
-                  setState(() {
-                    _selectedKodepos = value;
-                  });
-                },
-              ),
+
+            // ✅ BENAR - Tanpa Expanded
+            _buildDropdown(
+              label: 'Kode Pos',
+              value: _selectedKodepos,
+              items: _kodeposList,
+              hint: 'Pilih Kode Pos',
+              onChanged: (value) {
+                setState(() {
+                  _selectedKodepos = value;
+                });
+              },
             ),
-            const SizedBox(height: 16),
+
+            const SizedBox(height: 32), // Tambah spacing sebelum tombol
           ],
         ),
       ),
