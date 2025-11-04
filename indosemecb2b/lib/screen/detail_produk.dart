@@ -8,6 +8,8 @@ import '../utils/user_data_manager.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/koperasi_model.dart';
 import '../services/koperasi_service.dart';
+import '../services/flash_sale_service.dart';
+import 'dart:async';
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
@@ -29,6 +31,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   final FavoriteService _favoriteService = FavoriteService();
   final ProductService _productService = ProductService();
   List<Product> similarProducts = [];
+  Timer? _priceCheckTimer;
 
   @override
   void initState() {
@@ -36,6 +39,20 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     _loadFavoriteStatus();
     _loadCartQuantity();
     _loadSimilarProducts();
+
+    _priceCheckTimer = Timer.periodic(Duration(seconds: 10), (_) {
+      if (mounted) {
+        setState(() {
+          // Trigger rebuild untuk update harga
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _priceCheckTimer?.cancel(); // ⭐ JANGAN LUPA CANCEL
+    super.dispose();
   }
 
   Future<void> _loadSimilarProducts() async {
@@ -475,68 +492,128 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-
                   // ✅ FIX 2: Display harga utama dengan flash sale
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.product.name,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Nama Produk
+                      Text(
+                        widget.product.name,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Text(
-                              'Rp${displayPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue[700],
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      // ⭐ BAGIAN HARGA YANG DIPERBAIKI
+                      Builder(
+                        builder: (context) {
+                          // Cek status Flash Sale
+                          final isFlashSaleActive = FlashSaleService.isProductOnFlashSale(widget.product.id);
+                          final flashDiscountPercent = FlashSaleService.getFlashDiscountPercentage(widget.product.id);
+                          
+                          // Hitung harga
+                          final originalPrice = widget.product.originalPrice ?? widget.product.price;
+                          double displayPrice;
+                          double? priceToCompare;
+                          int? discountPercent;
+                          bool isFlashDiscount = false;
+                          
+                          if (isFlashSaleActive) {
+                            // 🔥 FLASH SALE AKTIF
+                            displayPrice = FlashSaleService.calculateFlashPrice(widget.product.id, originalPrice);
+                            priceToCompare = originalPrice;
+                            discountPercent = flashDiscountPercent;
+                            isFlashDiscount = true;
+                          } else {
+                            // ⏰ FLASH SALE TIDAK AKTIF
+                            if (widget.product.discountPercentage != null && widget.product.originalPrice != null) {
+                              // Ada diskon original
+                              displayPrice = widget.product.price;
+                              priceToCompare = widget.product.originalPrice;
+                              discountPercent = widget.product.discountPercentage;
+                              isFlashDiscount = false;
+                            } else {
+                              // Tidak ada diskon
+                              displayPrice = widget.product.price;
+                              priceToCompare = null;
+                              discountPercent = null;
+                              isFlashDiscount = false;
+                            }
+                          }
+                          
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Row Harga
+                              Row(
+                                children: [
+                                  // Harga Utama
+                                  Text(
+                                    'Rp${displayPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: isFlashDiscount ? Colors.red[700] : Colors.blue[700],
+                                    ),
+                                  ),
+                                  
+                                  // Harga Coret (jika ada)
+                                  if (priceToCompare != null) ...[
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Rp${priceToCompare.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
+                                      style: const TextStyle(
+                                        decoration: TextDecoration.lineThrough,
+                                        color: Colors.grey,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
-                            ),
-                            if (widget.product.originalPrice != null) ...[
-                              const SizedBox(width: 12),
-                              Text(
-                                'Rp${widget.product.originalPrice!.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
-                                style: const TextStyle(
-                                  decoration: TextDecoration.lineThrough,
-                                  color: Colors.grey,
-                                  fontSize: 16,
+                              
+                              // Badge Diskon (jika ada)
+                              if (discountPercent != null) ...[
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isFlashDiscount ? Colors.red : Colors.blue[700],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (isFlashDiscount) ...[
+                                        Icon(Icons.local_fire_department, color: Colors.white, size: 14),
+                                        SizedBox(width: 4),
+                                      ],
+                                      Text(
+                                        '${discountPercent}%',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
+                              ],
                             ],
-                          ],
-                        ),
-                        if (widget.product.discountPercentage != null) ...[
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              '${widget.product.discountPercentage}%',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
+                ),
 
                   const SizedBox(height: 20),
 

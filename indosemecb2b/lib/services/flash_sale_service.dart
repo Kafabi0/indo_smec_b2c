@@ -48,10 +48,10 @@ class FlashSaleService {
     FlashSaleSchedule(
       id: 'fs3',
       title: 'FLASH SALE SORE',
-      startTime: DateTime(today.year, today.month, today.day, 16, 0),
+      startTime: DateTime(today.year, today.month, today.day, 14, 30),
       endTime: DateTime(today.year, today.month, today.day, 17, 0),
       productIds: [
-        '103', // Paket Sembako Ramadhan
+        '103', // Paket Sembako 
         '111', // Paket Buah Tropis Premium
         '112', // Paket Jamu Sehat Lengkap
         '113', // Paket Madu & Herbal
