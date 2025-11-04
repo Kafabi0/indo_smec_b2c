@@ -38,13 +38,40 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     _loadSimilarProducts();
   }
 
-  void _loadSimilarProducts() {
+  Future<void> _loadSimilarProducts() async {
+    // ⭐ AMBIL KOPERASI PRODUK INI
+    final productKoperasi = await _getProductKoperasi();
+
+    if (productKoperasi == null) {
+      // Fallback: tampilkan produk serupa tanpa filter koperasi
+      final allProducts = _productService.getProductsByCategory(
+        widget.product.category,
+      );
+      final filtered =
+          allProducts.where((p) => p.id != widget.product.id).toList();
+
+      setState(() {
+        similarProducts = filtered.take(8).toList();
+      });
+      return;
+    }
+
+    // ⭐ FILTER: Hanya produk dari koperasi yang sama
     final allProducts = _productService.getProductsByCategory(
       widget.product.category,
     );
 
     final filtered =
-        allProducts.where((p) => p.id != widget.product.id).toList();
+        allProducts.where((p) {
+          // Exclude produk saat ini
+          if (p.id == widget.product.id) return false;
+
+          // ✅ HANYA produk dari koperasi yang sama
+          return productKoperasi.productIds.contains(p.id);
+        }).toList();
+
+    print('🔍 [SIMILAR] Koperasi: ${productKoperasi.name}');
+    print('🔍 [SIMILAR] Produk serupa dari koperasi ini: ${filtered.length}');
 
     setState(() {
       similarProducts = filtered.take(8).toList();
