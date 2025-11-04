@@ -61,10 +61,7 @@ class _FairKlikScreenState extends State<FairKlikScreen>
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
-              tabs: const [
-                Tab(text: 'Fair Berjalan'),
-                Tab(text: 'Semua Fair'),
-              ],
+              tabs: const [Tab(text: 'Fair Berjalan'), Tab(text: 'Semua Fair')],
             ),
           ),
         ),
@@ -75,10 +72,7 @@ class _FairKlikScreenState extends State<FairKlikScreen>
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [
-                _buildFairBerjalan(),
-                _buildSemuaFair(),
-              ],
+              children: [_buildFairBerjalan(), _buildSemuaFair()],
             ),
           ),
         ],
@@ -121,10 +115,7 @@ class _FairKlikScreenState extends State<FairKlikScreen>
               ),
               child: Row(
                 children: [
-                  Text(
-                    selectedFilter,
-                    style: const TextStyle(fontSize: 14),
-                  ),
+                  Text(selectedFilter, style: const TextStyle(fontSize: 14)),
                   const SizedBox(width: 4),
                   const Icon(Icons.keyboard_arrow_down, size: 20),
                 ],
@@ -164,8 +155,10 @@ class _FairKlikScreenState extends State<FairKlikScreen>
       padding: const EdgeInsets.all(16),
       children: [
         _buildFairCard(
-          title: 'Khusus Member Baru setiap pembelian produk Wings senilai Rp35.000 dapatkan potongan Rp5.000',
-          imageUrl: 'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F58869d9f-ec02-47b5-a1f8-34a824cbda7d.png&w=1920&q=75',
+          title:
+              'Khusus Member Baru setiap pembelian produk Wings senilai Rp35.000 dapatkan potongan Rp5.000',
+          imageUrl:
+              'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F58869d9f-ec02-47b5-a1f8-34a824cbda7d.png&w=1920&q=75',
           tags: ['Exclusive', 'New Member', 'Wings Fair'],
           validUntil: '01 Nov 2025 - 30 Nov 2025',
           discount: 'DISKON\nRP 7.500',
@@ -175,8 +168,10 @@ class _FairKlikScreenState extends State<FairKlikScreen>
         ),
         const SizedBox(height: 16),
         _buildFairCard(
-          title: 'Khusus Member Baru setiap pembelian produk Nutrilon tertentu senilai Rp90.000 dapatkan potongan s.d Rp18.000',
-          imageUrl: 'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2Fdecdc6dc-133b-487d-8c0b-5b18af91c170.png&w=1920&q=75',
+          title:
+              'Khusus Member Baru setiap pembelian produk Nutrilon tertentu senilai Rp90.000 dapatkan potongan s.d Rp18.000',
+          imageUrl:
+              'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2Fdecdc6dc-133b-487d-8c0b-5b18af91c170.png&w=1920&q=75',
           tags: ['Exclusive', 'New Member', 'Nutrilon Fair'],
           validUntil: '01 Nov 2025 - 30 Nov 2025',
           discount: 'DISKON\nS.D RP 18RB',
@@ -193,8 +188,10 @@ class _FairKlikScreenState extends State<FairKlikScreen>
       padding: const EdgeInsets.all(16),
       children: [
         _buildFairCard(
-          title: 'Khusus Member Baru setiap pembelian produk Wings senilai Rp35.000 dapatkan potongan Rp5.000',
-          imageUrl: 'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F58869d9f-ec02-47b5-a1f8-34a824cbda7d.png&w=1920&q=75',
+          title:
+              'Khusus Member Baru setiap pembelian produk Wings senilai Rp35.000 dapatkan potongan Rp5.000',
+          imageUrl:
+              'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2Fdecdc6dc-133b-487d-8c0b-5b18af91c170.png&w=1920&q=75',
           tags: ['Exclusive', 'New Member', 'Wings Fair'],
           validUntil: '01 Nov 2025 - 30 Nov 2025',
           discount: 'DISKON\nRP 7.500',
@@ -204,8 +201,10 @@ class _FairKlikScreenState extends State<FairKlikScreen>
         ),
         const SizedBox(height: 16),
         _buildFairCard(
-          title: 'Khusus Member Baru setiap pembelian produk Nutrilon tertentu senilai Rp90.000 dapatkan potongan s.d Rp18.000',
-          imageUrl: 'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2Fdecdc6dc-133b-487d-8c0b-5b18af91c170.png&w=1920&q=75',
+          title:
+              'Khusus Member Baru setiap pembelian produk Nutrilon tertentu senilai Rp90.000 dapatkan potongan s.d Rp18.000',
+          imageUrl:
+              'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2Fdecdc6dc-133b-487d-8c0b-5b18af91c170.png&w=1920&q=75',
           tags: ['Exclusive', 'New Member', 'Nutrilon Fair'],
           validUntil: '01 Nov 2025 - 30 Nov 2025',
           discount: 'DISKON\nS.D RP 18RB',
@@ -216,7 +215,8 @@ class _FairKlikScreenState extends State<FairKlikScreen>
         const SizedBox(height: 16),
         _buildFairCard(
           title: 'Diskon hingga 50% untuk produk makanan pilihan',
-          imageUrl: 'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F055aa64a-58a1-4e2e-aa67-7c58c3bdcd5c.png&w=1920&q=75',
+          imageUrl:
+              'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F055aa64a-58a1-4e2e-aa67-7c58c3bdcd5c.png&w=1920&q=75',
           tags: ['Promo Terbatas', 'Food Fair'],
           validUntil: '01 Nov 2025 - 15 Nov 2025',
           discount: 'DISKON\n50%',
@@ -270,7 +270,11 @@ class _FairKlikScreenState extends State<FairKlikScreen>
                       height: 150,
                       color: Colors.grey[200],
                       child: Center(
-                        child: Icon(Icons.image, size: 50, color: Colors.grey[400]),
+                        child: Icon(
+                          Icons.image,
+                          size: 50,
+                          color: Colors.grey[400],
+                        ),
                       ),
                     );
                   },
@@ -281,7 +285,10 @@ class _FairKlikScreenState extends State<FairKlikScreen>
                   top: 8,
                   right: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.orange[400],
                       borderRadius: BorderRadius.circular(6),
@@ -310,16 +317,24 @@ class _FairKlikScreenState extends State<FairKlikScreen>
                     ...tags.map((tag) {
                       bool isExclusive = tag == 'Exclusive';
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: isExclusive ? Colors.amber[100] : Colors.blue[50],
+                          color:
+                              isExclusive ? Colors.amber[100] : Colors.blue[50],
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             if (isExclusive) ...[
-                              const Icon(Icons.star, size: 12, color: Colors.amber),
+                              const Icon(
+                                Icons.star,
+                                size: 12,
+                                color: Colors.amber,
+                              ),
                               const SizedBox(width: 4),
                             ],
                             Text(
@@ -327,7 +342,10 @@ class _FairKlikScreenState extends State<FairKlikScreen>
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: isExclusive ? Colors.amber[900] : Colors.blue[900],
+                                color:
+                                    isExclusive
+                                        ? Colors.amber[900]
+                                        : Colors.blue[900],
                               ),
                             ),
                           ],
@@ -416,10 +434,7 @@ class _FairKlikScreenState extends State<FairKlikScreen>
             children: [
               const Text(
                 'Filter Fair',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
               _buildFilterOption('Semua Tipe Fair'),
@@ -469,9 +484,7 @@ class _FairKlikScreenState extends State<FairKlikScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Colors.grey[200]!),
-          ),
+          border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
         ),
         child: Row(
           children: [
