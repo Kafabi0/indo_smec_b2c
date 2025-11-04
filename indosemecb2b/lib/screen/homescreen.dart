@@ -3088,6 +3088,23 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             products.take(5).map((product) {
               final isFavorite = favoriteStatus[product.id] ?? false;
 
+              // ⭐ CEK FLASH SALE STATUS
+              final isFlashSaleActive = FlashSaleService.isProductOnFlashSale(
+                product.id,
+              );
+              final flashDiscountPercent =
+                  FlashSaleService.getFlashDiscountPercentage(product.id);
+
+              // ⭐ HITUNG HARGA REAL-TIME DARI SERVICE
+              final displayPrice = _productService.getProductPrice(product.id);
+              final originalPrice = product.originalPrice ?? product.price;
+
+              // ⭐ TENTUKAN DISKON YANG DITAMPILKAN (Flash Sale Priority)
+              final discountToShow =
+                  isFlashSaleActive
+                      ? flashDiscountPercent
+                      : product.discountPercentage;
+
               return StatefulBuilder(
                 builder: (context, setStateLocal) {
                   int quantity = 0;
@@ -3109,46 +3126,109 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       padding: const EdgeInsets.all(12),
                       child: Row(
                         children: [
+                          // ⭐ GAMBAR PRODUK
                           GestureDetector(
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder:
-                                      (context) =>
-                                          ProductDetailPage(product: product),
+                                      (context) => ProductDetailPage(
+                                        product: product,
+                                        userKoperasi:
+                                            _nearbyKoperasi.isNotEmpty
+                                                ? _nearbyKoperasi.first
+                                                : null,
+                                      ),
                                 ),
                               );
                             },
-                            child: Container(
-                              width: 70,
-                              height: 70,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  product.imageUrl ?? '',
-                                  height: 70,
+                            child: Stack(
+                              children: [
+                                Container(
                                   width: 70,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Center(
-                                      child: Icon(
-                                        Icons.image_rounded,
-                                        size: 30,
-                                        color: Colors.grey[400],
-                                      ),
-                                    );
-                                  },
+                                  height: 70,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      product.imageUrl ?? '',
+                                      height: 70,
+                                      width: 70,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (
+                                        context,
+                                        error,
+                                        stackTrace,
+                                      ) {
+                                        return Center(
+                                          child: Icon(
+                                            Icons.image_rounded,
+                                            size: 30,
+                                            color: Colors.grey[400],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
                                 ),
-                              ),
+
+                                // ⭐ BADGE FLASH SALE (JIKA AKTIF)
+                                if (isFlashSaleActive)
+                                  Positioned(
+                                    top: 2,
+                                    left: 2,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.red[600]!,
+                                            Colors.red[800]!,
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(4),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.red.withOpacity(0.4),
+                                            blurRadius: 3,
+                                            offset: Offset(0, 1),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.local_fire_department,
+                                            color: Colors.white,
+                                            size: 8,
+                                          ),
+                                          SizedBox(width: 2),
+                                          Text(
+                                            'FLASH',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 7,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                           const SizedBox(width: 12),
 
+                          // ⭐ INFORMASI PRODUK
                           Expanded(
                             child: GestureDetector(
                               onTap: () {
@@ -3156,14 +3236,20 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   context,
                                   MaterialPageRoute(
                                     builder:
-                                        (context) =>
-                                            ProductDetailPage(product: product),
+                                        (context) => ProductDetailPage(
+                                          product: product,
+                                          userKoperasi:
+                                              _nearbyKoperasi.isNotEmpty
+                                                  ? _nearbyKoperasi.first
+                                                  : null,
+                                        ),
                                   ),
                                 );
                               },
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  // Nama Produk
                                   Text(
                                     product.name,
                                     style: TextStyle(
@@ -3175,6 +3261,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   ),
                                   const SizedBox(height: 4),
 
+                                  // Rating
                                   Row(
                                     children: [
                                       Icon(
@@ -3203,6 +3290,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   ),
 
                                   const SizedBox(height: 4),
+
+                                  // Deskripsi
                                   Text(
                                     product.description,
                                     style: TextStyle(
@@ -3212,29 +3301,88 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
+
                                   const SizedBox(height: 6),
-                                  Row(
+
+                                  // ⭐ HARGA DINAMIS (FLASH SALE / NORMAL)
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
+                                      // Harga Utama
                                       Text(
-                                        _formatPrice(product.price),
+                                        _formatPrice(displayPrice),
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.blue[700],
+                                          color:
+                                              isFlashSaleActive
+                                                  ? Colors.red[700]
+                                                  : Colors.blue[700],
                                         ),
                                       ),
-                                      if (product.originalPrice != null) ...[
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          _formatPrice(product.originalPrice!),
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            decoration:
-                                                TextDecoration.lineThrough,
-                                            color: Colors.grey[400],
-                                          ),
+
+                                      // ⭐ HARGA CORET + BADGE DISKON (JIKA ADA)
+                                      if (discountToShow != null &&
+                                          discountToShow > 0)
+                                        Row(
+                                          children: [
+                                            // Harga Original (Dicoret)
+                                            Text(
+                                              _formatPrice(originalPrice),
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                decoration:
+                                                    TextDecoration.lineThrough,
+                                                color: Colors.grey[400],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+
+                                            // Badge Diskon
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 4,
+                                                vertical: 1,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    isFlashSaleActive
+                                                        ? Colors.red[600]
+                                                        : Colors.blue[50],
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  if (isFlashSaleActive) ...[
+                                                    Icon(
+                                                      Icons
+                                                          .local_fire_department,
+                                                      color: Colors.white,
+                                                      size: 8,
+                                                    ),
+                                                    SizedBox(width: 2),
+                                                  ],
+                                                  Text(
+                                                    '$discountToShow%',
+                                                    style: TextStyle(
+                                                      color:
+                                                          isFlashSaleActive
+                                                              ? Colors.white
+                                                              : Colors
+                                                                  .blue[700],
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 9,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
                                     ],
                                   ),
                                 ],
@@ -3242,8 +3390,10 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             ),
                           ),
 
+                          // ⭐ TOMBOL FAVORIT & KERANJANG
                           Column(
                             children: [
+                              // Tombol Favorit
                               GestureDetector(
                                 onTap:
                                     () => _toggleFavorite(
@@ -3273,6 +3423,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               ),
                               const SizedBox(height: 8),
 
+                              // Tombol Keranjang (Dinamis)
                               AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 200),
                                 transitionBuilder:
@@ -3316,9 +3467,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                                       product
                                                           .discountPercentage,
                                                   imageUrl: product.imageUrl,
-                                                  category:
-                                                      product
-                                                          .category, // ✅ TAMBAHKAN INI
+                                                  category: product.category,
                                                 );
 
                                             if (success) {
@@ -3349,20 +3498,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                                   ),
                                                   behavior:
                                                       SnackBarBehavior.floating,
-                                                ),
-                                              );
-                                            } else {
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    'Gagal menambahkan ke keranjang',
-                                                  ),
-                                                  backgroundColor: Colors.red,
-                                                  duration: Duration(
-                                                    seconds: 2,
-                                                  ),
                                                 ),
                                               );
                                             }
@@ -3493,8 +3628,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                                         imageUrl:
                                                             product.imageUrl,
                                                         category:
-                                                            product
-                                                                .category, // ✅ TAMBAHKAN INI
+                                                            product.category,
                                                       );
 
                                                   if (success) {
