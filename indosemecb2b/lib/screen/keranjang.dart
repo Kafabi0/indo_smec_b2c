@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/screen/fair_klik_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:indosemecb2b/screen/checkout_screen.dart';
 import 'package:indosemecb2b/screen/favorit.dart';
@@ -375,62 +376,63 @@ class CartScreenState extends State<CartScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: Colors.white,
-    appBar: PreferredSize(
-      preferredSize: const Size.fromHeight(90), 
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        decoration: BoxDecoration(
-          color: _isScrolled ? Colors.blue : Colors.blue,
-          borderRadius: const BorderRadius.only(
-            bottomLeft: Radius.circular(20), 
-            bottomRight: Radius.circular(20), 
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(90),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          decoration: BoxDecoration(
+            color: _isScrolled ? Colors.blue : Colors.blue,
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20),
+            ),
+            boxShadow: [
+              if (_isScrolled)
+                BoxShadow(
+                  color: Colors.blue.withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+            ],
           ),
-          boxShadow: [
-            if (_isScrolled)
-              BoxShadow(
-                color: Colors.blue.withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Keranjang Belanja',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.favorite_sharp,
+                      color: _isScrolled ? Colors.white : Colors.white,
+                      size: 26,
+                    ),
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FavoritScreen(),
+                        ),
+                      );
+                      await _loadUserData();
+                    },
+                  ),
+                ],
               ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Keranjang Belanja',
-                  style: TextStyle(
-                    color: Colors.white, 
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.favorite_sharp,
-                    color: _isScrolled ? Colors.white : Colors.white,
-                    size: 26,
-                  ),
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const FavoritScreen()),
-                    );
-                    await _loadUserData();
-                  },
-                ),
-              ],
             ),
           ),
         ),
       ),
-    ),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -443,10 +445,19 @@ class CartScreenState extends State<CartScreen> with RouteAware {
                     const SizedBox(height: 24),
                     _buildPromoBanner(),
                     const SizedBox(height: 24),
+
+                    // ✅ Bagian produk
                     _cartItems.isEmpty ? _buildEmptyCart() : _buildCartItems(),
+
+                    const SizedBox(height: 24),
+
+                    // ✅ Pindahkan bagian Promo Fair ke sini agar selalu muncul
+                    _buildPromoFairSection(),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
+
       bottomNavigationBar:
           _cartItems.isNotEmpty
               ? Container(
@@ -515,6 +526,75 @@ class CartScreenState extends State<CartScreen> with RouteAware {
                 ),
               )
               : null,
+    );
+  }
+
+  Widget _buildPromoFairSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Promo Fair',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  print('Button ditekan');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const FairKlikScreen(),
+                    ),
+                  );
+                },
+                child: Text(
+                  'Lihat Semua',
+                  style: TextStyle(
+                    color: Colors.blue[700],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 250,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _buildPromoCard(
+                  context,
+                  title: 'New Member Bu Krim',
+                  description:
+                      'Khusus Member Baru setiap pembelian produk Bu Krim...',
+                  tag: 'Pengguna Baru',
+                  imageUrl:
+                      'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400',
+                ),
+                _buildPromoCard(
+                  context,
+                  title: 'Personal Care Wings',
+                  description:
+                      'Khusus Member Baru setiap pembelian produk Wings personal...',
+                  tag: 'Pengguna Baru',
+                  imageUrl:
+                      'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -989,72 +1069,72 @@ class CartScreenState extends State<CartScreen> with RouteAware {
           },
         ),
         const SizedBox(height: 24),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Promo Fair',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    child: Text(
-                      'Lihat Semua',
-                      style: TextStyle(
-                        color: Colors.blue[700],
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 250,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _buildPromoCard(
-                      context,
-                      title: 'New Member Bu Krim',
-                      description:
-                          'Khusus Member Baru setiap pembelian produk Bu Krim, Total...',
-                      tag: 'Pengguna Baru',
-                      imageUrl:
-                          'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400',
-                    ),
-                    _buildPromoCard(
-                      context,
-                      title: 'Personal Care Wings',
-                      description:
-                          'Khusus Member Baru setiap pembelian produk Wings personal...',
-                      tag: 'Pengguna Baru',
-                      imageUrl:
-                          'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400',
-                    ),
-                    _buildPromoCard(
-                      context,
-                      title: 'Diskon Makanan',
-                      description:
-                          'Dapatkan diskon hingga 50% untuk produk makanan pilihan...',
-                      tag: 'Promo Terbatas',
-                      imageUrl:
-                          'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400',
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        // Padding(
+        //   padding: const EdgeInsets.symmetric(horizontal: 16),
+        //   child: Column(
+        //     children: [
+        //       Row(
+        //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        //         children: [
+        //           const Text(
+        //             'Promo Fair',
+        //             style: TextStyle(
+        //               fontSize: 16,
+        //               fontWeight: FontWeight.bold,
+        //               color: Colors.black,
+        //             ),
+        //           ),
+        //           TextButton(
+        //             onPressed: () {},
+        //             child: Text(
+        //               'Lihat Semua',
+        //               style: TextStyle(
+        //                 color: Colors.blue[700],
+        //                 fontWeight: FontWeight.bold,
+        //               ),
+        //             ),
+        //           ),
+        //         ],
+        //       ),
+        //       const SizedBox(height: 12),
+        //       SizedBox(
+        //         height: 250,
+        //         child: ListView(
+        //           scrollDirection: Axis.horizontal,
+        //           children: [
+        //             _buildPromoCard(
+        //               context,
+        //               title: 'New Member Bu Krim',
+        //               description:
+        //                   'Khusus Member Baru setiap pembelian produk Bu Krim, Total...',
+        //               tag: 'Pengguna Baru',
+        //               imageUrl:
+        //                   'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400',
+        //             ),
+        //             _buildPromoCard(
+        //               context,
+        //               title: 'Personal Care Wings',
+        //               description:
+        //                   'Khusus Member Baru setiap pembelian produk Wings personal...',
+        //               tag: 'Pengguna Baru',
+        //               imageUrl:
+        //                   'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400',
+        //             ),
+        //             _buildPromoCard(
+        //               context,
+        //               title: 'Diskon Makanan',
+        //               description:
+        //                   'Dapatkan diskon hingga 50% untuk produk makanan pilihan...',
+        //               tag: 'Promo Terbatas',
+        //               imageUrl:
+        //                   'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400',
+        //             ),
+        //           ],
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
       ],
     );
   }
@@ -1323,69 +1403,69 @@ class CartScreenState extends State<CartScreen> with RouteAware {
 
           const SizedBox(height: 32),
 
-          // Promo Fair Section
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Promo Fair',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: Text(
-                  'Lihat Semua',
-                  style: TextStyle(
-                    color: Colors.blue[700],
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          // // Promo Fair Section
+          // Row(
+          //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          //   children: [
+          //     const Text(
+          //       'Promo Fair',
+          //       style: TextStyle(
+          //         fontSize: 16,
+          //         fontWeight: FontWeight.bold,
+          //         color: Colors.black,
+          //       ),
+          //     ),
+          //     TextButton(
+          //       onPressed: () {},
+          //       child: Text(
+          //         'Lihat Semua',
+          //         style: TextStyle(
+          //           color: Colors.blue[700],
+          //           fontWeight: FontWeight.bold,
+          //         ),
+          //       ),
+          //     ),
+          //   ],
+          // ),
 
-          const SizedBox(height: 12),
+          // const SizedBox(height: 12),
 
-          // Promo Cards
-          SizedBox(
-            height: 250,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                _buildPromoCard(
-                  context,
-                  title: 'New Member Bu Krim',
-                  description:
-                      'Khusus Member Baru setiap pembelian produk Bu Krim, Total...',
-                  tag: 'Pengguna Baru',
-                  imageUrl:
-                      'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F58869d9f-ec02-47b5-a1f8-34a824cbda7d.png&w=1920&q=75',
-                ),
-                _buildPromoCard(
-                  context,
-                  title: 'Personal Care Wings',
-                  description:
-                      'Khusus Member Baru setiap pembelian produk Wings personal...',
-                  tag: 'Pengguna Baru',
-                  imageUrl:
-                      'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2Fdecdc6dc-133b-487d-8c0b-5b18af91c170.png&w=1920&q=75',
-                ),
-                _buildPromoCard(
-                  context,
-                  title: 'Diskon Makanan',
-                  description:
-                      'Dapatkan diskon hingga 50% untuk produk makanan pilihan...',
-                  tag: 'Promo Terbatas',
-                  imageUrl:
-                      'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F055aa64a-58a1-4e2e-aa67-7c58c3bdcd5c.png&w=1920&q=75',
-                ),
-              ],
-            ),
-          ),
+          // // Promo Cards
+          // SizedBox(
+          //   height: 250,
+          //   child: ListView(
+          //     scrollDirection: Axis.horizontal,
+          //     children: [
+          //       _buildPromoCard(
+          //         context,
+          //         title: 'New Member Bu Krim',
+          //         description:
+          //             'Khusus Member Baru setiap pembelian produk Bu Krim, Total...',
+          //         tag: 'Pengguna Baru',
+          //         imageUrl:
+          //             'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F58869d9f-ec02-47b5-a1f8-34a824cbda7d.png&w=1920&q=75',
+          //       ),
+          //       _buildPromoCard(
+          //         context,
+          //         title: 'Personal Care Wings',
+          //         description:
+          //             'Khusus Member Baru setiap pembelian produk Wings personal...',
+          //         tag: 'Pengguna Baru',
+          //         imageUrl:
+          //             'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2Fdecdc6dc-133b-487d-8c0b-5b18af91c170.png&w=1920&q=75',
+          //       ),
+          //       _buildPromoCard(
+          //         context,
+          //         title: 'Diskon Makanan',
+          //         description:
+          //             'Dapatkan diskon hingga 50% untuk produk makanan pilihan...',
+          //         tag: 'Promo Terbatas',
+          //         imageUrl:
+          //             'https://www.klikindomaret.com/assets-klikidmsearch/_next/image?url=https%3A%2F%2Fcdn-klik.klikindomaret.com%2Fhome%2Fbanner%2F055aa64a-58a1-4e2e-aa67-7c58c3bdcd5c.png&w=1920&q=75',
+          //       ),
+          //     ],
+          //   ),
+          // ),
         ],
       ),
     );
