@@ -3690,7 +3690,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               Icon(Icons.local_fire_department, color: Colors.white, size: 10),
                               SizedBox(width: 2),
                               Text(
-                                'FLASH',
+                                'FLASH SALE',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 8,
