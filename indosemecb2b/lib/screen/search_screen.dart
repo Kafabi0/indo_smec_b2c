@@ -3,6 +3,7 @@ import '../models/product_model.dart';
 import '../services/product_service.dart';
 import '../models/koperasi_model.dart';
 import 'product_list_screen.dart';
+import '../services/flash_sale_service.dart'; // ⭐ TAMBAHKAN INI
 
 class SearchScreen extends StatefulWidget {
   final List<Koperasi>? nearbyKoperasi;
@@ -138,7 +139,7 @@ class _SearchScreenState extends State<SearchScreen> {
             (context) => ProductListScreen(
               title: 'Hasil pencarian "$query"',
               products: results,
-              nearbyKoperasi: widget.nearbyKoperasi ?? [], // ⭐ PASS KOPERASI
+              nearbyKoperasi: widget.nearbyKoperasi ?? [],
             ),
       ),
     );
@@ -148,6 +149,26 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {
       recentSearches.clear();
     });
+  }
+
+  // ⭐ HELPER FUNCTION: Format Harga
+  String _formatPrice(double price) {
+    final priceInt = price.toInt();
+    final priceString = priceInt.toString();
+
+    String result = '';
+    int counter = 0;
+
+    for (int i = priceString.length - 1; i >= 0; i--) {
+      if (counter == 3) {
+        result = '.$result';
+        counter = 0;
+      }
+      result = priceString[i] + result;
+      counter++;
+    }
+
+    return 'Rp$result';
   }
 
   @override
@@ -222,6 +243,27 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildProductSearchItem(Product product) {
+    // ⭐⭐⭐ CEK FLASH SALE STATUS ⭐⭐⭐
+    final isFlashActive = FlashSaleService.isProductOnFlashSale(product.id);
+    final flashDiscountPercent = FlashSaleService.getFlashDiscountPercentage(
+      product.id,
+    );
+
+    // ⭐⭐⭐ HITUNG HARGA DINAMIS ⭐⭐⭐
+    final originalPrice = product.originalPrice ?? product.price;
+    double displayPrice;
+
+    if (isFlashActive) {
+      // Flash Sale AKTIF → gunakan harga flash sale
+      displayPrice = FlashSaleService.calculateFlashPrice(
+        product.id,
+        originalPrice,
+      );
+    } else {
+      // Flash Sale TIDAK AKTIF → gunakan harga normal produk
+      displayPrice = product.price;
+    }
+
     return InkWell(
       onTap: () => _performSearch(product.name),
       child: Container(
@@ -240,35 +282,79 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         child: Row(
           children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  product.imageUrl ?? '',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Center(
-                      child: Icon(
-                        Icons.image,
-                        color: Colors.grey[400],
-                        size: 30,
-                      ),
-                    );
-                  },
+            // ⭐ GAMBAR PRODUK
+            Stack(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      product.imageUrl ?? '',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Icon(
+                            Icons.image,
+                            color: Colors.grey[400],
+                            size: 30,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ),
+                
+                // ⭐ BADGE FLASH SALE (DINAMIS)
+                if (isFlashActive)
+                  Positioned(
+                    top: 2,
+                    left: 2,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.red[600]!, Colors.red[800]!],
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.local_fire_department,
+                            color: Colors.white,
+                            size: 8,
+                          ),
+                          SizedBox(width: 2),
+                          Text(
+                            'FLASH',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 7,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
+            
             SizedBox(width: 12),
+            
+            // ⭐ INFORMASI PRODUK
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Nama Produk
                   Text(
                     product.name,
                     style: TextStyle(
@@ -280,18 +366,83 @@ class _SearchScreenState extends State<SearchScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 4),
+                  
+                  // Kategori
                   Text(
                     product.category,
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   SizedBox(height: 4),
-                  Text(
-                    'Rp${product.price.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue[700],
-                    ),
+                  
+                  // ⭐⭐⭐ HARGA DINAMIS (FLASH SALE / NORMAL) ⭐⭐⭐
+                  Row(
+                    children: [
+                      // Harga Utama
+                      Text(
+                        _formatPrice(displayPrice),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: isFlashActive ? Colors.red[700] : Colors.blue[700],
+                        ),
+                      ),
+                      
+                      SizedBox(width: 6),
+                      
+                      // Harga Coret + Badge Diskon (jika ada)
+                      if (isFlashActive && displayPrice < originalPrice) ...[
+                        Text(
+                          _formatPrice(originalPrice),
+                          style: TextStyle(
+                            decoration: TextDecoration.lineThrough,
+                            color: Colors.grey[400],
+                            fontSize: 10,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.red[600],
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: Text(
+                            '-${flashDiscountPercent}%',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ] else if (!isFlashActive && product.discountPercentage != null) ...[
+                        // Tampilkan diskon original jika flash sale berakhir
+                        Text(
+                          _formatPrice(originalPrice),
+                          style: TextStyle(
+                            decoration: TextDecoration.lineThrough,
+                            color: Colors.grey[400],
+                            fontSize: 10,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[50],
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: Text(
+                            '-${product.discountPercentage}%',
+                            style: TextStyle(
+                              color: Colors.blue[700],
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
@@ -558,7 +709,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       title: category['name'] as String,
                       products: products,
                       nearbyKoperasi:
-                          widget.nearbyKoperasi ?? [], // ⭐ PASS KOPERASI
+                          widget.nearbyKoperasi ?? [],
                     ),
               ),
             );
