@@ -128,11 +128,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   void _showKoperasiDetail(Koperasi koperasi) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent, // Buat transparan untuk custom shape
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return Container(
+          decoration: BoxDecoration(
+            color: Colors.white, // Background putih eksplisit
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
           padding: EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,

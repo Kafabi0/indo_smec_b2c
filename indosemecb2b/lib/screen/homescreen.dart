@@ -1998,51 +1998,51 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
 
                 // ⭐ FLASH SALE INFO
-                // if (flashSaleProducts.isNotEmpty) ...[
-                //   const SizedBox(height: 6),
-                //   Container(
-                //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                //     decoration: BoxDecoration(
-                //       gradient: LinearGradient(
-                //         colors: [Colors.red[50]!, Colors.orange[50]!],
-                //       ),
-                //       borderRadius: BorderRadius.circular(8),
-                //       border: Border.all(color: Colors.red[200]!),
-                //     ),
-                //     // child: Row(
-                //     //   children: [
-                //     //     Icon(Icons.local_fire_department, color: Colors.red[700], size: 16),
-                //     //     const SizedBox(width: 8),
-                //     //     // Expanded(
-                //     //     //   child: Text(
-                //     //     //     '${flashSaleProducts.length} produk Flash Sale tersedia!',
-                //     //     //     style: TextStyle(
-                //     //     //       color: Colors.red[800],
-                //     //     //       fontSize: 11,
-                //     //     //       fontWeight: FontWeight.w600,
-                //     //     //     ),
-                //     //     //   ),
-                //     //     // ),
-                //     //     if (currentFlashSale != null)
-                //     //       Container(
-                //     //         padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                //     //         decoration: BoxDecoration(
-                //     //           color: Colors.red[700],
-                //     //           borderRadius: BorderRadius.circular(4),
-                //     //         ),
-                //     //         child: Text(
-                //     //           '${currentFlashSale!.discountPercentage}%',
-                //     //           style: TextStyle(
-                //     //             color: Colors.white,
-                //     //             fontSize: 9,
-                //     //             fontWeight: FontWeight.bold,
-                //     //           ),
-                //     //         ),
-                //     //       ),
-                //     //   ],
-                //     // ),
-                //   ),
-                // ],
+                if (flashSaleProducts.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.red[50]!, Colors.orange[50]!],
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.local_fire_department, color: Colors.red[700], size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${flashSaleProducts.length} produk Flash Sale tersedia!',
+                            style: TextStyle(
+                              color: Colors.red[800],
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        if (currentFlashSale != null)
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red[700],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '${currentFlashSale!.discountPercentage}%',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ] else if (_savedAlamat != null) ...[
