@@ -3720,7 +3720,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               ),
                               SizedBox(width: 2),
                               Text(
-                                'FLASH',
+                                'FLASH SALE',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 8,
