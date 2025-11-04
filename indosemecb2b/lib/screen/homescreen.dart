@@ -485,142 +485,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     try {
       print('🔄 [HOME] ========== _loadData START ==========');
       print('📍 [HOME] Nearby koperasi count: ${_nearbyKoperasi.length}');
+      print('🏷️ [HOME] Selected category: $selectedCategory');
 
-      // Debug koperasi
-      for (var k in _nearbyKoperasi) {
-        print('🏪 [HOME] Koperasi: ${k.name}');
-        print('   - Total products: ${k.productIds.length}');
-        print('   - Has 51? ${k.productIds.contains('51')}');
-        print('   - Has 52? ${k.productIds.contains('52')}');
-        print(
-          '   - Has 69? ${k.productIds.contains('69')}',
-        ); // Perbaikan: 200 -> 69
-
-        // ⭐ DEBUG SEMUA 35 PRODUK DI KOPERASI MERAH PUTIH ANTAPANI KIDUL ⭐
-        if (k.name == 'Koperasi Merah Putih Antapani Kidul') {
-          print(
-            '\n   🔍 [HOME] ========== SEMUA 35 PRODUK DI KOPERASI MERAH PUTIH ==========',
-          );
-          final allProducts = _productService.getAllProducts();
-          final allFruitVeggies = _productService.getFruitAndVeggies();
-
-          print('   📊 [HOME] Total produk di database: ${allProducts.length}');
-          print(
-            '   📊 [HOME] Total produk di getFruitAndVeggies: ${allFruitVeggies.length}\n',
-          );
-
-          // Header tabel
-          print(
-            '   ╔═════════╦═════════════════════════════════════╦═════════╦═════════════════╦═════════════╗',
-          );
-          print(
-            '   ║   ID    ║             NAMA PRODUK              ║  ADA?   ║ BUAH/ SAYUR?   ║  KATEGORI   ║',
-          );
-          print(
-            '   ╠═════════╬═════════════════════════════════════╬═════════╬═════════════════╬═════════════╣',
-          );
-
-          // Periksa setiap produk
-          for (var productId in k.productIds) {
-            // Cek apakah produk ada di database
-            final productExists = allProducts.any((p) => p.id == productId);
-
-            // Dapatkan detail produk
-            final product = allProducts.firstWhere(
-              (p) => p.id == productId,
-              orElse:
-                  () => Product(
-                    id: 'not_found',
-                    name: 'NOT FOUND',
-                    description: '',
-                    price: 0,
-                    originalPrice: 0,
-                    category: '',
-                    rating: 0,
-                    reviewCount: 0,
-                    storeName: '',
-                    storeDistance: '',
-                    imageUrl: '',
-                  ),
-            );
-
-            // Cek apakah produk termasuk dalam kategori fruit & veggies
-            final isInFruitVeggies = allFruitVeggies.any(
-              (p) => p.id == productId,
-            );
-
-            // Format output
-            final idStr = productId.padRight(7);
-            final nameStr =
-                product.name.length > 35
-                    ? product.name.substring(0, 32) + '...'
-                    : product.name.padRight(35);
-            final existsStr = productExists ? '✅ TRUE' : '❌ FALSE';
-            final fruitVegStr = isInFruitVeggies ? '✅ TRUE' : '❌ FALSE';
-            final categoryStr = product.category.padRight(11);
-
-            print(
-              '   ║ $idStr ║ $nameStr ║ $existsStr ║ $fruitVegStr ║ $categoryStr ║',
-            );
-          }
-
-          print(
-            '   ╚═════════╩═════════════════════════════════════╩═════════╩═════════════════╩═════════════╝',
-          );
-
-          // ⭐ DETAIL KHUSUS PRODUK 69 (BUAH NAGA) ⭐
-          print(
-            '\n   🔍 [HOME] ========== KHUSUS PRODUK 69 (BUAH NAGA) ==========',
-          );
-          final product69 = allProducts.firstWhere(
-            (p) => p.id == '69',
-            orElse:
-                () => Product(
-                  id: 'not_found',
-                  name: 'NOT FOUND',
-                  description: '',
-                  price: 0,
-                  originalPrice: 0,
-                  category: '',
-                  rating: 0,
-                  reviewCount: 0,
-                  storeName: '',
-                  storeDistance: '',
-                  imageUrl: '',
-                ),
-          );
-
-          print('   📦 [HOME] Product 69 Details:');
-          print('      - ID: ${product69.id}');
-          print('      - Name: "${product69.name}"');
-          print('      - Name Length: ${product69.name.length}');
-          print('      - Name (lowercase): "${product69.name.toLowerCase()}"');
-          print('      - Category: ${product69.category}');
-          print(
-            '      - In Fruit&Veggies: ${allFruitVeggies.any((p) => p.id == '69')}',
-          );
-
-          // Test filter secara manual
-          final name69 = product69.name.toLowerCase();
-          final containsNaga = name69.contains('naga');
-          final containsBuah = name69.contains('buah');
-          print('      - Contains "naga": $containsNaga');
-          print('      - Contains "buah": $containsBuah');
-
-          // Cek apakah ada spasi ekstra di nama
-          print('      - First char: "${product69.name[0]}"');
-          print(
-            '      - Last char: "${product69.name[product69.name.length - 1]}"',
-          );
-          print('      - Has trailing space: ${product69.name.endsWith(' ')}');
-
-          print(
-            '   =============================================================\n',
-          );
-        }
-      }
-
-      // Filter produk berdasarkan koperasi
+      // ⭐ FILTER PRODUK BERDASARKAN KOPERASI DAN KATEGORI
       if (_nearbyKoperasi.isNotEmpty) {
         // Kumpulkan semua productIds dari koperasi yang match
         final Set<String> allowedProductIds = {};
@@ -629,25 +496,19 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         }
 
         print('📦 [HOME] Total allowed products: ${allowedProductIds.length}');
-        print(
-          '🔍 [HOME] Allowed contains 51? ${allowedProductIds.contains('51')}',
-        );
-        print(
-          '🔍 [HOME] Allowed contains 52? ${allowedProductIds.contains('52')}',
-        );
-        print(
-          '🔍 [HOME] Allowed contains 69? ${allowedProductIds.contains('69')}',
-        );
 
-        // Load produk berdasarkan kategori
+        // Load semua produk
         final allProducts = _productService.getAllProducts();
 
+        // ⭐⭐⭐ FILTER BERDASARKAN KATEGORI DAN KOPERASI ⭐⭐⭐
         if (selectedCategory == 'Semua') {
+          // Tampilkan semua produk dari koperasi
           displayedProducts =
               allProducts
                   .where((p) => allowedProductIds.contains(p.id))
                   .toList();
         } else {
+          // ⭐ FILTER BERDASARKAN KATEGORI DAN KOPERASI
           displayedProducts =
               allProducts
                   .where(
@@ -658,139 +519,148 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   .toList();
         }
 
-        print('📦 [HOME] displayedProducts: ${displayedProducts.length}');
+        print(
+          '📦 [HOME] displayedProducts (after category filter): ${displayedProducts.length}',
+        );
 
-        // ⭐⭐⭐ GANTI BAGIAN INI ⭐⭐⭐
         // Flash Sale Products (filter by koperasi)
         print('\n🏠 [HOME] ========== LOADING FLASH SALE ==========');
-        print('📍 [HOME] Nearby koperasi: ${_nearbyKoperasi.length}');
-
-        if (_nearbyKoperasi.isNotEmpty) {
-          print('🏪 [HOME] Koperasi name: ${_nearbyKoperasi.first.name}');
-          print(
-            '📦 [HOME] Koperasi products: ${_nearbyKoperasi.first.productIds.length}',
-          );
-          print(
-            '   Sample IDs: ${_nearbyKoperasi.first.productIds.take(10).join(", ")}',
-          );
-        }
-
-        print('📥 [HOME] Allowed product IDs: ${allowedProductIds.length}');
-        print('   Sample: ${allowedProductIds.take(10).join(", ")}');
-
         flashSaleProducts = _productService.getFlashSaleProductsByKoperasi(
           allowedProductIds.toList(),
         );
-
         print(
           '✅ [HOME] Flash sale products loaded: ${flashSaleProducts.length}',
         );
 
-        if (flashSaleProducts.isNotEmpty) {
-          print('📋 [HOME] Flash sale products:');
-          for (var p in flashSaleProducts) {
-            print('   - ${p.id}: ${p.name}');
-          }
-        } else {
-          print('⚠️ [HOME] NO FLASH SALE PRODUCTS!');
-        }
-
-        print('========================================================\n');
-
-        // Top Rated Products (filter berdasarkan koperasi)
+        // ⭐ Top Rated Products (filter berdasarkan koperasi DAN kategori)
         final filteredProducts =
             allProducts.where((p) => allowedProductIds.contains(p.id)).toList();
 
-        topRatedProducts = List<Product>.from(filteredProducts)
-          ..sort((a, b) => b.rating.compareTo(a.rating));
-        topRatedProducts = topRatedProducts.take(8).toList();
-
-        // Fresh Products (filter berdasarkan koperasi)
-        print('\n🍹 [HOME] Calling getFreshProducts...');
-        freshProducts =
-            _productService
-                .getFreshProducts()
-                .where((p) => allowedProductIds.contains(p.id))
-                .take(8)
-                .toList();
-        print('📦 [HOME] freshProducts after filter: ${freshProducts.length}');
-
-        // Newest Products (filter berdasarkan koperasi)
-        newestProducts = filteredProducts.take(8).toList();
-
-        // ⭐⭐⭐ BUAH & SAYUR - INI YANG PENTING! ⭐⭐⭐
-        print('\n🍎 [HOME] Calling getFruitAndVeggies...');
-        final allFruitVeggies = _productService.getFruitAndVeggies();
-
-        print(
-          '📊 [HOME] getFruitAndVeggies returned: ${allFruitVeggies.length} products',
-        );
-        print(
-          '🔍 [HOME] Before filter - Has 51? ${allFruitVeggies.any((p) => p.id == '51')}',
-        );
-        print(
-          '🔍 [HOME] Before filter - Has 52? ${allFruitVeggies.any((p) => p.id == '52')}',
-        );
-        print(
-          '🔍 [HOME] Before filter - Has 69? ${allFruitVeggies.any((p) => p.id == '69')}',
-        );
-
-        // Filter berdasarkan koperasi
-        fruitAndVeggies =
-            allFruitVeggies.where((p) {
-              final allowed = allowedProductIds.contains(p.id);
-              if (p.id == '51' || p.id == '52' || p.id == '69') {
-                print(
-                  '🔍 [HOME] Product ${p.id} (${p.name}) allowed? $allowed',
-                );
-              }
-              return allowed;
-            }).toList(); // HAPUS .take(8) DI SINI
-
-        // Tambahkan sorting berdasarkan rating (tertinggi ke terendah)
-        fruitAndVeggies.sort((a, b) => b.rating.compareTo(a.rating));
-
-        print('\n📦 [HOME] ========== FINAL BUAH & SAYUR ==========');
-        print('📊 [HOME] Total: ${fruitAndVeggies.length} products');
-        for (var i = 0; i < fruitAndVeggies.length; i++) {
-          final p = fruitAndVeggies[i];
-          final marker =
-              (p.id == '51' || p.id == '52' || p.id == '69') ? '⭐⭐⭐' : '';
-          print('   ${i + 1}. ID:${p.id} - ${p.name} (${p.rating}) $marker');
+        if (selectedCategory == 'Semua') {
+          topRatedProducts = List<Product>.from(filteredProducts)
+            ..sort((a, b) => b.rating.compareTo(a.rating));
+          topRatedProducts = topRatedProducts.take(8).toList();
+        } else {
+          // Filter by category juga untuk top rated
+          topRatedProducts =
+              filteredProducts
+                  .where((p) => p.category == selectedCategory)
+                  .toList()
+                ..sort((a, b) => b.rating.compareTo(a.rating));
+          topRatedProducts = topRatedProducts.take(8).toList();
         }
 
-        final has51 = fruitAndVeggies.any((p) => p.id == '51');
-        final has52 = fruitAndVeggies.any((p) => p.id == '52');
-        final has69 = fruitAndVeggies.any((p) => p.id == '69');
+        // ⭐ Fresh Products (filter berdasarkan koperasi DAN kategori)
+        print('\n🍹 [HOME] Calling getFreshProducts...');
+        final allFreshProducts = _productService.getFreshProducts().where(
+          (p) => allowedProductIds.contains(p.id),
+        );
 
-        print('🎯 [HOME] Has 51 in final list? $has51');
-        print('🎯 [HOME] Has 52 in final list? $has52');
-        print('🎯 [HOME] Has 69 in final list? $has69');
-        print('===================================================\n');
+        if (selectedCategory == 'Semua') {
+          freshProducts = allFreshProducts.take(8).toList();
+        } else {
+          freshProducts =
+              allFreshProducts
+                  .where((p) => p.category == selectedCategory)
+                  .take(8)
+                  .toList();
+        }
+        print('📦 [HOME] freshProducts after filter: ${freshProducts.length}');
+
+        // ⭐ Newest Products (filter berdasarkan koperasi DAN kategori)
+        if (selectedCategory == 'Semua') {
+          newestProducts = filteredProducts.take(8).toList();
+        } else {
+          newestProducts =
+              filteredProducts
+                  .where((p) => p.category == selectedCategory)
+                  .take(8)
+                  .toList();
+        }
+
+        // ⭐ Buah & Sayur (filter berdasarkan koperasi DAN kategori)
+        print('\n🍎 [HOME] Calling getFruitAndVeggies...');
+        final allFruitVeggies = _productService.getFruitAndVeggies().where(
+          (p) => allowedProductIds.contains(p.id),
+        );
+
+        if (selectedCategory == 'Semua' ||
+            selectedCategory == 'Grocery' ||
+            selectedCategory == 'Food') {
+          fruitAndVeggies =
+              allFruitVeggies.toList()
+                ..sort((a, b) => b.rating.compareTo(a.rating));
+        } else {
+          // Jika kategori bukan Grocery/Food, kosongkan fruit & veggies
+          fruitAndVeggies = [];
+        }
+
+        print('📦 [HOME] fruitAndVeggies: ${fruitAndVeggies.length}');
       } else {
-        // Jika tidak ada koperasi match, tampilkan semua
-        print('⚠️ [HOME] No matching koperasi, showing all products');
+        // ⭐ JIKA TIDAK ADA KOPERASI MATCH, FILTER HANYA BERDASARKAN KATEGORI
+        print(
+          '⚠️ [HOME] No matching koperasi, showing all products by category',
+        );
+
         displayedProducts =
             selectedCategory == 'Semua'
                 ? _productService.getAllProducts()
                 : _productService.getProductsByCategory(selectedCategory);
 
         flashSaleProducts = _productService.getActiveFlashSaleProducts();
-        topRatedProducts = List<Product>.from(_productService.getAllProducts())
-          ..sort((a, b) => b.rating.compareTo(a.rating));
-        topRatedProducts = topRatedProducts.take(8).toList();
 
-        freshProducts = _productService.getFreshProducts().take(8).toList();
-        newestProducts = _productService.getAllProducts().take(8).toList();
-        fruitAndVeggies = _productService.getFruitAndVeggies().take(8).toList();
+        final allProducts = _productService.getAllProducts();
+
+        if (selectedCategory == 'Semua') {
+          topRatedProducts = List<Product>.from(allProducts)
+            ..sort((a, b) => b.rating.compareTo(a.rating));
+          topRatedProducts = topRatedProducts.take(8).toList();
+
+          freshProducts = _productService.getFreshProducts().take(8).toList();
+          newestProducts = allProducts.take(8).toList();
+          fruitAndVeggies =
+              _productService.getFruitAndVeggies().take(8).toList();
+        } else {
+          // Filter by category
+          final categoryProducts =
+              allProducts.where((p) => p.category == selectedCategory).toList();
+
+          topRatedProducts = List<Product>.from(categoryProducts)
+            ..sort((a, b) => b.rating.compareTo(a.rating));
+          topRatedProducts = topRatedProducts.take(8).toList();
+
+          freshProducts =
+              _productService
+                  .getFreshProducts()
+                  .where((p) => p.category == selectedCategory)
+                  .take(8)
+                  .toList();
+
+          newestProducts = categoryProducts.take(8).toList();
+
+          // Buah & Sayur hanya untuk Grocery/Food
+          if (selectedCategory == 'Grocery' || selectedCategory == 'Food') {
+            fruitAndVeggies =
+                _productService.getFruitAndVeggies().take(8).toList();
+          } else {
+            fruitAndVeggies = [];
+          }
+        }
       }
 
-      // Load stores dan subcategories
+      // Load stores dan subcategories (tetap berdasarkan kategori)
       categoryStores = _productService.getStoresByCategory(selectedCategory);
       subCategories = _productService.getSubCategories(selectedCategory);
       flagshipStore = _productService.getFlagshipStore(selectedCategory);
 
       print('✅ [HOME] Data loaded successfully');
+      print('📊 [HOME] Final counts:');
+      print('   - displayedProducts: ${displayedProducts.length}');
+      print('   - flashSaleProducts: ${flashSaleProducts.length}');
+      print('   - topRatedProducts: ${topRatedProducts.length}');
+      print('   - freshProducts: ${freshProducts.length}');
+      print('   - newestProducts: ${newestProducts.length}');
+      print('   - fruitAndVeggies: ${fruitAndVeggies.length}');
       print('🔄 [HOME] ========== _loadData END ==========\n');
 
       if (mounted) {
@@ -1124,7 +994,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       showCategoryFilter = false;
     });
 
-    _refreshData();
+    _refreshData(); // Ini akan memanggil _loadData() yang sudah diperbaiki
   }
 
   void _onSubCategorySelected(String subCategory) {
@@ -1134,21 +1004,55 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     setState(() {
       selectedSubCategory = subCategory;
 
-      // Filter produk berdasarkan subkategori yang dipilih
+      // ⭐ AMBIL SEMUA PRODUK DARI KOPERASI TERDEKAT
+      final Set<String> allowedProductIds = {};
+      if (_nearbyKoperasi.isNotEmpty) {
+        for (var koperasi in _nearbyKoperasi) {
+          allowedProductIds.addAll(koperasi.productIds);
+        }
+        print('🏪 [SUBCAT] Filtering from ${_nearbyKoperasi.length} koperasi');
+        print('📦 [SUBCAT] Allowed products: ${allowedProductIds.length}');
+      }
+
+      // ⭐⭐⭐ FILTER SUBKATEGORI DENGAN KOPERASI ⭐⭐⭐
+      List<Product> allProducts = _productService.getAllProducts();
+
+      // Jika ada koperasi, filter dulu berdasarkan koperasi
+      if (allowedProductIds.isNotEmpty) {
+        allProducts =
+            allProducts.where((p) => allowedProductIds.contains(p.id)).toList();
+        print('📦 [SUBCAT] After koperasi filter: ${allProducts.length}');
+      }
+
+      // Filter berdasarkan subkategori
       if (subCategory == 'Buah') {
-        displayedProducts = _productService.getFruitProducts();
-      } else if (subCategory == 'Sayuran Organik') {
-        displayedProducts = _productService.getVegetableProducts();
-      } else if (subCategory == 'Nasi Box') {
         displayedProducts =
             _productService
-                .getAllProducts()
+                .getFruitProducts()
+                .where(
+                  (p) =>
+                      allowedProductIds.isEmpty ||
+                      allowedProductIds.contains(p.id),
+                )
+                .toList();
+      } else if (subCategory == 'Sayuran Organik') {
+        displayedProducts =
+            _productService
+                .getVegetableProducts()
+                .where(
+                  (p) =>
+                      allowedProductIds.isEmpty ||
+                      allowedProductIds.contains(p.id),
+                )
+                .toList();
+      } else if (subCategory == 'Nasi Box') {
+        displayedProducts =
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('nasi'))
                 .toList();
       } else if (subCategory == 'Snack & Jajanan') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('snack') ||
@@ -1159,8 +1063,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Minuman') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('minuman') ||
@@ -1172,8 +1075,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Lauk Pauk') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('ayam') ||
@@ -1184,8 +1086,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Dessert') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('dessert') ||
@@ -1196,8 +1097,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Beras & Tepung') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('beras') ||
@@ -1206,8 +1106,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Bumbu Dapur') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('bumbu') ||
@@ -1218,14 +1117,12 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Minyak Goreng') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('minyak'))
                 .toList();
       } else if (subCategory == 'Telur & Susu') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('telur') ||
@@ -1234,26 +1131,22 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Mie Instan') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('mie'))
                 .toList();
       } else if (subCategory == 'Batik') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('batik'))
                 .toList();
       } else if (subCategory == 'Hijab') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('hijab'))
                 .toList();
       } else if (subCategory == 'Kaos & Kemeja') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('kaos') ||
@@ -1262,32 +1155,27 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Celana') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('celana'))
                 .toList();
       } else if (subCategory == 'Dress') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('dress'))
                 .toList();
       } else if (subCategory == 'Jamu Tradisional') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('jamu'))
                 .toList();
       } else if (subCategory == 'Madu') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('madu'))
                 .toList();
       } else if (subCategory == 'Minuman Herbal') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('herbal') ||
@@ -1299,14 +1187,12 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Rempah') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('rempah'))
                 .toList();
       } else if (subCategory == 'Anyaman') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('anyaman') ||
@@ -1315,8 +1201,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Ukiran Kayu') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('ukir') ||
@@ -1325,8 +1210,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Souvenir') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('souvenir') ||
@@ -1335,38 +1219,32 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Pupuk') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('pupuk'))
                 .toList();
       } else if (subCategory == 'Bibit Tanaman') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('bibit'))
                 .toList();
       } else if (subCategory == 'Alat Tani') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('alat'))
                 .toList();
       } else if (subCategory == 'Alat Lukis') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('lukis'))
                 .toList();
       } else if (subCategory == 'Buku Sketsa') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('sketsa'))
                 .toList();
       } else if (subCategory == 'Jahit & Bordir') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('jahit') ||
@@ -1376,8 +1254,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Laundry') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('laundry') ||
@@ -1387,8 +1264,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Salon & Spa') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('salon') ||
@@ -1399,8 +1275,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Bengkel') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('service motor') ||
@@ -1410,8 +1285,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Tukang') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('pembuatan') ||
@@ -1421,8 +1295,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Service Elektronik') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('service') ||
@@ -1433,8 +1306,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Cleaning Service') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where(
                   (p) =>
                       p.name.toLowerCase().contains('cleaning') ||
@@ -1444,32 +1316,42 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 .toList();
       } else if (subCategory == 'Catering') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('catering'))
                 .toList();
       } else if (subCategory == 'Clay & Polymer') {
         displayedProducts =
-            _productService
-                .getAllProducts()
+            allProducts
                 .where((p) => p.name.toLowerCase().contains('clay'))
                 .toList();
       } else {
-        displayedProducts = _productService.getProductsBySubCategory(
-          subCategory,
+        displayedProducts =
+            _productService
+                .getProductsBySubCategory(subCategory)
+                .where(
+                  (p) =>
+                      allowedProductIds.isEmpty ||
+                      allowedProductIds.contains(p.id),
+                )
+                .toList();
+      }
+
+      // Jika tidak ada produk setelah filter, fallback ke kategori utama (dengan filter koperasi)
+      if (displayedProducts.isEmpty) {
+        displayedProducts =
+            allProducts.where((p) => p.category == selectedCategory).toList();
+
+        print(
+          '⚠️ [SUBCAT] No products found, fallback to category: ${displayedProducts.length}',
         );
       }
 
-      // Jika tidak ada produk, tampilkan semua produk dari kategori utama
-      if (displayedProducts.isEmpty) {
-        displayedProducts = _productService.getProductsByCategory(
-          selectedCategory,
-        );
-      }
+      print(
+        '✅ [SUBCAT] Final products for "$subCategory": ${displayedProducts.length}',
+      );
     });
 
-    // HAPUS pemanggilan _refreshData() di akhir method ini untuk mencegah loop
-    // _refreshData(); // HAPUS BARIS INI
+    // TIDAK perlu panggil _refreshData() karena sudah setState di atas
   }
 
   @override
