@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/screen/detail_produk.dart';
 import 'package:indosemecb2b/screen/notif.dart';
+import 'package:indosemecb2b/screen/poinku.dart';
 import 'package:indosemecb2b/screen/product_list_screen.dart';
 import 'package:indosemecb2b/screen/search_screen.dart';
 import 'package:indosemecb2b/utils/cart_manager.dart';
@@ -2470,18 +2471,50 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildPointCard(
-                    Icons.stars_rounded,
-                    'Poin UMKM',
-                    _formatPoinNumber(_totalPoinUMKM),
-                    Colors.blue[700]!,
+                  // ⭐ POIN UMKM - Dengan Navigasi
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) =>
+                                     PoinkuMainScreen(),
+                          ),
+                        );
+                      },
+                      child: _buildPointCard(
+                        Icons.stars_rounded,
+                        'Poin UMKM',
+                        _formatPoinNumber(_totalPoinUMKM),
+                        Colors.blue[700]!,
+                      ),
+                    ),
                   ),
+
                   Container(width: 1, height: 30, color: Colors.grey[200]),
-                  _buildPointCard(
-                    Icons.account_balance_wallet_rounded,
-                    'Poin Cash',
-                    _formatPoinNumber(_totalPoinCash),
-                    Colors.green[700]!,
+
+                  // ⭐ POIN CASH - Dengan Navigasi
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) =>
+                                     PoinkuMainScreen(),
+                          ),
+                        );
+                      },
+                      child: _buildPointCard(
+                        Icons.account_balance_wallet_rounded,
+                        'Poin Cash',
+                        _formatPoinNumber(_totalPoinCash),
+                        Colors.green[700]!,
+                      ),
+                    ),
                   ),
                 ],
               ),
