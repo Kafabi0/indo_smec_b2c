@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
+import '../models/koperasi_model.dart';
 import '../services/favorite_service.dart';
 import '../utils/cart_manager.dart';
 import '../utils/user_data_manager.dart';
@@ -9,11 +10,13 @@ import 'package:intl/intl.dart';
 class ProductListScreen extends StatefulWidget {
   final String title;
   final List<Product> products;
+  final List<Koperasi> nearbyKoperasi; // ⭐ TAMBAH PARAMETER INI
 
   const ProductListScreen({
     Key? key,
     required this.title,
     required this.products,
+    this.nearbyKoperasi = const [], // ⭐ DEFAULT EMPTY LIST
   }) : super(key: key);
 
   @override
@@ -25,22 +28,58 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Map<String, bool> favoriteStatus = {};
   Map<String, int> cartQuantities = {};
 
-  bool isGridView = true; // true = grid, false = list
-  String sortBy = 'default'; // default, price_asc, price_desc, rating, newest
+  bool isGridView = true;
+  String sortBy = 'default';
   List<Product> displayedProducts = [];
 
   @override
   void initState() {
     super.initState();
-    displayedProducts = List.from(widget.products);
+    print('📋 [LIST] ========== ProductListScreen initState ==========');
+    print('📦 [LIST] Total products from parent: ${widget.products.length}');
+    print('🏪 [LIST] Nearby koperasi count: ${widget.nearbyKoperasi.length}');
+
+    // ⭐ FILTER PRODUK BERDASARKAN KOPERASI
+    _filterProductsByKoperasi();
+
     _loadFavoriteStatus();
     _loadCartQuantities();
+  }
+
+  // ⭐ METHOD BARU: FILTER PRODUK BERDASARKAN KOPERASI
+  void _filterProductsByKoperasi() {
+    if (widget.nearbyKoperasi.isEmpty) {
+      // Jika tidak ada koperasi, tampilkan semua produk
+      print('⚠️ [LIST] No koperasi, showing all products');
+      displayedProducts = List.from(widget.products);
+    } else {
+      // Kumpulkan semua productIds dari koperasi yang match
+      final Set<String> allowedProductIds = {};
+      for (var koperasi in widget.nearbyKoperasi) {
+        allowedProductIds.addAll(koperasi.productIds);
+      }
+
+      print('📊 [LIST] Allowed product IDs: ${allowedProductIds.length}');
+
+      // Filter produk
+      displayedProducts =
+          widget.products
+              .where((p) => allowedProductIds.contains(p.id))
+              .toList();
+
+      print('✅ [LIST] Filtered products: ${displayedProducts.length}');
+
+      // Debug: tampilkan info koperasi
+      if (widget.nearbyKoperasi.isNotEmpty) {
+        print('🏪 [LIST] Shopping from: ${widget.nearbyKoperasi.first.name}');
+      }
+    }
   }
 
   Future<void> _loadFavoriteStatus() async {
     final favoriteIds = await _favoriteService.getAllFavoriteIds();
     setState(() {
-      for (var product in widget.products) {
+      for (var product in displayedProducts) {
         favoriteStatus[product.id] = favoriteIds.contains(product.id);
       }
     });
@@ -56,8 +95,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   Future<void> _loadCartQuantities() async {
-    // Load cart quantities for all products
-    for (var product in widget.products) {
+    for (var product in displayedProducts) {
       final quantity = await CartManager.getProductQuantity(product.id);
       setState(() {
         cartQuantities[product.id] = quantity;
@@ -120,7 +158,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
           displayedProducts.sort((a, b) => b.id.compareTo(a.id));
           break;
         default:
-          displayedProducts = List.from(widget.products);
+          _filterProductsByKoperasi(); // Reset ke filter awal
       }
     });
   }
@@ -212,6 +250,64 @@ class _ProductListScreenState extends State<ProductListScreen> {
       ),
       body: Column(
         children: [
+          // ⭐ INFO KOPERASI (JIKA ADA)
+          if (widget.nearbyKoperasi.isNotEmpty)
+            Container(
+              margin: EdgeInsets.all(16),
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.store, color: Colors.green[700], size: 20),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Belanja dari:',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.green[600],
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          widget.nearbyKoperasi.first.name,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[800],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green[700],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${displayedProducts.length} produk',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // Header info & view toggle
           Container(
             color: Colors.white,
@@ -233,19 +329,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   ),
                 ),
                 SizedBox(width: 8),
-                // TextButton.icon(
-                //   onPressed: () {
-                //     // TODO: Implement filter
-                //   },
-                //   icon: Icon(Icons.filter_list, size: 18),
-                //   label: Text('Filter'),
-                //   style: TextButton.styleFrom(
-                //     foregroundColor: Colors.grey[700],
-                //     padding: EdgeInsets.symmetric(horizontal: 8),
-                //   ),
-                // ),
-                // SizedBox(width: 8),
-                // View toggle buttons
                 Container(
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey[300]!),
@@ -304,7 +387,43 @@ class _ProductListScreenState extends State<ProductListScreen> {
           Divider(height: 1, color: Colors.grey[200]),
 
           // Product list/grid
-          Expanded(child: isGridView ? _buildGridView() : _buildListView()),
+          Expanded(
+            child:
+                displayedProducts.isEmpty
+                    ? _buildEmptyState()
+                    : (isGridView ? _buildGridView() : _buildListView()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ⭐ TAMBAH EMPTY STATE
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.inventory_2_outlined, size: 80, color: Colors.grey[400]),
+          SizedBox(height: 16),
+          Text(
+            'Tidak ada produk tersedia',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          SizedBox(height: 8),
+          if (widget.nearbyKoperasi.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 40),
+              child: Text(
+                'Koperasi ${widget.nearbyKoperasi.first.name} belum memiliki produk di kategori ini',
+                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                textAlign: TextAlign.center,
+              ),
+            ),
         ],
       ),
     );
@@ -348,8 +467,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
             builder:
                 (context) => ProductDetailPage(
                   product: product,
-                  // userKoperasi:
-                  //     nearbyKoperasi.isNotEmpty ? nearbyKoperasi.first : null,
+                  userKoperasi:
+                      widget.nearbyKoperasi.isNotEmpty
+                          ? widget.nearbyKoperasi.first
+                          : null,
                 ),
           ),
         );
@@ -357,7 +478,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          // borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.06),
@@ -369,7 +489,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image with favorite button
             Stack(
               children: [
                 Container(
@@ -389,7 +508,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     ),
                   ),
                 ),
-                // Add/Counter button
                 Positioned(
                   top: 8,
                   right: 8,
@@ -398,7 +516,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
               ],
             ),
 
-            // Product info
             Expanded(
               child: Padding(
                 padding: EdgeInsets.all(10),
@@ -415,8 +532,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: 4),
-
-                    // Rating - TAMBAHKAN INI
                     Row(
                       children: [
                         Icon(
@@ -443,7 +558,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         ),
                       ],
                     ),
-
                     SizedBox(height: 4),
                     Text(
                       formatRupiah(product.price),
@@ -507,7 +621,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ProductDetailPage(product: product),
+            builder:
+                (context) => ProductDetailPage(
+                  product: product,
+                  userKoperasi:
+                      widget.nearbyKoperasi.isNotEmpty
+                          ? widget.nearbyKoperasi.first
+                          : null,
+                ),
           ),
         );
       },
@@ -527,7 +648,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
         ),
         child: Row(
           children: [
-            // Product image
             Container(
               width: 80,
               height: 80,
@@ -541,8 +661,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
               ),
             ),
             SizedBox(width: 12),
-
-            // Product info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -554,8 +672,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 4),
-
-                  // Rating - TAMBAHKAN INI
                   Row(
                     children: [
                       Icon(
@@ -579,7 +695,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       ),
                     ],
                   ),
-
                   SizedBox(height: 6),
                   Text(
                     formatRupiah(product.price),
@@ -627,8 +742,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 ],
               ),
             ),
-
-            // Favorite & Add buttons
             Column(
               children: [
                 GestureDetector(
@@ -739,7 +852,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     GestureDetector(
                       onTap: () async {
                         if (quantity > 1) {
-                          // Update quantity di cart
                           final success = await CartManager.updateQuantity(
                             product.id,
                             quantity - 1,
@@ -750,7 +862,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                             });
                           }
                         } else {
-                          // Remove dari cart
                           final success = await CartManager.removeFromCart(
                             product.id,
                           );

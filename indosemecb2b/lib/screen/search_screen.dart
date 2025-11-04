@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../services/product_service.dart';
-import '../services/koperasi_service.dart'; // ⭐ TAMBAHKAN
-import '../models/koperasi_model.dart'; // ⭐ TAMBAHKAN
+import '../models/koperasi_model.dart';
 import 'product_list_screen.dart';
 
 class SearchScreen extends StatefulWidget {
-  final List<Koperasi>? nearbyKoperasi; // ⭐ TAMBAHKAN parameter
+  final List<Koperasi>? nearbyKoperasi;
 
   const SearchScreen({Key? key, this.nearbyKoperasi}) : super(key: key);
 
@@ -22,7 +21,6 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Product> searchResults = [];
   bool isSearching = false;
 
-  // Popular searches & recent searches
   final List<String> popularSearches = [
     'Beras',
     'Minyak Goreng',
@@ -42,21 +40,16 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-
-    // ⭐ FILTER PRODUK BERDASARKAN KOPERASI
     _loadFilteredProducts();
-
     _searchController.addListener(_onSearchChanged);
   }
 
-  // ⭐ TAMBAHKAN METHOD BARU INI
   void _loadFilteredProducts() {
     print('🔍 [SEARCH] Loading filtered products...');
 
     final allAvailableProducts = _productService.getAllProducts();
 
     if (widget.nearbyKoperasi != null && widget.nearbyKoperasi!.isNotEmpty) {
-      // Filter berdasarkan koperasi
       final Set<String> allowedProductIds = {};
       for (var koperasi in widget.nearbyKoperasi!) {
         allowedProductIds.addAll(koperasi.productIds);
@@ -71,7 +64,6 @@ class _SearchScreenState extends State<SearchScreen> {
         '✅ [SEARCH] Filtered ${allProducts.length} products from ${widget.nearbyKoperasi!.length} koperasi',
       );
     } else {
-      // Tidak ada filter, tampilkan semua
       allProducts = allAvailableProducts;
       print(
         '⚠️ [SEARCH] No koperasi filter, showing all ${allProducts.length} products',
@@ -100,7 +92,7 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {
       isSearching = true;
       searchResults =
-          allProducts // ⭐ Gunakan allProducts yang sudah difilter
+          allProducts
               .where(
                 (product) =>
                     product.name.toLowerCase().contains(query) ||
@@ -115,7 +107,6 @@ class _SearchScreenState extends State<SearchScreen> {
   void _performSearch(String query) {
     if (query.trim().isEmpty) return;
 
-    // Add to recent searches
     if (!recentSearches.contains(query)) {
       setState(() {
         recentSearches.insert(0, query);
@@ -125,9 +116,8 @@ class _SearchScreenState extends State<SearchScreen> {
       });
     }
 
-    // Navigate to ProductListScreen with search results
     final results =
-        allProducts // ⭐ Gunakan allProducts yang sudah difilter
+        allProducts
             .where(
               (product) =>
                   product.name.toLowerCase().contains(query.toLowerCase()) ||
@@ -148,6 +138,7 @@ class _SearchScreenState extends State<SearchScreen> {
             (context) => ProductListScreen(
               title: 'Hasil pencarian "$query"',
               products: results,
+              nearbyKoperasi: widget.nearbyKoperasi ?? [], // ⭐ PASS KOPERASI
             ),
       ),
     );
@@ -343,7 +334,7 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ⭐ TAMBAHKAN INFO KOPERASI
+          // ⭐ INFO KOPERASI
           if (widget.nearbyKoperasi != null &&
               widget.nearbyKoperasi!.isNotEmpty) ...[
             Container(
@@ -554,11 +545,8 @@ class _SearchScreenState extends State<SearchScreen> {
       itemBuilder: (context, index) {
         final category = categories[index];
 
-        // ⭐ FILTER PRODUK BY KATEGORI
         final products =
-            allProducts // ⭐ Gunakan allProducts yang sudah difilter
-                .where((p) => p.category == category['name'])
-                .toList();
+            allProducts.where((p) => p.category == category['name']).toList();
 
         return GestureDetector(
           onTap: () {
@@ -569,6 +557,8 @@ class _SearchScreenState extends State<SearchScreen> {
                     (context) => ProductListScreen(
                       title: category['name'] as String,
                       products: products,
+                      nearbyKoperasi:
+                          widget.nearbyKoperasi ?? [], // ⭐ PASS KOPERASI
                     ),
               ),
             );

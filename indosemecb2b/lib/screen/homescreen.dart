@@ -2001,7 +2001,10 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 if (flashSaleProducts.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [Colors.red[50]!, Colors.orange[50]!],
@@ -2011,7 +2014,11 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.local_fire_department, color: Colors.red[700], size: 16),
+                        Icon(
+                          Icons.local_fire_department,
+                          color: Colors.red[700],
+                          size: 16,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -2025,7 +2032,10 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ),
                         if (currentFlashSale != null)
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.red[700],
                               borderRadius: BorderRadius.circular(4),
@@ -2478,9 +2488,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder:
-                                (context) =>
-                                     PoinkuMainScreen(),
+                            builder: (context) => PoinkuMainScreen(),
                           ),
                         );
                       },
@@ -2502,9 +2510,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder:
-                                (context) =>
-                                     PoinkuMainScreen(),
+                            builder: (context) => PoinkuMainScreen(),
                           ),
                         );
                       },
@@ -3616,8 +3622,11 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   context,
                   MaterialPageRoute(
                     builder:
-                        (context) =>
-                            ProductListScreen(title: title, products: products),
+                        (context) => ProductListScreen(
+                          title: title,
+                          products: products,
+                          nearbyKoperasi: _nearbyKoperasi,
+                        ),
                   ),
                 );
               },
