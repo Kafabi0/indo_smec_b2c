@@ -2792,7 +2792,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           children: [
                             Icon(Icons.store, color: Colors.white, size: 8),
                             SizedBox(width: 2),
-                            Text('Lokal', style: TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.bold)),
+                            Text('UMKM', style: TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
