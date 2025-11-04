@@ -261,6 +261,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       originalPrice: widget.product.originalPrice,
       discountPercentage: widget.product.discountPercentage,
       imageUrl: widget.product.imageUrl,
+      category: widget.product.category,
     );
 
     if (success) {

@@ -88,6 +88,7 @@ class _FavoritScreenState extends State<FavoritScreen> {
       originalPrice: product.originalPrice,
       discountPercentage: product.discountPercentage,
       imageUrl: product.imageUrl,
+      category: product.category,
       quantity: 1,
     );
 

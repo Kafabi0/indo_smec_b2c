@@ -798,6 +798,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     originalPrice: product.originalPrice,
                     discountPercentage: product.discountPercentage,
                     imageUrl: product.imageUrl,
+                    category: product.category,
                   );
 
                   if (success) {
@@ -903,6 +904,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           originalPrice: product.originalPrice,
                           discountPercentage: product.discountPercentage,
                           imageUrl: product.imageUrl,
+                          category: product.category,
                         );
 
                         if (success) {

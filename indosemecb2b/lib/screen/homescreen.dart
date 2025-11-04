@@ -2578,6 +2578,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   product: product,
                   userKoperasi:
                       _nearbyKoperasi.isNotEmpty ? _nearbyKoperasi.first : null,
+                      
                 ),
           ),
         );
