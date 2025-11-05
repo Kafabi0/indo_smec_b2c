@@ -28,9 +28,12 @@ class Transaction {
     this.voucherDiscount, // ✅ ADD
   });
 
+  String get noTransaksi => id;
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'no_transaksi': id, // ✅ Selalu sama dengan id
       'date': date.toIso8601String(),
       'status': status,
       'deliveryOption': deliveryOption,

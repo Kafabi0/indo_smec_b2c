@@ -229,7 +229,9 @@ class DetailPembayaranScreen extends StatelessWidget {
                 children: [
                   _buildInfoRow(
                     'No. Transaksi',
-                    transaksi['no_transaksi'] ?? transaksi['id'] ?? 'N/A',
+                    transaksi['id'] ??
+                        transaksi['no_transaksi'] ??
+                        'N/A', // ✅ Prioritaskan 'id'
                     showCopy: true,
                     context: context,
                   ),
