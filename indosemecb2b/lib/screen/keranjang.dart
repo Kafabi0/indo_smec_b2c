@@ -245,14 +245,33 @@ class CartScreenState extends State<CartScreen> with RouteAware {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          disabledBackgroundColor: Colors.grey[300],
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
                         onPressed: () => Navigator.pop(context),
-                        child: const Text("Batal"),
+                        child: Text(
+                          "Batal",
+                          style: TextStyle(color: Colors.blue[700]),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue[700],
+                          disabledBackgroundColor: Colors.grey[300],
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
                         onPressed: () {
                           if (selectedShipping == "reguler" &&
                               selectedRegulerTime == null) {
@@ -264,10 +283,12 @@ class CartScreenState extends State<CartScreen> with RouteAware {
                                 backgroundColor: Colors.red,
                               ),
                             );
+
                             return;
                           }
 
                           Navigator.pop(context);
+
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -282,7 +303,10 @@ class CartScreenState extends State<CartScreen> with RouteAware {
                             ),
                           );
                         },
-                        child: const Text("Konfirmasi"),
+                        child: const Text(
+                          "Konfirmasi",
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ),
                   ],
@@ -1155,217 +1179,227 @@ class CartScreenState extends State<CartScreen> with RouteAware {
   }
 
   Widget _buildCartItemCard(CartItem item) {
-  print('🛒 [CART] Product ID: ${item.productId}');
-  final currentPrice = _productService.getProductPrice(item.productId);
-  
-  return Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey[300]!),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.grey[200]!, Colors.grey[100]!],
+    print('🛒 [CART] Product ID: ${item.productId}');
+    final currentPrice = _productService.getProductPrice(item.productId);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.grey[200]!, Colors.grey[100]!],
+              ),
+              borderRadius: BorderRadius.circular(8),
             ),
-            borderRadius: BorderRadius.circular(8),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                item.imageUrl ?? '',
+                height: 80,
+                width: 80,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Center(
+                    child: Icon(
+                      Icons.image_rounded,
+                      size: 40,
+                      color: Colors.grey[400],
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              item.imageUrl ?? '',
-              height: 80,
-              width: 80,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Center(
-                  child: Icon(
-                    Icons.image_rounded,
-                    size: 40,
-                    color: Colors.grey[400],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
                   ),
-                );
-              },
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                item.name,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Text(
-                    _formatPrice(currentPrice),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue[800],
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  if (item.originalPrice != null)
+                const SizedBox(height: 8),
+                Row(
+                  children: [
                     Text(
-                      _formatPrice(item.originalPrice!),
+                      _formatPrice(currentPrice),
                       style: TextStyle(
-                        fontSize: 12,
-                        decoration: TextDecoration.lineThrough,
-                        color: Colors.grey[400],
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue[800],
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // ⭐ BADGE DISKON DENGAN FLASH SALE SUPPORT
-                  Builder(
-                    builder: (context) {
-                      // Cek apakah produk sedang flash sale
-                      final isFlashSale = FlashSaleService.isProductOnFlashSale(item.productId);
-                      final flashDiscount = FlashSaleService.getFlashDiscountPercentage(item.productId);
-                      
-                      // Tentukan diskon yang akan ditampilkan
-                      final discountToShow = isFlashSale ? flashDiscount : item.discountPercentage;
-                      
-                      if (discountToShow != null) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isFlashSale ? Colors.red : Colors.red[50],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Icon api hanya muncul saat flash sale
-                              if (isFlashSale) ...[
-                                Icon(
-                                  Icons.local_fire_department,
-                                  color: Colors.white,
-                                  size: 10,
-                                ),
-                                SizedBox(width: 2),
-                              ],
-                              Text(
-                                '$discountToShow%',
-                                style: TextStyle(
-                                  color: isFlashSale ? Colors.white : Colors.red,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                      return SizedBox.shrink();
-                    },
-                  ),
-                  const Spacer(),
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => _removeItem(item.productId),
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.red[50],
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Icon(
-                            Icons.delete_outline,
-                            size: 20,
-                            color: Colors.red[400],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () {
-                          if (item.quantity > 1) {
-                            _updateQuantity(
-                              item.productId,
-                              item.quantity - 1,
-                            );
-                          }
-                        },
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Icon(
-                            Icons.remove,
-                            size: 18,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
+                    const SizedBox(width: 6),
+                    if (item.originalPrice != null)
                       Text(
-                        '${item.quantity}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                        _formatPrice(item.originalPrice!),
+                        style: TextStyle(
+                          fontSize: 12,
+                          decoration: TextDecoration.lineThrough,
+                          color: Colors.grey[400],
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: () {
-                          _updateQuantity(item.productId, item.quantity + 1);
-                        },
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: Colors.blue[700],
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Icon(
-                            Icons.add,
-                            size: 18,
-                            color: Colors.white,
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // ⭐ BADGE DISKON DENGAN FLASH SALE SUPPORT
+                    Builder(
+                      builder: (context) {
+                        // Cek apakah produk sedang flash sale
+                        final isFlashSale =
+                            FlashSaleService.isProductOnFlashSale(
+                              item.productId,
+                            );
+                        final flashDiscount =
+                            FlashSaleService.getFlashDiscountPercentage(
+                              item.productId,
+                            );
+
+                        // Tentukan diskon yang akan ditampilkan
+                        final discountToShow =
+                            isFlashSale
+                                ? flashDiscount
+                                : item.discountPercentage;
+
+                        if (discountToShow != null) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isFlashSale ? Colors.red : Colors.red[50],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Icon api hanya muncul saat flash sale
+                                if (isFlashSale) ...[
+                                  Icon(
+                                    Icons.local_fire_department,
+                                    color: Colors.white,
+                                    size: 10,
+                                  ),
+                                  SizedBox(width: 2),
+                                ],
+                                Text(
+                                  '$discountToShow%',
+                                  style: TextStyle(
+                                    color:
+                                        isFlashSale ? Colors.white : Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        return SizedBox.shrink();
+                      },
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => _removeItem(item.productId),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.red[50],
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Icon(
+                              Icons.delete_outline,
+                              size: 20,
+                              color: Colors.red[400],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () {
+                            if (item.quantity > 1) {
+                              _updateQuantity(
+                                item.productId,
+                                item.quantity - 1,
+                              );
+                            }
+                          },
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Icon(
+                              Icons.remove,
+                              size: 18,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          '${item.quantity}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        GestureDetector(
+                          onTap: () {
+                            _updateQuantity(item.productId, item.quantity + 1);
+                          },
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: Colors.blue[700],
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Icon(
+                              Icons.add,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _buildEmptyCart() {
     return Padding(
