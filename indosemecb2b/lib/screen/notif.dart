@@ -486,7 +486,21 @@ class _NotificationScreenState extends State<NotificationScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => TrackingScreen(trackingData: trackingData),
+            builder:
+                (_) => TrackingScreen(
+                  trackingData: OrderTrackingModel(
+                    transactionId: transaksiMap['id'] ?? notif.orderId ?? '',
+                    courierName: trackingData.courierName ?? "Tryan Gumilar",
+                    courierId: trackingData.courierId ?? "D 4563 ADP",
+                    statusMessage: transaksiMap['status'] ?? "Diproses",
+                    statusDesc:
+                        trackingData.statusDesc ?? "Pesananmu sedang diproses",
+                    updatedAt:
+                        transaksiMap['date'] != null
+                            ? DateTime.parse(transaksiMap['date'])
+                            : DateTime.now(),
+                  ),
+                ),
           ),
         );
         break;
@@ -516,10 +530,12 @@ class MainNavigationWithTransaction extends StatefulWidget {
   const MainNavigationWithTransaction({Key? key}) : super(key: key);
 
   @override
-  State<MainNavigationWithTransaction> createState() => _MainNavigationWithTransactionState();
+  State<MainNavigationWithTransaction> createState() =>
+      _MainNavigationWithTransactionState();
 }
 
-class _MainNavigationWithTransactionState extends State<MainNavigationWithTransaction> {
+class _MainNavigationWithTransactionState
+    extends State<MainNavigationWithTransaction> {
   @override
   void initState() {
     super.initState();

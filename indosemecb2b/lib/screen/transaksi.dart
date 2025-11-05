@@ -786,7 +786,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                                                   statusMessage:
                                                       currentTransaction.status,
                                                   statusDesc:
-                                                      "Pesanan berhasil diantarkan",
+                                                      "Pesananmu sedang diproses",
                                                   updatedAt:
                                                       currentTransaction.date ??
                                                       DateTime.now(),
