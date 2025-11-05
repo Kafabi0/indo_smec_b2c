@@ -31,7 +31,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   void initState() {
     super.initState();
-    // ⭐ Reload notifikasi ketika screen dibuka
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<NotificationProvider>(
         context,
@@ -425,10 +424,38 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  // ✅ PERBAIKAN UTAMA - Ambil transaksi dari TransactionManager berdasarkan orderId
+  // ✅ SOLUSI UTAMA - Gunakan transactionData dari notifikasi
   void _navigateToDetail(BuildContext context, AppNotification notif) async {
-    print('🔍 Navigating to detail for Order ID: ${notif.orderId}');
+    print('🔍 [NotifScreen] Navigating to detail...');
+    print('   Button: ${notif.detailButtonText}');
+    print('   Order ID: ${notif.orderId}');
+    print('   Has transactionData: ${notif.transactionData != null}');
 
+    // ✅ STRATEGI 1: Jika ada transactionData, gunakan langsung
+    if (notif.transactionData != null) {
+      print('✅ Using transactionData from notification');
+
+      switch (notif.detailButtonText) {
+        case 'Lihat Detail':
+          // Langsung ke detail pembayaran
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) =>
+                      DetailPembayaranScreen(transaksi: notif.transactionData!),
+            ),
+          );
+          return;
+
+        case 'Lacak Pesanan':
+        case 'Konfirmasi Penerimaan':
+          // Coba cari di TransactionManager dulu
+          break;
+      }
+    }
+
+    // ✅ STRATEGI 2: Cari di TransactionManager
     if (notif.orderId == null || notif.orderId!.isEmpty) {
       print('❌ Order ID is null or empty');
       if (context.mounted) {
@@ -452,53 +479,33 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
 
     try {
-      // ✅ Ambil semua transaksi dari TransactionManager
       final allTransactions = await TransactionManager.getTransactions();
-      print('📦 Total transactions: ${allTransactions.length}');
+      print('📦 Total transactions in manager: ${allTransactions.length}');
 
-      // ✅ Cari transaksi berdasarkan orderId
       final transaction = allTransactions.firstWhere(
         (t) => t.id == notif.orderId,
         orElse: () => throw Exception('Transaction not found'),
       );
 
-      print(
-        '✅ Transaction found: ${transaction.id}, Status: ${transaction.status}',
-      );
+      print('✅ Transaction found: ${transaction.id}');
 
       if (!context.mounted) return;
+      Navigator.of(context).pop(); // Close loading
 
-      // Close loading
-      Navigator.of(context).pop();
-
-      // ✅ Navigasi berdasarkan tipe tombol
+      // Navigate based on button type
       switch (notif.detailButtonText) {
         case 'Lihat Detail':
-          // Untuk pembayaran berhasil - ke detail pembayaran
-          if (notif.transactionData != null) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder:
-                    (_) => DetailPembayaranScreen(
-                      transaksi: notif.transactionData!,
-                    ),
-              ),
-            );
-          } else {
-            // Fallback ke detail transaksi
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder:
-                    (_) => TransactionDetailScreen(transaction: transaction),
-              ),
-            );
-          }
+          // Fallback: convert transaction to map
+          final transaksiMap = _convertTransactionToMap(transaction, notif);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DetailPembayaranScreen(transaksi: transaksiMap),
+            ),
+          );
           break;
 
         case 'Lacak Pesanan':
-          // ✅ Untuk pesanan sedang dikirim - langsung ke detail transaksi
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -508,7 +515,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
           break;
 
         case 'Konfirmasi Penerimaan':
-          // ✅ Untuk pesanan sampai - ke halaman transaksi (tab transaksi)
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
@@ -519,7 +525,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
           break;
 
         default:
-          // Default: buka detail transaksi
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -531,9 +536,21 @@ class _NotificationScreenState extends State<NotificationScreen> {
       print('❌ Error finding transaction: $e');
 
       if (!context.mounted) return;
+      Navigator.of(context).pop(); // Close loading
 
-      // Close loading if still showing
-      Navigator.of(context).pop();
+      // ✅ STRATEGI 3: Jika tidak ditemukan tapi ada transactionData, gunakan itu
+      if (notif.transactionData != null) {
+        print('⚠️ Using fallback transactionData');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (_) =>
+                    DetailPembayaranScreen(transaksi: notif.transactionData!),
+          ),
+        );
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -556,6 +573,57 @@ class _NotificationScreenState extends State<NotificationScreen> {
       );
     }
   }
+
+  // ✅ Helper method untuk convert Transaction ke Map
+  Map<String, dynamic> _convertTransactionToMap(
+    Transaction transaction,
+    AppNotification notif,
+  ) {
+    return {
+      'no_transaksi': transaction.id,
+      'id': transaction.id,
+      'tanggal': transaction.date,
+      'date': transaction.date,
+      'status': transaction.status,
+      'metode_pembayaran':
+          notif.transactionData?['metode_pembayaran'] ??
+          transaction.metodePembayaran ??
+          'N/A',
+      'total_pembayaran': notif.total ?? transaction.totalPrice,
+      'totalPrice': transaction.totalPrice,
+      'voucher_code': transaction.voucherCode,
+      'voucher_discount': transaction.voucherDiscount,
+      'items':
+          transaction.items
+              .map(
+                (item) => {
+                  'nama': item.name,
+                  'name': item.name,
+                  'quantity': item.quantity,
+                  'harga': item.price,
+                  'price': item.price,
+                  'image': item.imageUrl,
+                  'imageUrl': item.imageUrl,
+                },
+              )
+              .toList(),
+      'penerima':
+          transaction.alamat?['nama_penerima'] ??
+          transaction.alamat?['nama'] ??
+          'N/A',
+      'alamat': transaction.alamat,
+      'metode_pengiriman':
+          transaction.deliveryOption == 'xpress'
+              ? 'Xpress (Rp5.000)'
+              : 'Reguler (Rp5.000)',
+      'deliveryOption': transaction.deliveryOption,
+      'jadwal_pengiriman':
+          'Dikirim : ${DateFormat('EEEE, d MMM yyyy, HH:mm').format(transaction.date)}',
+      'biaya_pengiriman': 5000.0,
+      'biaya_admin': 0.0,
+      'catatan_pengiriman': transaction.catatanPengiriman,
+    };
+  }
 }
 
 class MainNavigationWithTransaction extends StatefulWidget {
@@ -568,14 +636,6 @@ class MainNavigationWithTransaction extends StatefulWidget {
 
 class _MainNavigationWithTransactionState
     extends State<MainNavigationWithTransaction> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Ini akan trigger setelah MainNavigation selesai build
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return const MainNavigation(initialIndex: 3);

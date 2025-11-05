@@ -7,8 +7,8 @@ import '../services/flash_sale_notification_service.dart';
 class NotificationProvider with ChangeNotifier {
   List<AppNotification> _notifications = [];
   String? _currentUser;
-  bool _isInitialized = false; // ✅ Track initialization status
-  bool _isInitializing = false; // ✅ Prevent concurrent initialization
+  bool _isInitialized = false;
+  bool _isInitializing = false;
 
   List<AppNotification> get notifications => _notifications;
 
@@ -23,11 +23,9 @@ class NotificationProvider with ChangeNotifier {
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
   NotificationProvider() {
-    // ✅ Call async initialization (tidak perlu await di constructor)
     _initializeForCurrentUser();
   }
 
-  // ⭐ Initialize untuk user yang sedang login
   Future<void> _initializeForCurrentUser() async {
     if (_isInitializing) {
       print('⏳ [NotifProvider] Already initializing, skipping...');
@@ -60,7 +58,6 @@ class NotificationProvider with ChangeNotifier {
     }
   }
 
-  // ✅ BARU: Ensure user is loaded (dengan timeout protection)
   Future<void> ensureUserLoaded() async {
     if (_isInitialized && _currentUser != null) {
       print('✅ [NotifProvider] User already loaded: $_currentUser');
@@ -69,7 +66,6 @@ class NotificationProvider with ChangeNotifier {
 
     if (_isInitializing) {
       print('⏳ [NotifProvider] Waiting for initialization...');
-      // Wait for initialization to complete (max 5 seconds)
       int attempts = 0;
       while (_isInitializing && attempts < 50) {
         await Future.delayed(const Duration(milliseconds: 100));
@@ -83,7 +79,6 @@ class NotificationProvider with ChangeNotifier {
     }
   }
 
-  // ⭐ Load notifikasi untuk user tertentu
   Future<void> _loadNotifications() async {
     if (_currentUser == null) {
       print('❌ [NotifProvider] Cannot load: no current user');
@@ -95,7 +90,6 @@ class NotificationProvider with ChangeNotifier {
       _notifications =
           notifList.map((json) => AppNotification.fromJson(json)).toList();
 
-      // Sort by date (newest first)
       _notifications.sort((a, b) => b.date.compareTo(a.date));
 
       print('✅ [NotifProvider] Loaded ${_notifications.length} notifications');
@@ -105,7 +99,6 @@ class NotificationProvider with ChangeNotifier {
     }
   }
 
-  // ⭐ Simpan notifikasi untuk user tertentu
   Future<void> _saveNotifications() async {
     if (_currentUser == null) {
       print('❌ [NotifProvider] Cannot save: no current user');
@@ -121,14 +114,12 @@ class NotificationProvider with ChangeNotifier {
     }
   }
 
-  // ⭐ PENTING: Reload ketika user login/logout
   Future<void> reloadForCurrentUser() async {
     print('🔄 [NotifProvider] Reloading for current user...');
     _isInitialized = false;
     await _initializeForCurrentUser();
   }
 
-  // ⭐ Clear ketika logout
   Future<void> clearForLogout() async {
     print('🚪 [NotifProvider] Clearing notifications on logout');
     _notifications = [];
@@ -137,9 +128,7 @@ class NotificationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // ✅ PERBAIKAN: Tambah notifikasi baru dengan auto-load user
   Future<void> addNotification(AppNotification notification) async {
-    // ✅ Pastikan user sudah loaded
     await ensureUserLoaded();
 
     if (_currentUser == null) {
@@ -148,13 +137,13 @@ class NotificationProvider with ChangeNotifier {
     }
 
     print('✅ [NotifProvider] Adding notification for user: $_currentUser');
-    _notifications.insert(0, notification); // Add di awal list
+    _notifications.insert(0, notification);
     await _saveNotifications();
     notifyListeners();
     print('✅ Notification added successfully');
   }
 
-  // ✅ PERBAIKAN: Tambah notifikasi pembayaran berhasil
+  // ✅ PERBAIKAN KUNCI - Simpan semua data transaksi lengkap
   Future<void> addPaymentSuccessNotification({
     required String orderId,
     required String paymentMethod,
@@ -166,6 +155,34 @@ class NotificationProvider with ChangeNotifier {
     print('   Order ID: $orderId');
     print('   Method: $paymentMethod');
     print('   Total: $total');
+
+    // ✅ DEBUG: Print transaction data yang diterima
+    if (transactionData != null) {
+      print('   📋 Transaction Data Keys: ${transactionData.keys}');
+      print('   📋 Metode Pembayaran: ${transactionData['metode_pembayaran']}');
+      print('   📋 Voucher: ${transactionData['voucher_code']}');
+      print('   📋 Catatan: ${transactionData['catatan_pengiriman']}');
+    }
+
+    // ✅ PASTIKAN transactionData LENGKAP dengan semua field yang dibutuhkan
+    final completeTransactionData =
+        transactionData != null
+            ? {
+              ...transactionData,
+              // Pastikan field-field penting ada
+              'no_transaksi': orderId,
+              'id': orderId,
+              'metode_pembayaran': paymentMethod,
+              'total_pembayaran': total,
+              'status': transactionData['status'] ?? 'Pembayaran Lunas',
+            }
+            : {
+              'no_transaksi': orderId,
+              'id': orderId,
+              'metode_pembayaran': paymentMethod,
+              'total_pembayaran': total,
+              'status': 'Pembayaran Lunas',
+            };
 
     final notification = AppNotification(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -179,15 +196,13 @@ class NotificationProvider with ChangeNotifier {
       total: total,
       detailButtonText: 'Lihat Detail',
       orderId: orderId,
-      transactionData: transactionData,
+      transactionData: completeTransactionData, // ✅ Simpan data lengkap
     );
 
     await addNotification(notification);
-    print('✅ [NotifProvider] Payment notification added');
+    print('✅ [NotifProvider] Payment notification added with complete data');
   }
 
-  // Tambah notifikasi pesanan dikirim
-  // ✅ TAMBAHAN - Notifikasi pesanan sedang dikirim
   Future<void> addOrderShippedNotification({
     required String orderId,
     required String deliveryTime,
@@ -227,7 +242,6 @@ class NotificationProvider with ChangeNotifier {
                 {'lat': -6.21, 'lng': 106.82},
               ],
         },
-        // tambahkan data transaksi asli jika ingin tetap ada
         ...?transactionData,
       },
     );
@@ -262,7 +276,6 @@ class NotificationProvider with ChangeNotifier {
     print('✅ [NotifProvider] Order arrived notification added');
   }
 
-  // Mark notification as read
   Future<void> markAsRead(String notifId) async {
     final index = _notifications.indexWhere((n) => n.id == notifId);
     if (index != -1) {
@@ -272,7 +285,6 @@ class NotificationProvider with ChangeNotifier {
     }
   }
 
-  // ✅ ADD THIS METHOD after addPaymentSuccessNotification
   Future<void> addTopUpSuccessNotification({
     required double amount,
     required String paymentMethod,
@@ -308,7 +320,6 @@ class NotificationProvider with ChangeNotifier {
     print('✅ [NotifProvider] Top-up notification added');
   }
 
-  // Mark all as read
   Future<void> markAllAsRead() async {
     _notifications =
         _notifications.map((n) => n.copyWith(isRead: true)).toList();
@@ -316,14 +327,12 @@ class NotificationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Delete notification
   Future<void> deleteNotification(String notifId) async {
     _notifications.removeWhere((n) => n.id == notifId);
     await _saveNotifications();
     notifyListeners();
   }
 
-  // Clear all notifications
   Future<void> clearAll() async {
     _notifications.clear();
     await _saveNotifications();
