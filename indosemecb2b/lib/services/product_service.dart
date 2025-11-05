@@ -991,7 +991,7 @@ class ProductService {
     // ============ TAMBAHAN PRODUK SEGAR (MINUMAN, JELLY, PRODUK UMKM INDONESIA) ============
     Product(
       id: '33',
-      name: 'Es Teh Manis Botolan 500ml',
+      name: 'Es Teh Manis Cup',
       description: 'Es teh manis khas Indonesia dalam kemasan botol',
       price: 7000,
       originalPrice: 10000,
@@ -1524,6 +1524,48 @@ class ProductService {
       storeDistance: '1.1 km',
       imageUrl:
           'https://i.pinimg.com/736x/b1/89/6f/b1896ff335654b5a929a86aa0de16e8b.jpg',
+    ),
+    Product(
+      id: '71',
+      name: 'Jus Jambu Biji Merah 350ml',
+      description: 'Jus jambu biji merah segar kaya vitamin C',
+      price: 15000,
+      originalPrice: 20000,
+      category: 'Food',
+      rating: 4.7,
+      reviewCount: 345,
+      storeName: 'Tropical Drink',
+      storeDistance: '0.8 km',
+      imageUrl:
+          'https://i.pinimg.com/1200x/e3/73/db/e373dbc89364aea76c28358495654b39.jpg',
+    ),
+    Product(
+      id: '72',
+      name: 'Jelly Cocopandan',
+      description: 'Jelly kelapa pandan segar dengan tekstur kenyal',
+      price: 20000,
+      originalPrice: 25000,
+      category: 'Food',
+      rating: 4.7,
+      reviewCount: 234,
+      storeName: 'Snack House',
+      storeDistance: '1.1 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/0b/ce/2e/0bce2ecb6117309961a0e4ede944c9c3.jpg',
+    ),
+    Product(
+      id: '73',
+      name: 'Es Cendol Durian',
+      description: 'Minuman cendol dengan topping durian segar',
+      price: 15000,
+      originalPrice: 20000,
+      category: 'Food',
+      rating: 4.9,
+      reviewCount: 412,
+      storeName: 'Bu Ningsih',
+      storeDistance: '0.6 km',
+      imageUrl:
+          'https://i.pinimg.com/736x/00/51/5e/00515eaa273b7e0390200dbd8d9ca8ea.jpg',
     ),
     // PAKET SEMBAKO
     Product(
@@ -2514,6 +2556,7 @@ List<Product> getNewestProducts() {
 /// Get produk segar (minuman, jelly, jamu, dll - BUKAN buah fisik)
 /// ✅ FIXED: Semua rating bisa masuk, urut berdasarkan ID
 List<Product> getFreshProducts() {
+  print('\n🍹 [ProductService] ========== getFreshProducts START ==========');
   
   final freshCategories = ['Food', 'Grocery', 'Pertanian', 'Herbal'];
 
@@ -2522,11 +2565,23 @@ List<Product> getFreshProducts() {
       .where((p) => freshCategories.contains(p.category))
       .toList();
 
+  print('📦 [ProductService] Total produk di kategori segar: ${freshProducts.length}');
+
   // Filter khusus untuk produk segar (minuman, jelly, dll - BUKAN buah fisik)
   final specificFresh = freshProducts.where((p) {
     final name = p.name.toLowerCase();
-    return name.contains('minuman') ||
-        name.contains('es') ||
+    final id = p.id;
+    
+    // ⚠️ FORCE INCLUDE: Jelly dan Jus harus masuk
+    final forceIncludeIds = ['33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '71', '72', '73'];
+    if (forceIncludeIds.contains(id)) {
+      print('   ✅ [FORCE INCLUDE] ID: $id | Name: ${p.name}');
+      return true;
+    }
+    
+    // Keyword matching untuk produk segar
+    final isMatch = name.contains('minuman') ||
+        name.contains('es ') ||
         name.contains('teh') ||
         name.contains('madu') ||
         name.contains('sari') ||
@@ -2539,9 +2594,18 @@ List<Product> getFreshProducts() {
         name.contains('jelly') ||
         name.contains('kopyor') ||
         name.contains('uwuh') ||
-        name.contains('kelapa') ||
+        name.contains('jus') ||
+        name.contains('cendol') ||
         name.contains('kacang ijo');
+    
+    if (isMatch) {
+      print('   ✅ [KEYWORD MATCH] ID: $id | Name: ${p.name}');
+    }
+    
+    return isMatch;
   }).toList();
+
+  print('🎯 [ProductService] Produk segar terfilter: ${specificFresh.length}');
 
   // ⭐ SORTING BERDASARKAN ID (bukan rating)
   specificFresh.sort((a, b) {
@@ -2553,56 +2617,56 @@ List<Product> getFreshProducts() {
   });
 
   // Kembalikan maksimal 8 produk
-  return specificFresh.take(8).toList();
+  final result = specificFresh.take(8).toList();
+  
+  print('📋 [ProductService] Final result (8 produk):');
+  for (var p in result) {
+    print('   - ID: ${p.id} | ${p.name}');
+  }
+  print('========================================================\n');
+  
+  return result;
 }
 
-/// Get buah & sayur (buah fisik + sayuran)
 /// ✅ FIXED: Priority IDs (51-53) di depan, sisanya urut ID
 /// Get buah & sayur (buah fisik + sayuran)
 List<Product> getFruitAndVeggies() {
+  print('\n🍎 [ProductService] ========== getFruitAndVeggies START ==========');
+  
   // Filter produk buah & sayur berdasarkan nama
   final fruitVeggieProducts = _allProducts.where((p) {
     final name = p.name.toLowerCase();
-    return name.contains('sayur') ||
-        name.contains('buah') ||
-        name.contains('pisang') ||
-        name.contains('apel') ||
-        name.contains('tomat') ||
-        name.contains('cabai') ||
-        name.contains('bayam') ||
-        name.contains('brokoli') ||
-        name.contains('wortel') ||
-        name.contains('kentang') ||
-        name.contains('semangka') ||
-        name.contains('melon') ||
-        name.contains('strawberry') ||
-        name.contains('anggur') ||
-        name.contains('mangga') ||
-        name.contains('alpukat') ||
-        name.contains('jeruk') ||
-        name.contains('timun') ||
-        name.contains('salak') ||
-        name.contains('nanas') ||
-        name.contains('jambu') ||
-        name.contains('duku') ||
-        name.contains('srikaya') ||
-        name.contains('manggis') ||
-        name.contains('rambutan') ||
-        name.contains('pepaya') ||
-        name.contains('durian') ||
-        name.contains('lengkeng') ||
-        name.contains('belimbing') ||
-        name.contains('kangkung') ||
-        name.contains('kol') ||
-        name.contains('sawi') ||
-        name.contains('terong') ||
-        name.contains('naga') ||
-        name.contains('labu');
+    final id = p.id;
+    
+    // ⚠️ EXCLUDE produk minuman/jus/jelly meskipun ada nama buah
+    final excludeKeywords = ['jus', 'minuman', 'jelly', 'es '];
+    for (var keyword in excludeKeywords) {
+      if (name.contains(keyword)) {
+        print('   ❌ [EXCLUDED] ID: $id | Name: ${p.name} | Keyword: $keyword');
+        return false;
+      }
+    }
+    
+    // List buah & sayur yang valid
+    final fruitVeggieKeywords = [
+      'sayur', 'buah', 'pisang', 'apel', 'tomat', 'cabai', 'bayam', 
+      'brokoli', 'wortel', 'kentang', 'semangka', 'melon', 'strawberry', 
+      'anggur', 'mangga', 'alpukat', 'jeruk', 'jambu', 'timun', 'salak', 
+      'nanas', 'duku', 'srikaya', 'manggis', 'rambutan', 'pepaya', 
+      'durian', 'lengkeng', 'belimbing', 'kangkung', 'kol', 'sawi', 
+      'terong', 'naga', 'labu'
+    ];
+    
+    final isMatch = fruitVeggieKeywords.any((keyword) => name.contains(keyword));
+    
+    if (isMatch) {
+      print('   ✅ [INCLUDED] ID: $id | Name: ${p.name}');
+    }
+    
+    return isMatch;
   }).toList();
 
-  // ⭐ TAMBAHKAN DEBUG UNTUK MELIHAT SEMUA PRODUK YANG TERFILTER ⭐
-  print('🔍 [ProductService] ========== SEMUA PRODUK YANG TERFILTER DI getFruitAndVeggies ==========');
-  print('📊 [ProductService] Total produk yang terfilter: ${fruitVeggieProducts.length}');
+  print('📦 [ProductService] Total produk Buah & Sayur: ${fruitVeggieProducts.length}');
   print('   ╔═════════╦═════════════════════════════════════╦═════════════╗');
   print('   ║   ID    ║             NAMA PRODUK              ║  KATEGORI   ║');
   print('   ╠═════════╬═════════════════════════════════════╬═════════════╣');
@@ -2615,7 +2679,7 @@ List<Product> getFruitAndVeggies() {
     print('   ║ $idStr ║ $nameStr ║ $categoryStr ║');
   }
   print('   ╚═════════╩═════════════════════════════════════╩═════════════╝');
-  print('   =============================================================\n');
+  print('========================================================\n');
 
   // Kembalikan SEMUA produk tanpa sorting dan limit
   return fruitVeggieProducts;
