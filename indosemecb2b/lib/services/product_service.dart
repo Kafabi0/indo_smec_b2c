@@ -1567,6 +1567,47 @@ class ProductService {
       imageUrl:
           'https://i.pinimg.com/736x/00/51/5e/00515eaa273b7e0390200dbd8d9ca8ea.jpg',
     ),
+    Product(
+      id: '74',
+      name: 'Smoothie Mangga Segar',
+      description: 'Smoothie mangga manis dengan topping mangga segar dan saus karamel',
+      price: 18000,
+      originalPrice: 22000,
+      category: 'Food',
+      rating: 4.8,
+      reviewCount: 267,
+      storeName: 'Tropical Drink',
+      storeDistance: '0.8 km',
+      imageUrl: 'https://i.pinimg.com/736x/47/46/0a/47460a579a239e5db9df9027685a5490.jpg', 
+    ),
+
+    Product(
+      id: '75',
+      name: 'Smoothie Buah Naga Pink',
+      description: 'Smoothie buah naga merah dengan topping buah naga segar dan chia seed',
+      price: 20000,
+      originalPrice: 25000,
+      category: 'Food',
+      rating: 4.9,
+      reviewCount: 312,
+      storeName: 'Tropical Drink',
+      storeDistance: '0.8 km',
+      imageUrl: 'https://i.pinimg.com/1200x/46/95/c9/4695c9ffed3530771bc6f7d1b6582b42.jpg', 
+    ),
+
+    Product(
+      id: '76',
+      name: 'Smoothie Alpukat Keju',
+      description: 'Smoothie alpukat creamy dengan topping keju parut dan saus coklat',
+      price: 22000,
+      originalPrice: 27000,
+      category: 'Food',
+      rating: 4.9,
+      reviewCount: 345,
+      storeName: 'Tropical Drink',
+      storeDistance: '0.8 km',
+      imageUrl: 'https://i.pinimg.com/736x/14/a1/70/14a170916103962748d5b107e21e6e6e.jpg', 
+    ),
     // PAKET SEMBAKO
     Product(
       id: '100',
@@ -2531,17 +2572,13 @@ List<Product> getPaketMakanan() {
 // SECTION 4: FILTERED PRODUCT LISTS (FOR HOME SCREEN)
 // ============================================================
 
-/// Get produk dengan rating tertinggi (Top 8)
-/// ⚠️ CATATAN: Tetap berdasarkan rating untuk konsistensi UI
-List<Product> getTopRatedProducts() {
+List<Product> getTopRatedProducts({int? limit}) {
   final sorted = List<Product>.from(_allProducts);
   sorted.sort((a, b) => b.rating.compareTo(a.rating));
-  return sorted.take(8).toList();
+  return limit != null ? sorted.take(limit).toList() : sorted;
 }
 
-/// Get produk terbaru (berdasarkan ID terbesar)
-/// ✅ FIXED: Semua produk bisa masuk, urut ID besar → kecil
-List<Product> getNewestProducts() {
+List<Product> getNewestProducts({int? limit}) {
   final sorted = List<Product>.from(_allProducts);
   sorted.sort((a, b) {
     try {
@@ -2550,7 +2587,7 @@ List<Product> getNewestProducts() {
       return b.id.compareTo(a.id);
     }
   });
-  return sorted.take(8).toList();
+  return limit != null ? sorted.take(limit).toList() : sorted;
 }
 
 /// Get produk segar (minuman, jelly, jamu, dll - BUKAN buah fisik)
@@ -2603,7 +2640,7 @@ List<Product> getFreshProducts() {
 
   // ⭐ SORTING: ID 71, 72, 73 di depan (MANUAL HIGH PRIORITY)
   specificFresh.sort((a, b) {
-    final highPriorityIds = ['71', '72', '73', '35'];
+    final highPriorityIds = ['74', '75', '76'];
     
     if (highPriorityIds.contains(a.id) && !highPriorityIds.contains(b.id)) {
       return -1;
@@ -2619,7 +2656,7 @@ List<Product> getFreshProducts() {
     }
   });
 
-  final result = specificFresh.take(8).toList();
+  final result = specificFresh.toList();
   
   print('📋 [ProductService] Final result (8 produk):');
   for (var p in result) {

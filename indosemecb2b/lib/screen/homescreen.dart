@@ -487,7 +487,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       print('📍 [HOME] Nearby koperasi count: ${_nearbyKoperasi.length}');
       print('🏷️ [HOME] Selected category: $selectedCategory');
 
-      // ⭐ FILTER PRODUK BERDASARKAN KOPERASI DAN KATEGORI
       if (_nearbyKoperasi.isNotEmpty) {
         // Kumpulkan semua productIds dari koperasi yang match
         final Set<String> allowedProductIds = {};
@@ -500,112 +499,88 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         // Load semua produk
         final allProducts = _productService.getAllProducts();
 
-        // ⭐⭐⭐ FILTER BERDASARKAN KATEGORI DAN KOPERASI ⭐⭐⭐
+        // ⭐ FILTER BERDASARKAN KATEGORI DAN KOPERASI
         if (selectedCategory == 'Semua') {
-          // Tampilkan semua produk dari koperasi
-          displayedProducts =
-              allProducts
-                  .where((p) => allowedProductIds.contains(p.id))
-                  .toList();
+          displayedProducts = allProducts
+              .where((p) => allowedProductIds.contains(p.id))
+              .toList();
         } else {
-          // ⭐ FILTER BERDASARKAN KATEGORI DAN KOPERASI
-          displayedProducts =
-              allProducts
-                  .where(
-                    (p) =>
-                        allowedProductIds.contains(p.id) &&
-                        p.category == selectedCategory,
-                  )
-                  .toList();
+          displayedProducts = allProducts
+              .where((p) =>
+                  allowedProductIds.contains(p.id) &&
+                  p.category == selectedCategory)
+              .toList();
         }
 
         print(
-          '📦 [HOME] displayedProducts (after category filter): ${displayedProducts.length}',
-        );
+            '📦 [HOME] displayedProducts (after category filter): ${displayedProducts.length}');
 
-        // Flash Sale Products (filter by koperasi)
+        // Flash Sale
         print('\n🏠 [HOME] ========== LOADING FLASH SALE ==========');
         flashSaleProducts = _productService.getFlashSaleProductsByKoperasi(
           allowedProductIds.toList(),
         );
         print(
-          '✅ [HOME] Flash sale products loaded: ${flashSaleProducts.length}',
-        );
+            '✅ [HOME] Flash sale products loaded: ${flashSaleProducts.length}');
 
-        // ⭐ Top Rated Products (filter berdasarkan koperasi DAN kategori)
+        // ⭐ Top Rated Products
         final filteredProducts =
             allProducts.where((p) => allowedProductIds.contains(p.id)).toList();
 
         if (selectedCategory == 'Semua') {
           topRatedProducts = List<Product>.from(filteredProducts)
             ..sort((a, b) => b.rating.compareTo(a.rating));
-          topRatedProducts = topRatedProducts.take(8).toList();
         } else {
-          // Filter by category juga untuk top rated
-          topRatedProducts =
-              filteredProducts
-                  .where((p) => p.category == selectedCategory)
-                  .toList()
-                ..sort((a, b) => b.rating.compareTo(a.rating));
-          topRatedProducts = topRatedProducts.take(8).toList();
+          topRatedProducts = filteredProducts
+              .where((p) => p.category == selectedCategory)
+              .toList()
+            ..sort((a, b) => b.rating.compareTo(a.rating));
         }
 
-        // ⭐ Fresh Products (filter berdasarkan koperasi DAN kategori)
+        // ⭐ Fresh Products
         print('\n🍹 [HOME] Calling getFreshProducts...');
-        final allFreshProducts = _productService.getFreshProducts().where(
-          (p) => allowedProductIds.contains(p.id),
-        );
+        final allFreshProducts =
+            _productService.getFreshProducts().where((p) => allowedProductIds.contains(p.id));
 
         if (selectedCategory == 'Semua') {
-          freshProducts = allFreshProducts.take(8).toList();
+          freshProducts = allFreshProducts.toList();
         } else {
-          freshProducts =
-              allFreshProducts
-                  .where((p) => p.category == selectedCategory)
-                  .take(8)
-                  .toList();
+          freshProducts = allFreshProducts
+              .where((p) => p.category == selectedCategory)
+              .toList();
         }
         print('📦 [HOME] freshProducts after filter: ${freshProducts.length}');
 
-        // ⭐ Newest Products (filter berdasarkan koperasi DAN kategori)
+        // ⭐ Newest Products
         if (selectedCategory == 'Semua') {
-          newestProducts = filteredProducts.take(8).toList();
+          newestProducts = filteredProducts;
         } else {
           newestProducts =
-              filteredProducts
-                  .where((p) => p.category == selectedCategory)
-                  .take(8)
-                  .toList();
+              filteredProducts.where((p) => p.category == selectedCategory).toList();
         }
 
-        // ⭐ Buah & Sayur (filter berdasarkan koperasi DAN kategori)
+        // ⭐ Buah & Sayur
         print('\n🍎 [HOME] Calling getFruitAndVeggies...');
-        final allFruitVeggies = _productService.getFruitAndVeggies().where(
-          (p) => allowedProductIds.contains(p.id),
-        );
+        final allFruitVeggies =
+            _productService.getFruitAndVeggies().where((p) => allowedProductIds.contains(p.id));
 
         if (selectedCategory == 'Semua' ||
             selectedCategory == 'Grocery' ||
             selectedCategory == 'Food') {
-          fruitAndVeggies =
-              allFruitVeggies.toList()
-                ..sort((a, b) => b.rating.compareTo(a.rating));
+          fruitAndVeggies = allFruitVeggies.toList()
+            ..sort((a, b) => b.rating.compareTo(a.rating));
         } else {
-          // Jika kategori bukan Grocery/Food, kosongkan fruit & veggies
           fruitAndVeggies = [];
         }
 
         print('📦 [HOME] fruitAndVeggies: ${fruitAndVeggies.length}');
       } else {
-        // ⭐ JIKA TIDAK ADA KOPERASI MATCH, FILTER HANYA BERDASARKAN KATEGORI
-        print(
-          '⚠️ [HOME] No matching koperasi, showing all products by category',
-        );
+        // ⚠️ Tidak ada koperasi match
+        print('⚠️ [HOME] No matching koperasi, showing all products by category');
 
-        displayedProducts =
-            selectedCategory == 'Semua'
-                ? _productService.getAllProducts()
-                : _productService.getProductsByCategory(selectedCategory);
+        displayedProducts = selectedCategory == 'Semua'
+            ? _productService.getAllProducts()
+            : _productService.getProductsByCategory(selectedCategory);
 
         flashSaleProducts = _productService.getActiveFlashSaleProducts();
 
@@ -614,41 +589,33 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         if (selectedCategory == 'Semua') {
           topRatedProducts = List<Product>.from(allProducts)
             ..sort((a, b) => b.rating.compareTo(a.rating));
-          topRatedProducts = topRatedProducts.take(8).toList();
 
-          freshProducts = _productService.getFreshProducts().take(8).toList();
-          newestProducts = allProducts.take(8).toList();
-          fruitAndVeggies =
-              _productService.getFruitAndVeggies().take(8).toList();
+          freshProducts = _productService.getFreshProducts().toList();
+          newestProducts = allProducts;
+          fruitAndVeggies = _productService.getFruitAndVeggies().toList();
         } else {
-          // Filter by category
           final categoryProducts =
               allProducts.where((p) => p.category == selectedCategory).toList();
 
           topRatedProducts = List<Product>.from(categoryProducts)
             ..sort((a, b) => b.rating.compareTo(a.rating));
-          topRatedProducts = topRatedProducts.take(8).toList();
 
-          freshProducts =
-              _productService
-                  .getFreshProducts()
-                  .where((p) => p.category == selectedCategory)
-                  .take(8)
-                  .toList();
+          freshProducts = _productService
+              .getFreshProducts()
+              .where((p) => p.category == selectedCategory)
+              .toList();
 
-          newestProducts = categoryProducts.take(8).toList();
+          newestProducts = categoryProducts;
 
-          // Buah & Sayur hanya untuk Grocery/Food
           if (selectedCategory == 'Grocery' || selectedCategory == 'Food') {
-            fruitAndVeggies =
-                _productService.getFruitAndVeggies().take(8).toList();
+            fruitAndVeggies = _productService.getFruitAndVeggies().toList();
           } else {
             fruitAndVeggies = [];
           }
         }
       }
 
-      // Load stores dan subcategories (tetap berdasarkan kategori)
+      // Load stores & subcategories
       categoryStores = _productService.getStoresByCategory(selectedCategory);
       subCategories = _productService.getSubCategories(selectedCategory);
       flagshipStore = _productService.getFlagshipStore(selectedCategory);
@@ -663,9 +630,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       print('   - fruitAndVeggies: ${fruitAndVeggies.length}');
       print('🔄 [HOME] ========== _loadData END ==========\n');
 
-      if (mounted) {
-        setState(() {});
-      }
+      if (mounted) setState(() {});
     } catch (e, stackTrace) {
       print('❌ [HOME] Error loading data: $e');
       print('📜 [HOME] Stack trace: $stackTrace');
