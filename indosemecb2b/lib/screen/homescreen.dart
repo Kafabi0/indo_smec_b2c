@@ -1359,19 +1359,20 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               _buildProductGrid(displayedProducts.take(6).toList()),
               const SizedBox(height: 20),
               _buildSectionHeader(
+                
                 'Produk Rating Tertinggi',
                 products: topRatedProducts,
               ),
-              _buildProductGrid(topRatedProducts),
+              _buildProductGrid(topRatedProducts.take(10).toList()),
               const SizedBox(height: 20),
               _buildSectionHeader('Produk Segar', products: freshProducts),
-              _buildProductGrid(freshProducts),
+              _buildProductGrid(freshProducts.take(10).toList()),
               const SizedBox(height: 20),
               _buildSectionHeader('Produk Terbaru', products: newestProducts),
-              _buildProductGrid(newestProducts),
+              _buildProductGrid(newestProducts.take(10).toList()),
               const SizedBox(height: 20),
               _buildSectionHeader('Buah & Sayur', products: fruitAndVeggies),
-              _buildProductGrid(fruitAndVeggies),
+              _buildProductGrid(fruitAndVeggies.take(10).toList()),
             ] else ...[
               if (subCategories.isNotEmpty) ...[
                 _buildCategoryShoppingSection(),
