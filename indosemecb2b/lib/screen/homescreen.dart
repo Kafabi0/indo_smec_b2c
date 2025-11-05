@@ -1382,7 +1382,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ],
 
               _buildSectionHeader('Nikmati Promonya!'),
-              _buildProductGrid(displayedProducts.take(6).toList()),
+              _buildProductGrid(displayedProducts.take(10).toList()),
               const SizedBox(height: 20),
               _buildSectionHeader(
                 'Rekomendasi Khusus Untukmu',
