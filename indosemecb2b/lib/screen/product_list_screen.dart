@@ -236,20 +236,20 @@ class _ProductListScreenState extends State<ProductListScreen> {
         ),
         backgroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.search),
-            onPressed: () {
-              // TODO: Implement search
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.share),
-            onPressed: () {
-              // TODO: Implement share
-            },
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: Icon(Icons.search),
+        //     onPressed: () {
+        //       // TODO: Implement search
+        //     },
+        //   ),
+        //   IconButton(
+        //     icon: Icon(Icons.share),
+        //     onPressed: () {
+        //       // TODO: Implement share
+        //     },
+        //   ),
+        // ],
       ),
       body: Column(
         children: [
