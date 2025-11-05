@@ -2560,26 +2560,16 @@ List<Product> getFreshProducts() {
   
   final freshCategories = ['Food', 'Grocery', 'Pertanian', 'Herbal'];
 
-  // Filter produk segar berdasarkan kategori
   final freshProducts = _allProducts
       .where((p) => freshCategories.contains(p.category))
       .toList();
 
   print('📦 [ProductService] Total produk di kategori segar: ${freshProducts.length}');
 
-  // Filter khusus untuk produk segar (minuman, jelly, dll - BUKAN buah fisik)
   final specificFresh = freshProducts.where((p) {
     final name = p.name.toLowerCase();
-    final id = p.id;
     
-    // ⚠️ FORCE INCLUDE: Jelly dan Jus harus masuk
-    final forceIncludeIds = ['33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '71', '72', '73'];
-    if (forceIncludeIds.contains(id)) {
-      print('   ✅ [FORCE INCLUDE] ID: $id | Name: ${p.name}');
-      return true;
-    }
-    
-    // Keyword matching untuk produk segar
+    // HANYA KEYWORD MATCHING (TIDAK PERLU MANUAL LIST!)
     final isMatch = name.contains('minuman') ||
         name.contains('es ') ||
         name.contains('teh') ||
@@ -2596,10 +2586,14 @@ List<Product> getFreshProducts() {
         name.contains('uwuh') ||
         name.contains('jus') ||
         name.contains('cendol') ||
-        name.contains('kacang ijo');
+        name.contains('durian') ||
+        name.contains('kacang ijo') ||
+        name.contains('susu') || 
+        name.contains('kopi') || 
+        name.contains('smoothie');  
     
     if (isMatch) {
-      print('   ✅ [KEYWORD MATCH] ID: $id | Name: ${p.name}');
+      print('   ✅ [KEYWORD MATCH] ID: ${p.id} | Name: ${p.name}');
     }
     
     return isMatch;
@@ -2607,8 +2601,17 @@ List<Product> getFreshProducts() {
 
   print('🎯 [ProductService] Produk segar terfilter: ${specificFresh.length}');
 
-  // ⭐ SORTING BERDASARKAN ID (bukan rating)
+  // ⭐ SORTING: ID 71, 72, 73 di depan (MANUAL HIGH PRIORITY)
   specificFresh.sort((a, b) {
+    final highPriorityIds = ['71', '72', '73', '35'];
+    
+    if (highPriorityIds.contains(a.id) && !highPriorityIds.contains(b.id)) {
+      return -1;
+    }
+    if (!highPriorityIds.contains(a.id) && highPriorityIds.contains(b.id)) {
+      return 1;
+    }
+    
     try {
       return int.parse(a.id).compareTo(int.parse(b.id));
     } catch (e) {
@@ -2616,7 +2619,6 @@ List<Product> getFreshProducts() {
     }
   });
 
-  // Kembalikan maksimal 8 produk
   final result = specificFresh.take(8).toList();
   
   print('📋 [ProductService] Final result (8 produk):');
