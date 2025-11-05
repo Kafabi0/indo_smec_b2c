@@ -3,11 +3,152 @@ import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 import 'lacak.dart';
 import 'package:indosemecb2b/models/tracking.dart';
+import 'package:indosemecb2b/utils/cart_manager.dart';
+import 'package:indosemecb2b/screen/main_navigasi.dart';
 
-class TransactionDetailScreen extends StatelessWidget {
+class TransactionDetailScreen extends StatefulWidget {
   final Transaction transaction;
 
-  TransactionDetailScreen({required this.transaction});
+  const TransactionDetailScreen({Key? key, required this.transaction})
+      : super(key: key);
+
+  @override
+  State<TransactionDetailScreen> createState() =>
+      _TransactionDetailScreenState();
+}
+
+class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
+  // Getter untuk kemudahan akses
+  Transaction get transaction => widget.transaction;
+
+  // ✅ METHOD BARU: Handle "Beli Lagi"
+  Future<void> _handleBeliLagi() async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => Center(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  'Menambahkan produk ke keranjang...',
+                  style: TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      int successCount = 0;
+      int failedCount = 0;
+
+      // Loop through all items in the transaction
+      for (var item in transaction.items) {
+        final success = await CartManager.addToCart(
+          productId: item.productId,
+          name: item.name,
+          price: item.price,
+          imageUrl: item.imageUrl,
+          category: item.category,
+          quantity: item.quantity,
+        );
+
+        if (success) {
+          successCount++;
+        } else {
+          failedCount++;
+        }
+      }
+
+      if (!mounted) return;
+
+      // Close loading dialog
+      Navigator.of(context).pop();
+
+      // Show result and navigate
+      if (successCount > 0) {
+        // Navigate to CartScreen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => MainNavigation(initialIndex: 1)),
+        );
+
+        // Show success message
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        failedCount > 0
+                            ? '$successCount produk berhasil ditambahkan ke keranjang'
+                            : '${transaction.items.length} produk berhasil ditambahkan ke keranjang',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.green[600],
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        });
+      } else {
+        // All failed
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: const [
+                Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Gagal menambahkan produk ke keranjang',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red[600],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading if error
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red[600],
+        ),
+      );
+    }
+  }
 
   Color _statusColor(String status) {
     switch (status) {
@@ -33,7 +174,6 @@ class TransactionDetailScreen extends StatelessWidget {
     return formatCurrency.format(number);
   }
 
-  // ✅ HITUNG SUBTOTAL PRODUK (SEBELUM ONGKIR & DISKON)
   double _getSubtotal() {
     return transaction.items.fold(
       0.0,
@@ -41,7 +181,6 @@ class TransactionDetailScreen extends StatelessWidget {
     );
   }
 
-  // ✅ HITUNG TOTAL SETELAH DISKON (YANG BENAR-BENAR DIBAYAR)
   double _getFinalTotal() {
     final subtotal = _getSubtotal();
     final shipping = 5000.0;
@@ -59,7 +198,7 @@ class TransactionDetailScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Detail Transaksi'),
+        title: const Text('Detail Transaksi'),
         backgroundColor: Colors.white,
         elevation: 0.5,
         foregroundColor: Colors.black,
@@ -76,35 +215,55 @@ class TransactionDetailScreen extends StatelessWidget {
               child: OutlinedButton(
                 onPressed: () {
                   if (transaction.status == "Selesai") {
-                    Navigator.pop(context);
+                    // ✅ PANGGIL METHOD BELI LAGI
+                    _handleBeliLagi();
                   } else {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder:
-                            (_) => TrackingScreen(
-                              trackingData: OrderTrackingModel(
-                                transactionId: transaction.id,
-                                courierName: "Tryan Gumilar",
-                                courierId: "D 4563 ADP",
-                                statusMessage: transaction.status,
-                                statusDesc: "Pesananmu sedang diproses",
-                                updatedAt: transaction.date ?? DateTime.now(),
-                              ),
-                            ),
+                        builder: (_) => TrackingScreen(
+                          trackingData: OrderTrackingModel(
+                            transactionId: transaction.id,
+                            courierName: "Tryan Gumilar",
+                            courierId: "D 4563 ADP",
+                            statusMessage: transaction.status,
+                            statusDesc: "Pesananmu sedang diproses",
+                            updatedAt: transaction.date ?? DateTime.now(),
+                          ),
+                        ),
                       ),
                     );
                   }
                 },
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: Colors.blue[700]!),
-                ),
-                child: Text(
-                  transaction.status == "Selesai" ? "Beli Lagi" : "Lacak",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[700],
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      transaction.status == "Selesai"
+                          ? Icons.shopping_cart_outlined
+                          : Icons.location_on_outlined,
+                      size: 20,
+                      color: Colors.blue[700],
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      transaction.status == "Selesai"
+                          ? "Beli Lagi"
+                          : "Lacak",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue[700],
+                        fontSize: 15,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -119,7 +278,8 @@ class TransactionDetailScreen extends StatelessWidget {
             // ===== HEADER TRANSAKSI =====
             _buildDetailRow("No.Transaksi", transaction.id),
             const SizedBox(height: 6),
-            _buildDetailRow("Tanggal Transaksi", formatDate(transaction.date)),
+            _buildDetailRow(
+                "Tanggal Transaksi", formatDate(transaction.date)),
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -131,7 +291,8 @@ class TransactionDetailScreen extends StatelessWidget {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: _statusColor(transaction.status).withOpacity(0.12),
+                    color: _statusColor(transaction.status)
+                        .withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -164,7 +325,8 @@ class TransactionDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (var item in transaction.items) _buildProductItem(item),
+                  for (var item in transaction.items)
+                    _buildProductItem(item),
                   const Divider(),
                   Align(
                     alignment: Alignment.centerRight,
@@ -302,7 +464,7 @@ class TransactionDetailScreen extends StatelessWidget {
 
             const SizedBox(height: 18),
 
-            // ===== RINCIAN PEMBAYARAN (UPDATED) =====
+            // ===== RINCIAN PEMBAYARAN =====
             const Text(
               'Rincian Belanja',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -321,7 +483,6 @@ class TransactionDetailScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   _buildDetailRow("Biaya Pengiriman", formatRupiah(shipping)),
 
-                  // ✅ TAMPILKAN DISKON VOUCHER
                   if (discount > 0) ...[
                     const SizedBox(height: 8),
                     Row(
@@ -360,7 +521,6 @@ class TransactionDetailScreen extends StatelessWidget {
                     child: Divider(height: 1),
                   ),
 
-                  // ✅ TOTAL AKHIR (SETELAH DISKON)
                   _buildDetailRow(
                     "Total Pembayaran",
                     formatRupiah(finalTotal),
@@ -387,13 +547,12 @@ class TransactionDetailScreen extends StatelessWidget {
               width: 50,
               height: 50,
               fit: BoxFit.cover,
-              errorBuilder:
-                  (_, __, ___) => Container(
-                    width: 50,
-                    height: 50,
-                    color: Colors.grey[200],
-                    child: Icon(Icons.image, color: Colors.grey[400]),
-                  ),
+              errorBuilder: (_, __, ___) => Container(
+                width: 50,
+                height: 50,
+                color: Colors.grey[200],
+                child: Icon(Icons.image, color: Colors.grey[400]),
+              ),
             ),
           ),
           const SizedBox(width: 10),

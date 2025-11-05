@@ -7,6 +7,7 @@ import 'package:indosemecb2b/models/tracking.dart';
 import 'package:indosemecb2b/screen/detail_transaksi.dart';
 import 'package:indosemecb2b/screen/lacak.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
+import 'package:indosemecb2b/utils/cart_manager.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:indosemecb2b/models/transaction.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart';
@@ -867,12 +868,8 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                               OutlinedButton(
                                 onPressed: () {
                                   if (currentTransaction.status == "Selesai") {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => MainNavigation(),
-                                      ),
-                                    );
+                                    // ✅ PANGGIL METHOD BELI LAGI
+                                    _handleBeliLagi(currentTransaction);
                                   } else {
                                     Navigator.push(
                                       context,
@@ -934,6 +931,132 @@ class _TransaksiScreenState extends State<TransaksiScreen>
         );
       },
     );
+  }
+  // Tambahkan method ini di dalam class _TransaksiScreenState
+
+  /// ✅ METHOD BARU: Handle "Beli Lagi" - Tambahkan produk ke keranjang
+  Future<void> _handleBeliLagi(Transaction transaction) async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder:
+            (_) => Center(
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text(
+                      'Menambahkan produk ke keranjang...',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+      );
+
+      int successCount = 0;
+      int failedCount = 0;
+
+      // Loop through all items in the transaction
+      for (var item in transaction.items) {
+        final success = await CartManager.addToCart(
+          productId: item.productId,
+          name: item.name,
+          price: item.price,
+          imageUrl: item.imageUrl,
+          category: item.category,
+          quantity: item.quantity,
+        );
+
+        if (success) {
+          successCount++;
+        } else {
+          failedCount++;
+        }
+      }
+
+      if (!mounted) return;
+
+      // Close loading dialog
+      Navigator.of(context).pop();
+
+      // Show result
+      if (successCount > 0) {
+        // Navigate to CartScreen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MainNavigation(initialIndex: 1),
+          ), // Index 2 adalah Cart
+        );
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    failedCount > 0
+                        ? '$successCount produk berhasil ditambahkan ke keranjang'
+                        : '${transaction.items.length} produk berhasil ditambahkan ke keranjang',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green[600],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
+        // All failed
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: const [
+                Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Gagal menambahkan produk ke keranjang',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red[600],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading if error
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red[600]),
+      );
+    }
   }
 
   double _calculateFinalTotal(Transaction transaction) {
