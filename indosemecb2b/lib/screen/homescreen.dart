@@ -3774,7 +3774,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              // borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.08),
@@ -3795,14 +3795,14 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         gradient: LinearGradient(
                           colors: [Colors.grey[200]!, Colors.grey[100]!],
                         ),
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(16),
-                        ),
+                        // borderRadius: const BorderRadius.vertical(
+                        //   top: Radius.circular(16),
+                        // ),
                       ),
                       child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(16),
-                        ),
+                        // borderRadius: const BorderRadius.vertical(
+                        //   top: Radius.circular(16),
+                        // ),
                         child: Image.network(
                           product.imageUrl ?? '',
                           height: 140,
