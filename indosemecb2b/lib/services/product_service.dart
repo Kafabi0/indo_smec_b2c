@@ -2678,7 +2678,7 @@ List<Product> getFruitAndVeggies() {
     final id = p.id;
     
     // ⚠️ EXCLUDE produk minuman/jus/jelly meskipun ada nama buah
-    final excludeKeywords = ['jus', 'minuman', 'jelly', 'es '];
+    final excludeKeywords = ['jus', 'minuman', 'jelly', 'es ', 'smoothie'];
     for (var keyword in excludeKeywords) {
       if (name.contains(keyword)) {
         print('   ❌ [EXCLUDED] ID: $id | Name: ${p.name} | Keyword: $keyword');
