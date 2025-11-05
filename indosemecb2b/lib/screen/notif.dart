@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:indosemecb2b/models/tracking.dart';
+import 'package:indosemecb2b/models/transaction.dart';
 import 'package:indosemecb2b/screen/detail_produk.dart';
 import 'package:indosemecb2b/screen/lacak.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
@@ -423,6 +424,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   // ✅ PERBAIKAN - Langsung gunakan transactionData dari notifikasi
+  // ✅ PERBAIKAN - Fungsi _navigateToDetail dengan validasi status
   void _navigateToDetail(BuildContext context, AppNotification notif) async {
     print('🔍 Navigating to detail for Order ID: ${notif.orderId}');
     print('📦 Transaction data: ${notif.transactionData}');
@@ -469,40 +471,68 @@ class _NotificationScreenState extends State<NotificationScreen> {
         break;
 
       case 'Lacak Pesanan':
-        final trackingMap = transaksiMap['trackingData'];
+        // ✅ PERBAIKAN - Konversi Map ke Transaction object dan cek status
+        try {
+          final transaction = Transaction.fromMap(transaksiMap);
 
-        if (trackingMap == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Data pelacakan tidak ditemukan'),
-              backgroundColor: Colors.orange,
+          // ✅ CEK STATUS - Jika sudah selesai, tampilkan pesan
+          if (transaction.status == 'Selesai') {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Pesanan sudah selesai, tidak bisa dilacak lagi',
+                  ),
+                  backgroundColor: Colors.orange,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+            return;
+          }
+
+          // ✅ CEK STATUS - Jika dibatalkan, tampilkan pesan
+          if (transaction.status == 'Dibatalkan') {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Pesanan telah dibatalkan'),
+                  backgroundColor: Colors.red,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+            return;
+          }
+
+          // ✅ Jika status masih "Diproses", lanjutkan ke tracking
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => TrackingScreen(
+                    trackingData: OrderTrackingModel(
+                      transactionId: transaction.id,
+                      courierName: "Tryan Gumilar",
+                      courierId: "D 4563 ADP",
+                      statusMessage: transaction.status,
+                      statusDesc: "Pesananmu sedang diproses",
+                      updatedAt: transaction.date ?? DateTime.now(),
+                    ),
+                  ),
             ),
           );
-          return;
+        } catch (e) {
+          print('❌ Error parsing transaction: $e');
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Gagal memuat data pelacakan'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
-
-        final trackingData = OrderTrackingModel.fromJson(trackingMap);
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (_) => TrackingScreen(
-                  trackingData: OrderTrackingModel(
-                    transactionId: transaksiMap['id'] ?? notif.orderId ?? '',
-                    courierName: trackingData.courierName ?? "Tryan Gumilar",
-                    courierId: trackingData.courierId ?? "D 4563 ADP",
-                    statusMessage: transaksiMap['status'] ?? "Diproses",
-                    statusDesc:
-                        trackingData.statusDesc ?? "Pesananmu sedang diproses",
-                    updatedAt:
-                        transaksiMap['date'] != null
-                            ? DateTime.parse(transaksiMap['date'])
-                            : DateTime.now(),
-                  ),
-                ),
-          ),
-        );
         break;
 
       case 'Konfirmasi Penerimaan':
