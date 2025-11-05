@@ -36,9 +36,47 @@ class _TrackingScreenState extends State<TrackingScreen> {
   List<Map<String, String>> _statusList = [];
 
   @override
+  @override
   void initState() {
     super.initState();
-    _initTracking();
+
+    // ⚠️ VALIDASI STATUS SEBELUM INIT TRACKING
+    final initialStatus = widget.trackingData.statusMessage;
+    print('🔍 TrackingScreen initState - Status: $initialStatus');
+
+    // ✅ Jangan start tracking jika status sudah Selesai atau Dibatalkan
+    if (initialStatus == 'Selesai' || initialStatus == 'Dibatalkan') {
+      print('⚠️ Status $initialStatus - Skip tracking initialization');
+
+      // Set initial state saja tanpa start tracking
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        setState(() {
+          _statusPesanan = initialStatus ?? "Status tidak diketahui";
+          _statusDesc =
+              initialStatus == 'Selesai'
+                  ? "Pesanan telah selesai dan diterima"
+                  : "Pesanan telah dibatalkan";
+          _statusList = [
+            {
+              "title": _statusPesanan,
+              "desc": _statusDesc,
+              "time": DateFormat(
+                'dd MMM yyyy, HH:mm',
+                'id_ID',
+              ).format(widget.trackingData.updatedAt ?? DateTime.now()),
+            },
+          ];
+        });
+      });
+      return; // ⚠️ PENTING: Return untuk skip tracking service
+    }
+
+    // ✅ Hanya init tracking untuk status yang masih dalam proses
+    print('✅ Status dalam proses - Initializing tracking');
+
+    // Setup notification providers
     final notificationProvider = Provider.of<NotificationProvider>(
       context,
       listen: false,
@@ -48,16 +86,17 @@ class _TrackingScreenState extends State<TrackingScreen> {
       notificationProvider: notificationProvider,
       notificationService: notificationService,
     );
-    TrackingServiceManager().startTracking(widget.trackingData.transactionId!);
+
+    // Start tracking dan init
+    final transactionId = widget.trackingData.transactionId;
+    if (transactionId != null) {
+      TrackingServiceManager().startTracking(transactionId);
+      _initTrackingData(transactionId);
+    }
   }
 
-  Future<void> _initTracking() async {
-    final transactionId = widget.trackingData.transactionId;
-    if (transactionId == null) {
-      print('❌ Transaction ID is null');
-      return;
-    }
-
+  // ✅ Method terpisah untuk init tracking data
+  Future<void> _initTrackingData(String transactionId) async {
     print('🔍 Initializing tracking for: $transactionId');
 
     if (!_trackingService.hasTracking(transactionId)) {
@@ -110,7 +149,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     };
     tracking.notifier.addListener(_positionListener!);
 
-    // ⭐ Listen to status updates (PENTING!)
+    // ⭐ Listen to status updates
     _statusListener = () {
       if (!mounted) return;
 

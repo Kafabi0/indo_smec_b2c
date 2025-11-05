@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:indosemecb2b/models/tracking.dart';
 import 'package:indosemecb2b/models/transaction.dart';
 import 'package:indosemecb2b/screen/detail_produk.dart';
+import 'package:indosemecb2b/screen/detail_transaksi.dart';
 import 'package:indosemecb2b/screen/lacak.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:indosemecb2b/screen/transaksi.dart';
+import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:provider/provider.dart';
 import 'notification_provider.dart';
 import '../models/notification_model.dart';
@@ -423,18 +425,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  // ✅ PERBAIKAN - Langsung gunakan transactionData dari notifikasi
-  // ✅ PERBAIKAN - Fungsi _navigateToDetail dengan validasi status
+  // ✅ PERBAIKAN UTAMA - Ambil transaksi dari TransactionManager berdasarkan orderId
   void _navigateToDetail(BuildContext context, AppNotification notif) async {
     print('🔍 Navigating to detail for Order ID: ${notif.orderId}');
-    print('📦 Transaction data: ${notif.transactionData}');
 
-    if (notif.transactionData == null || notif.transactionData!.isEmpty) {
-      print('❌ Transaction data is null or empty');
+    if (notif.orderId == null || notif.orderId!.isEmpty) {
+      print('❌ Order ID is null or empty');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Data transaksi tidak ditemukan'),
+            content: Text('ID transaksi tidak ditemukan'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -442,116 +442,118 @@ class _NotificationScreenState extends State<NotificationScreen> {
       return;
     }
 
-    final transaksiMap =
-        notif.transactionData != null
-            ? Map<String, dynamic>.from(notif.transactionData!)
-            : null;
-
-    if (transaksiMap == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Data transaksi tidak ditemukan'),
-          backgroundColor: Colors.orange,
-        ),
+    // Show loading
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
       );
-      return;
     }
 
-    if (!context.mounted) return;
+    try {
+      // ✅ Ambil semua transaksi dari TransactionManager
+      final allTransactions = await TransactionManager.getTransactions();
+      print('📦 Total transactions: ${allTransactions.length}');
 
-    // 🔍 Arahkan sesuai dengan teks tombol
-    switch (notif.detailButtonText) {
-      case 'Lihat Detail':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => DetailPembayaranScreen(transaksi: transaksiMap),
-          ),
-        );
-        break;
+      // ✅ Cari transaksi berdasarkan orderId
+      final transaction = allTransactions.firstWhere(
+        (t) => t.id == notif.orderId,
+        orElse: () => throw Exception('Transaction not found'),
+      );
 
-      case 'Lacak Pesanan':
-        // ✅ PERBAIKAN - Konversi Map ke Transaction object dan cek status
-        try {
-          final transaction = Transaction.fromMap(transaksiMap);
+      print(
+        '✅ Transaction found: ${transaction.id}, Status: ${transaction.status}',
+      );
 
-          // ✅ CEK STATUS - Jika sudah selesai, tampilkan pesan
-          if (transaction.status == 'Selesai') {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Pesanan sudah selesai, tidak bisa dilacak lagi',
-                  ),
-                  backgroundColor: Colors.orange,
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            }
-            return;
-          }
+      if (!context.mounted) return;
 
-          // ✅ CEK STATUS - Jika dibatalkan, tampilkan pesan
-          if (transaction.status == 'Dibatalkan') {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Pesanan telah dibatalkan'),
-                  backgroundColor: Colors.red,
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            }
-            return;
-          }
+      // Close loading
+      Navigator.of(context).pop();
 
-          // ✅ Jika status masih "Diproses", lanjutkan ke tracking
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (_) => TrackingScreen(
-                    trackingData: OrderTrackingModel(
-                      transactionId: transaction.id,
-                      courierName: "Tryan Gumilar",
-                      courierId: "D 4563 ADP",
-                      statusMessage: transaction.status,
-                      statusDesc: "Pesananmu sedang diproses",
-                      updatedAt: transaction.date ?? DateTime.now(),
+      // ✅ Navigasi berdasarkan tipe tombol
+      switch (notif.detailButtonText) {
+        case 'Lihat Detail':
+          // Untuk pembayaran berhasil - ke detail pembayaran
+          if (notif.transactionData != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => DetailPembayaranScreen(
+                      transaksi: notif.transactionData!,
                     ),
-                  ),
-            ),
-          );
-        } catch (e) {
-          print('❌ Error parsing transaction: $e');
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Gagal memuat data pelacakan'),
-                backgroundColor: Colors.red,
+              ),
+            );
+          } else {
+            // Fallback ke detail transaksi
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => TransactionDetailScreen(transaction: transaction),
               ),
             );
           }
-        }
-        break;
+          break;
 
-      case 'Konfirmasi Penerimaan':
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const MainNavigationWithTransaction(),
-          ),
-          (route) => false,
-        );
-        break;
+        case 'Lacak Pesanan':
+          // ✅ Untuk pesanan sedang dikirim - langsung ke detail transaksi
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => TransactionDetailScreen(transaction: transaction),
+            ),
+          );
+          break;
 
-      default:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Aksi detail belum tersedia'),
-            backgroundColor: Colors.grey,
+        case 'Konfirmasi Penerimaan':
+          // ✅ Untuk pesanan sampai - ke halaman transaksi (tab transaksi)
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const MainNavigationWithTransaction(),
+            ),
+            (route) => false,
+          );
+          break;
+
+        default:
+          // Default: buka detail transaksi
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => TransactionDetailScreen(transaction: transaction),
+            ),
+          );
+      }
+    } catch (e) {
+      print('❌ Error finding transaction: $e');
+
+      if (!context.mounted) return;
+
+      // Close loading if still showing
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Transaksi tidak ditemukan: ${notif.orderId}'),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'Lihat Semua',
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MainNavigationWithTransaction(),
+                ),
+                (route) => false,
+              );
+            },
           ),
-        );
+        ),
+      );
     }
   }
 }
