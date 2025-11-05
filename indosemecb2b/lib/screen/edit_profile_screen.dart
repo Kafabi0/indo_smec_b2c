@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/user_data_manager.dart';
@@ -61,10 +62,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     await prefs.setString('userName', nameController.text);
 
     if (mounted) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Profil berhasil disimpan")));
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MainNavigation()),
+        (route) => false,
+      );
     }
   }
 

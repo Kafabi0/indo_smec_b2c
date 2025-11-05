@@ -1636,14 +1636,14 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           ),
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Icon(
-                          Icons.qr_code_scanner_rounded,
-                          color: Colors.grey[400],
-                          size: 24,
-                        ),
-                      ),
+                      // Padding(
+                      //   padding: const EdgeInsets.symmetric(horizontal: 16),
+                      //   child: Icon(
+                      //     Icons.qr_code_scanner_rounded,
+                      //     color: Colors.grey[400],
+                      //     size: 24,
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
