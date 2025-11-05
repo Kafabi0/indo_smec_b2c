@@ -488,6 +488,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
       );
     },
     child: Container(
+      
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -504,7 +505,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
           Stack(
             children: [
               Container(
-                height: 140,
+                height: 185,
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.vertical(
@@ -514,7 +515,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 child: Center(
                   child: Image.network(
                     product.imageUrl ?? '',
-                    height: 140,
+                    height: 185,
                     width: double.infinity,
                     fit: BoxFit.cover,
                   ),
