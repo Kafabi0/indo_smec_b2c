@@ -10,7 +10,7 @@ class TransactionDetailScreen extends StatefulWidget {
   final Transaction transaction;
 
   const TransactionDetailScreen({Key? key, required this.transaction})
-      : super(key: key);
+    : super(key: key);
 
   @override
   State<TransactionDetailScreen> createState() =>
@@ -18,42 +18,39 @@ class TransactionDetailScreen extends StatefulWidget {
 }
 
 class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
-  // Getter untuk kemudahan akses
   Transaction get transaction => widget.transaction;
 
-  // ✅ METHOD BARU: Handle "Beli Lagi"
   Future<void> _handleBeliLagi() async {
     try {
-      // Show loading dialog
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (_) => Center(
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text(
-                  'Menambahkan produk ke keranjang...',
-                  style: TextStyle(fontSize: 14),
+        builder:
+            (_) => Center(
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text(
+                      'Menambahkan produk ke keranjang...',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ),
       );
 
       int successCount = 0;
       int failedCount = 0;
 
-      // Loop through all items in the transaction
       for (var item in transaction.items) {
         final success = await CartManager.addToCart(
           productId: item.productId,
@@ -72,19 +69,14 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       }
 
       if (!mounted) return;
-
-      // Close loading dialog
       Navigator.of(context).pop();
 
-      // Show result and navigate
       if (successCount > 0) {
-        // Navigate to CartScreen
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => MainNavigation(initialIndex: 1)),
         );
 
-        // Show success message
         Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -114,7 +106,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
           }
         });
       } else {
-        // All failed
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -139,13 +130,10 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      Navigator.of(context).pop(); // Close loading if error
+      Navigator.of(context).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red[600],
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red[600]),
       );
     }
   }
@@ -174,27 +162,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     return formatCurrency.format(number);
   }
 
-  double _getSubtotal() {
-    return transaction.items.fold(
-      0.0,
-      (sum, item) => sum + (item.price * item.quantity),
-    );
-  }
-
-  double _getFinalTotal() {
-    final subtotal = _getSubtotal();
-    final shipping = 5000.0;
-    final discount = transaction.voucherDiscount ?? 0.0;
-    return subtotal + shipping - discount;
-  }
-
   @override
   Widget build(BuildContext context) {
     final alamat = transaction.alamat ?? {};
-    final subtotal = _getSubtotal();
-    final shipping = 5000.0;
-    final discount = transaction.voucherDiscount ?? 0.0;
-    final finalTotal = _getFinalTotal();
 
     return Scaffold(
       appBar: AppBar(
@@ -215,22 +185,22 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
               child: OutlinedButton(
                 onPressed: () {
                   if (transaction.status == "Selesai") {
-                    // ✅ PANGGIL METHOD BELI LAGI
                     _handleBeliLagi();
                   } else {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => TrackingScreen(
-                          trackingData: OrderTrackingModel(
-                            transactionId: transaction.id,
-                            courierName: "Tryan Gumilar",
-                            courierId: "D 4563 ADP",
-                            statusMessage: transaction.status,
-                            statusDesc: "Pesananmu sedang diproses",
-                            updatedAt: transaction.date ?? DateTime.now(),
-                          ),
-                        ),
+                        builder:
+                            (_) => TrackingScreen(
+                              trackingData: OrderTrackingModel(
+                                transactionId: transaction.id,
+                                courierName: "Tryan Gumilar",
+                                courierId: "D 4563 ADP",
+                                statusMessage: transaction.status,
+                                statusDesc: "Pesananmu sedang diproses",
+                                updatedAt: transaction.date,
+                              ),
+                            ),
                       ),
                     );
                   }
@@ -254,9 +224,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      transaction.status == "Selesai"
-                          ? "Beli Lagi"
-                          : "Lacak",
+                      transaction.status == "Selesai" ? "Beli Lagi" : "Lacak",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.blue[700],
@@ -278,8 +246,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             // ===== HEADER TRANSAKSI =====
             _buildDetailRow("No.Transaksi", transaction.id),
             const SizedBox(height: 6),
-            _buildDetailRow(
-                "Tanggal Transaksi", formatDate(transaction.date)),
+            _buildDetailRow("Tanggal Transaksi", formatDate(transaction.date)),
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -291,8 +258,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: _statusColor(transaction.status)
-                        .withOpacity(0.12),
+                    color: _statusColor(transaction.status).withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -325,13 +291,12 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (var item in transaction.items)
-                    _buildProductItem(item),
+                  for (var item in transaction.items) _buildProductItem(item),
                   const Divider(),
                   Align(
                     alignment: Alignment.centerRight,
                     child: Text(
-                      'Subtotal ${formatRupiah(subtotal)}',
+                      'Subtotal ${formatRupiah(transaction.subtotal)}',
                       style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ),
@@ -342,7 +307,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             const SizedBox(height: 18),
 
             // ===== VOUCHER INFO (JIKA ADA) =====
-            if (transaction.voucherCode != null && discount > 0) ...[
+            if (transaction.hasVoucher) ...[
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -388,7 +353,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                           ),
                         ),
                         Text(
-                          formatRupiah(discount),
+                          formatRupiah(transaction.voucherDiscount!),
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -464,74 +429,200 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
             const SizedBox(height: 18),
 
-            // ===== RINCIAN PEMBAYARAN =====
-            const Text(
-              'Rincian Belanja',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: Column(
-                children: [
-                  _buildDetailRow("Subtotal Produk", formatRupiah(subtotal)),
-                  const SizedBox(height: 8),
-                  _buildDetailRow("Biaya Pengiriman", formatRupiah(shipping)),
+            // ✅ GANTI DENGAN WIDGET BARU
+            _buildRincianBelanja(),
+          ],
+        ),
+      ),
+    );
+  }
 
-                  if (discount > 0) ...[
-                    const SizedBox(height: 8),
+  // ✅ WIDGET BARU: Rincian Belanja dengan Poin Cash
+  Widget _buildRincianBelanja() {
+    final subtotal = transaction.subtotal;
+    final shipping = transaction.shippingCost;
+    final voucherDiscount = transaction.voucherDiscount ?? 0.0;
+    final poinCashUsed = transaction.poinCashUsed ?? 0.0;
+    final finalTotal = transaction.finalTotal;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Rincian Belanja',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: Column(
+            children: [
+              // Metode Pembayaran
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.payment, size: 16, color: Colors.blue[700]),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Metode Pembayaran',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    transaction.metodePembayaran ?? 'N/A',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+
+              const Divider(height: 24),
+
+              // Subtotal Produk
+              _buildDetailRow("Subtotal Produk", formatRupiah(subtotal)),
+              const SizedBox(height: 8),
+
+              // Biaya Pengiriman
+              _buildDetailRow("Biaya Pengiriman", formatRupiah(shipping)),
+
+              // ✅ Diskon Voucher (jika ada)
+              if (voucherDiscount > 0) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
+                        Icon(
+                          Icons.local_offer,
+                          size: 16,
+                          color: Colors.green[700],
+                        ),
+                        const SizedBox(width: 6),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              Icons.local_offer,
-                              size: 16,
-                              color: Colors.green[700],
-                            ),
-                            const SizedBox(width: 6),
                             Text(
                               "Diskon Voucher",
                               style: TextStyle(
+                                fontSize: 13,
                                 color: Colors.green[700],
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
+                            if (transaction.voucherCode != null)
+                              Text(
+                                transaction.voucherCode!,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey[600],
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
                           ],
                         ),
+                      ],
+                    ),
+                    Text(
+                      "- ${formatRupiah(voucherDiscount)}",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              // ✅ Poin Cash Used (jika ada)
+              if (poinCashUsed > 0) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.account_balance_wallet,
+                          size: 16,
+                          color: Colors.orange[700],
+                        ),
+                        const SizedBox(width: 6),
                         Text(
-                          "- ${formatRupiah(discount)}",
+                          "Poin Cash",
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green[700],
+                            fontSize: 13,
+                            color: Colors.orange[700],
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
+                    Text(
+                      "- ${formatRupiah(poinCashUsed)}",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange[700],
+                      ),
+                    ),
                   ],
+                ),
+              ],
 
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 10),
-                    child: Divider(height: 1),
-                  ),
-
-                  _buildDetailRow(
-                    "Total Pembayaran",
-                    formatRupiah(finalTotal),
-                    isBold: true,
-                  ),
-                ],
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Divider(height: 1),
               ),
-            ),
-          ],
+
+              // Total Pembayaran
+              _buildDetailRow(
+                "Total Pembayaran",
+                formatRupiah(finalTotal),
+                isBold: true,
+              ),
+            ],
+          ),
         ),
-      ),
+
+        // ✅ Info Box untuk penghematan
+        if (voucherDiscount > 0 || poinCashUsed > 0) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.green[200]!),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.green[700], size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Anda hemat ${formatRupiah(voucherDiscount + poinCashUsed)} dari transaksi ini',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.green[900],
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -547,12 +638,13 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
               width: 50,
               height: 50,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                width: 50,
-                height: 50,
-                color: Colors.grey[200],
-                child: Icon(Icons.image, color: Colors.grey[400]),
-              ),
+              errorBuilder:
+                  (_, __, ___) => Container(
+                    width: 50,
+                    height: 50,
+                    color: Colors.grey[200],
+                    child: Icon(Icons.image, color: Colors.grey[400]),
+                  ),
             ),
           ),
           const SizedBox(width: 10),
@@ -574,6 +666,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         Text(
           title,
           style: TextStyle(
+            fontSize: 13,
             fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -582,9 +675,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             value,
             textAlign: TextAlign.right,
             style: TextStyle(
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              fontSize: isBold ? 16 : 13,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
               color: isBold ? Colors.blue[700] : Colors.black,
-              fontSize: isBold ? 16 : 14,
             ),
           ),
         ),

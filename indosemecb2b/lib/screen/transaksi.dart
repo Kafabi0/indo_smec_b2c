@@ -1060,8 +1060,11 @@ class _TransaksiScreenState extends State<TransaksiScreen>
   }
 
   double _calculateFinalTotal(Transaction transaction) {
-    final discount = transaction.voucherDiscount ?? 0.0;
-    return transaction.totalPrice - discount;
+    // ✅ GUNAKAN GETTER finalTotal dari Transaction model
+    return transaction.finalTotal;
+
+    // Model Transaction sudah menghitung:
+    // finalTotal = totalPrice - voucherDiscount - poinCashUsed
   }
 
   // ⭐ Method untuk menampilkan dialog konfirmasi

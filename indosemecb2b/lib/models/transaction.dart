@@ -13,7 +13,8 @@ class Transaction {
   // ✅ TAMBAHKAN FIELD VOUCHER
   final String? voucherCode;
   final double? voucherDiscount;
-
+  final double? poinCashUsed;
+  final bool? isUsingPoinCash;
   Transaction({
     required this.id,
     required this.date,
@@ -26,6 +27,8 @@ class Transaction {
     this.metodePembayaran,
     this.voucherCode, // ✅ ADD
     this.voucherDiscount, // ✅ ADD
+    this.poinCashUsed, // ✅ ADD
+    this.isUsingPoinCash, // ✅ ADD
   });
 
   String get noTransaksi => id;
@@ -44,6 +47,8 @@ class Transaction {
       'metodePembayaran': metodePembayaran,
       'voucher_code': voucherCode, // ✅ SIMPAN VOUCHER
       'voucher_discount': voucherDiscount, // ✅ SIMPAN DISKON
+      'poin_cash_used': poinCashUsed, // ✅ SIMPAN
+      'is_using_poin_cash': isUsingPoinCash, // ✅ SIMPAN
     };
   }
 
@@ -68,13 +73,30 @@ class Transaction {
                   ? (map['voucher_discount'] as int).toDouble()
                   : (map['voucher_discount'] as double))
               : null, // ✅ LOAD DISKON
+      poinCashUsed: // ✅ LOAD
+          map['poin_cash_used'] != null
+              ? (map['poin_cash_used'] is int
+                  ? (map['poin_cash_used'] as int).toDouble()
+                  : (map['poin_cash_used'] as double))
+              : null,
+      isUsingPoinCash: map['is_using_poin_cash'] as bool?, // ✅ LOAD
     );
   }
 
   // ✅ METHOD UNTUK HITUNG TOTAL SETELAH DISKON
   double get finalTotal {
-    final discount = voucherDiscount ?? 0.0;
-    return totalPrice - discount;
+    final voucherDisc = voucherDiscount ?? 0.0;
+    final poinCash = poinCashUsed ?? 0.0;
+    return totalPrice - voucherDisc - poinCash;
+  }
+
+  double get subtotal {
+    return items.fold(0.0, (sum, item) => sum + item.totalPrice);
+  }
+
+  // ✅ Biaya pengiriman
+  double get shippingCost {
+    return totalPrice - subtotal; // Seharusnya 5000
   }
 
   // ✅ METHOD UNTUK CEK APAKAH PAKAI VOUCHER

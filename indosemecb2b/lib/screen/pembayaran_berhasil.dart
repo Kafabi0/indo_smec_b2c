@@ -8,7 +8,8 @@ class PaymentSuccessScreen extends StatelessWidget {
   final double totalPembayaran;
   final String metodePembayaran;
   final DateTime tanggal;
-  final double? voucherDiscount; // ✅ TAMBAHKAN
+  final double? voucherDiscount;
+  final double? poinCashUsed; // ✅ TAMBAHKAN
 
   const PaymentSuccessScreen({
     Key? key,
@@ -16,6 +17,7 @@ class PaymentSuccessScreen extends StatelessWidget {
     required this.metodePembayaran,
     required this.tanggal,
     this.voucherDiscount,
+    this.poinCashUsed, // ✅ TAMBAHKAN
   }) : super(key: key);
 
   String formatRupiah(double value) {
@@ -45,7 +47,6 @@ class PaymentSuccessScreen extends StatelessWidget {
             );
           },
         ),
-
         title: const Text(
           "Pembayaran Berhasil",
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
@@ -86,7 +87,6 @@ class PaymentSuccessScreen extends StatelessWidget {
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-
               child: ElevatedButton(
                 onPressed: () async {
                   final transactions =
@@ -95,24 +95,28 @@ class PaymentSuccessScreen extends StatelessWidget {
                   if (transactions.isNotEmpty) {
                     final latestTransaction = transactions.first;
 
-                    // ✅ KONVERSI Transaction ke Map DENGAN VOUCHER
+                    // ✅ KONVERSI Transaction ke Map LENGKAP
                     final transaksiMap = {
                       'no_transaksi': latestTransaction.id,
-                      'id': latestTransaction.id, // ✅ TAMBAHKAN id juga
+                      'id': latestTransaction.id,
                       'tanggal': latestTransaction.date,
-                      'date': latestTransaction.date, // ✅ TAMBAHKAN date juga
+                      'date': latestTransaction.date,
                       'status': latestTransaction.status,
                       'metode_pembayaran': metodePembayaran,
-                      // 'metodePembayaran': metodePembayaran, // ✅ Both variants
+                      'metodePembayaran': metodePembayaran,
                       'total_pembayaran': totalPembayaran,
-                      'totalPrice': latestTransaction.totalPrice, // ✅ TAMBAHKAN
-                      // ✅ VOUCHER FIELDS (PALING PENTING!)
+                      'totalPrice': latestTransaction.totalPrice,
+
+                      // ✅ VOUCHER FIELDS
                       'voucher_code': latestTransaction.voucherCode,
-                      'voucherCode':
-                          latestTransaction.voucherCode, // Both variants
+                      'voucherCode': latestTransaction.voucherCode,
                       'voucher_discount': latestTransaction.voucherDiscount,
-                      'voucherDiscount':
-                          latestTransaction.voucherDiscount, // Both variants
+                      'voucherDiscount': latestTransaction.voucherDiscount,
+
+                      // ✅ POIN CASH FIELDS (PENTING!)
+                      'poin_cash_used': latestTransaction.poinCashUsed,
+                      'poinCashUsed': latestTransaction.poinCashUsed,
+                      'is_using_poin_cash': latestTransaction.isUsingPoinCash,
 
                       'items':
                           latestTransaction.items
@@ -122,9 +126,9 @@ class PaymentSuccessScreen extends StatelessWidget {
                                   'name': item.name,
                                   'quantity': item.quantity,
                                   'harga': item.price,
-                                  'price': item.price, // ✅ TAMBAHKAN
+                                  'price': item.price,
                                   'image': item.imageUrl,
-                                  'imageUrl': item.imageUrl, // ✅ TAMBAHKAN
+                                  'imageUrl': item.imageUrl,
                                 },
                               )
                               .toList(),
@@ -132,32 +136,30 @@ class PaymentSuccessScreen extends StatelessWidget {
                           latestTransaction.alamat?['nama_penerima'] ??
                           latestTransaction.alamat?['nama'] ??
                           'N/A',
-                      'alamat':
-                          latestTransaction.alamat, // ✅ KIRIM FULL ALAMAT MAP
+                      'alamat': latestTransaction.alamat,
                       'metode_pengiriman':
                           latestTransaction.deliveryOption == 'xpress'
                               ? 'Xpress (Rp5.000)'
                               : 'Reguler (Rp5.000)',
-                      'deliveryOption':
-                          latestTransaction.deliveryOption, // ✅ TAMBAHKAN
+                      'deliveryOption': latestTransaction.deliveryOption,
                       'jadwal_pengiriman':
                           'Dikirim : ${DateFormat('EEEE, d MMM yyyy, HH:mm').format(latestTransaction.date)}',
                       'biaya_pengiriman': 5000.0,
                       'biaya_admin': 0.0,
                       'catatan_pengiriman': latestTransaction.catatanPengiriman,
-                      'catatanPengiriman':
-                          latestTransaction
-                              .catatanPengiriman, // ✅ Both variants
+                      'catatanPengiriman': latestTransaction.catatanPengiriman,
                     };
 
-                    // ✅ DEBUG: Print untuk verifikasi
+                    // ✅ DEBUG
                     print('🎟️ [PaymentSuccess] Sending to DetailPembayaran:');
                     print('   - voucher_code: ${transaksiMap['voucher_code']}');
                     print(
                       '   - voucher_discount: ${transaksiMap['voucher_discount']}',
                     );
+                    print(
+                      '   - poin_cash_used: ${transaksiMap['poin_cash_used']}',
+                    );
 
-                    // Cek apakah context masih valid sebelum navigation
                     if (context.mounted) {
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(
@@ -188,38 +190,6 @@ class PaymentSuccessScreen extends StatelessWidget {
                 ),
               ),
             ),
-
-            // SizedBox(height: 12),
-            // SizedBox(
-            //   width: double.infinity,
-
-            //   child: ElevatedButton(
-            //     onPressed:
-            //         () => Navigator.pushAndRemoveUntil(
-            //           context,
-            //           MaterialPageRoute(
-            //             builder: (context) => const MainNavigation(),
-            //           ),
-            //           (route) => false,
-            //         ),
-            //     style: ElevatedButton.styleFrom(
-            //       backgroundColor: const Color(0xFF1976D2),
-            //       padding: const EdgeInsets.symmetric(vertical: 14),
-            //       shape: RoundedRectangleBorder(
-            //         borderRadius: BorderRadius.circular(8),
-            //       ),
-            //     ),
-
-            //     child: const Text(
-            //       "Kembali Ke Beranda",
-            //       style: TextStyle(
-            //         color: Colors.white,
-            //         fontSize: 15,
-            //         fontWeight: FontWeight.w600,
-            //       ),
-            //     ),
-            //   ),
-            // ),
             const SizedBox(height: 24),
           ],
         ),
@@ -228,8 +198,11 @@ class PaymentSuccessScreen extends StatelessWidget {
   }
 
   Widget _buildSectionDetail() {
-    final subtotal = totalPembayaran - 5000; // Total - Ongkir
     final discount = voucherDiscount ?? 0.0;
+    final poinCash = poinCashUsed ?? 0.0;
+    final subtotal =
+        totalPembayaran - 5000 + discount + poinCash; // ✅ HITUNG ULANG
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -251,11 +224,10 @@ class PaymentSuccessScreen extends StatelessWidget {
           _buildDetailRow("Tanggal", DateFormat("d MMM yyyy").format(tanggal)),
           _buildDetailRow("Waktu", DateFormat("HH:mm").format(tanggal)),
           _buildDetailRow("Metode Pemesanan", "Reguler"),
-          _buildDetailRow(
-            "Subtotal Produk",
-            formatRupiah(totalPembayaran - 5000),
-          ), // ✅ TAMBAHKAN
-          _buildDetailRow("Biaya Pengiriman", "Rp5.000"), // ✅ TAMBAHKAN
+          _buildDetailRow("Subtotal Produk", formatRupiah(subtotal)),
+          _buildDetailRow("Biaya Pengiriman", "Rp5.000"),
+
+          // ✅ Diskon Voucher
           if (discount > 0) ...[
             _buildDetailRow(
               "Diskon Voucher",
@@ -263,13 +235,52 @@ class PaymentSuccessScreen extends StatelessWidget {
               color: Colors.green[700],
             ),
           ],
+
+          // ✅ Poin Cash
+          if (poinCash > 0) ...[
+            _buildDetailRow(
+              "Poin Cash",
+              "- ${formatRupiah(poinCash)}",
+              color: Colors.orange[700],
+            ),
+          ],
+
           _buildDetailRow("Metode Pembayaran", metodePembayaran),
           _buildDetailRow(
             "Total Pembayaran",
             formatRupiah(totalPembayaran),
             bold: true,
-            color: Colors.orange[800],
+            color: Colors.blue[800],
           ),
+
+          // ✅ Info Penghematan
+          if (discount > 0 || poinCash > 0) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.green[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green[700], size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Anda hemat ${formatRupiah(discount + poinCash)} dari transaksi ini',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.green[900],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

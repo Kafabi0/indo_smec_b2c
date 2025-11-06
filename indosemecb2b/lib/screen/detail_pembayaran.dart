@@ -27,19 +27,35 @@ class DetailPembayaranScreen extends StatelessWidget {
         : voucherDiscountRaw as double;
   }
 
+  double _convertToDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is int) return value.toDouble();
+    if (value is double) return value;
+    return 0.0;
+  }
+
+  double _hitungPoinCashUsed() {
+    final poinCashRaw =
+        transaksi['poin_cash_used'] ?? transaksi['poinCashUsed'];
+    if (poinCashRaw == null) return 0.0;
+
+    return poinCashRaw is int ? poinCashRaw.toDouble() : poinCashRaw as double;
+  }
+
   double _hitungTotalFinal() {
     final subtotal = _hitungSubtotal();
-    final biayaPengiriman =
-        (transaksi['biaya_pengiriman'] ?? 5000.0) is int
-            ? ((transaksi['biaya_pengiriman'] ?? 5000.0) as int).toDouble()
-            : (transaksi['biaya_pengiriman'] ?? 5000.0);
-    final biayaAdmin =
-        (transaksi['biaya_admin'] ?? 0.0) is int
-            ? ((transaksi['biaya_admin'] ?? 0.0) as int).toDouble()
-            : (transaksi['biaya_admin'] ?? 0.0);
+    final biayaPengiriman = _convertToDouble(
+      transaksi['biaya_pengiriman'] ?? 5000.0,
+    );
+    final biayaAdmin = _convertToDouble(transaksi['biaya_admin'] ?? 0.0);
     final voucherDiscount = _hitungVoucherDiscount();
+    final poinCashUsed = _hitungPoinCashUsed(); // ✅ TAMBAH
 
-    return subtotal + biayaPengiriman + biayaAdmin - voucherDiscount;
+    return subtotal +
+        biayaPengiriman +
+        biayaAdmin -
+        voucherDiscount -
+        poinCashUsed;
   }
 
   String formatTanggal(dynamic tanggal) {
@@ -416,30 +432,37 @@ class DetailPembayaranScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
+
                   _buildRincianRow(
                     'Metode Pembayaran',
-                    // Coba dari berbagai field yang mungkin ada
                     transaksi['metode_pembayaran'] ??
                         transaksi['metodePembayaran'] ??
                         transaksi['payment_method'] ??
                         transaksi['alamat']?['metode_pembayaran'] ??
-                        'Tidak Diketahui', // Default jika tidak ada
+                        'Tidak Diketahui',
                     showIcon: true,
                   ),
                   const SizedBox(height: 12),
-                  _buildRincianRow('Belanja Xpress', formatRupiah(subtotal)),
+
+                  _buildRincianRow('Subtotal', formatRupiah(_hitungSubtotal())),
                   const SizedBox(height: 8),
-                  _buildRincianRow('Subtotal', formatRupiah(subtotal)),
-                  const SizedBox(height: 8),
+
                   _buildRincianRow(
                     'Biaya Pengiriman',
-                    formatRupiah(transaksi['biaya_pengiriman'] ?? 5000.0),
+                    formatRupiah(
+                      _convertToDouble(transaksi['biaya_pengiriman'] ?? 5000.0),
+                    ),
                   ),
                   const SizedBox(height: 8),
+
                   _buildRincianRow(
                     'Biaya Admin',
-                    formatRupiah(transaksi['biaya_admin'] ?? 0.0),
+                    formatRupiah(
+                      _convertToDouble(transaksi['biaya_admin'] ?? 0.0),
+                    ),
                   ),
+
+                  // ✅ Diskon Voucher
                   if (transaksi['voucher_code'] != null &&
                       _hitungVoucherDiscount() > 0) ...[
                     const SizedBox(height: 8),
@@ -454,13 +477,26 @@ class DetailPembayaranScreen extends StatelessWidget {
                               color: Colors.green[700],
                             ),
                             const SizedBox(width: 6),
-                            Text(
-                              "Diskon Voucher",
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.green[700],
-                                fontWeight: FontWeight.w600,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Diskon Voucher",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.green[700],
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  transaksi['voucher_code'],
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey[600],
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -475,14 +511,86 @@ class DetailPembayaranScreen extends StatelessWidget {
                       ],
                     ),
                   ],
+
+                  // ✅ Poin Cash Used
+                  if (_hitungPoinCashUsed() > 0) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.account_balance_wallet,
+                              size: 16,
+                              color: Colors.orange[700],
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              "Poin Cash",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.orange[700],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          "- ${formatRupiah(_hitungPoinCashUsed())}",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
                   const SizedBox(height: 12),
                   const Divider(height: 1),
                   const SizedBox(height: 12),
+
                   _buildRincianRow(
                     'Total Pembayaran',
                     formatRupiah(_hitungTotalFinal()),
                     isBold: true,
                   ),
+
+                  // ✅ Info Box Penghematan
+                  if (_hitungVoucherDiscount() > 0 ||
+                      _hitungPoinCashUsed() > 0) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.check_circle,
+                            color: Colors.green[700],
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Anda hemat ${formatRupiah(_hitungVoucherDiscount() + _hitungPoinCashUsed())} dari transaksi ini',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green[900],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -593,6 +593,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
       'totalPrice': transaction.totalPrice,
       'voucher_code': transaction.voucherCode,
       'voucher_discount': transaction.voucherDiscount,
+      'is_using_poin_cash': transaction.isUsingPoinCash,
+      'poinCashUsed': transaction.poinCashUsed,
+      'poin_cash_used': transaction.poinCashUsed,
       'items':
           transaction.items
               .map(
