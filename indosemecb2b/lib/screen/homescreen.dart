@@ -2613,27 +2613,30 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               children: [
                 Container(
                   height: 100,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    child: Image.network(
-                      product.imageUrl ?? '',
-                      width: double.infinity,
-                      height: 100,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[200],
-                          child: Center(
-                            child: Icon(
-                              Icons.image_rounded,
-                              size: 40,
-                              color: Colors.grey[400],
+                  child: Hero( 
+                    tag: 'product_${product.id}',
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(12),
+                      ),
+                      child: Image.network(
+                        product.imageUrl ?? '',
+                        width: double.infinity,
+                        height: 100,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[200],
+                            child: Center(
+                              child: Icon(
+                                Icons.image_rounded,
+                                size: 40,
+                                color: Colors.grey[400],
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      )
                     ),
                   ),
                 ),
@@ -3162,26 +3165,29 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                     color: Colors.grey[200],
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      product.imageUrl ?? '',
-                                      height: 70,
-                                      width: 70,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (
-                                        context,
-                                        error,
-                                        stackTrace,
-                                      ) {
-                                        return Center(
-                                          child: Icon(
-                                            Icons.image_rounded,
-                                            size: 30,
-                                            color: Colors.grey[400],
-                                          ),
-                                        );
-                                      },
+                                  child: Hero(
+                                    tag: 'product_${product.id}',
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        product.imageUrl ?? '',
+                                        height: 70,
+                                        width: 70,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (
+                                          context,
+                                          error,
+                                          stackTrace,
+                                        ) {
+                                          return Center(
+                                            child: Icon(
+                                              Icons.image_rounded,
+                                              size: 30,
+                                              color: Colors.grey[400],
+                                            ),
+                                          );
+                                        },
+                                      )
                                     ),
                                   ),
                                 ),
@@ -3809,24 +3815,27 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         //   top: Radius.circular(16),
                         // ),
                       ),
-                      child: ClipRRect(
-                        // borderRadius: const BorderRadius.vertical(
-                        //   top: Radius.circular(16),
-                        // ),
-                        child: Image.network(
-                          product.imageUrl ?? '',
-                          height: 140,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Center(
-                              child: Icon(
-                                Icons.image,
-                                color: Colors.grey[400],
-                                size: 40,
-                              ),
-                            );
-                          },
+                      child: Hero( 
+                        tag: 'product_${product.id}',  
+                          child: ClipRRect(
+                          // borderRadius: const BorderRadius.vertical(
+                          //   top: Radius.circular(16),
+                          // ),
+                            child: Image.network(
+                            product.imageUrl ?? '',
+                            height: 140,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(
+                                child: Icon(
+                                  Icons.image,
+                                  color: Colors.grey[400],
+                                  size: 40,
+                                ),
+                              );
+                            },
+                          )
                         ),
                       ),
                     ),
