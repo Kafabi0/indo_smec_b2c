@@ -1420,6 +1420,82 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                 formatCurrency(subtotal.toInt()),
               ),
               _buildPdfTotalRow('Ongkos Kirim', formatCurrency(ongkir.toInt())),
+              if (transaction.voucherDiscount != null &&
+                  transaction.voucherDiscount! > 0) ...[
+                pw.SizedBox(height: 2),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Row(
+                      children: [
+                        pw.Container(
+                          width: 10,
+                          height: 10,
+                          decoration: pw.BoxDecoration(
+                            color: PdfColors.green700,
+                            shape: pw.BoxShape.circle,
+                          ),
+                        ),
+                        pw.SizedBox(width: 4),
+                        pw.Text(
+                          'Diskon Voucher',
+                          style: pw.TextStyle(
+                            fontSize: 7,
+                            color: PdfColors.green700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    pw.Text(
+                      '- ${formatCurrency(transaction.voucherDiscount!.toInt())}',
+                      style: pw.TextStyle(
+                        fontSize: 7,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.green700,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              if (transaction.poinCashUsed != null &&
+                  transaction.poinCashUsed! > 0) ...[
+                pw.SizedBox(height: 2),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Row(
+                      children: [
+                        pw.Container(
+                          width: 10,
+                          height: 10,
+                          decoration: pw.BoxDecoration(
+                            color: PdfColors.orange700,
+                            shape: pw.BoxShape.circle,
+                          ),
+                        ),
+                        pw.SizedBox(width: 4),
+                        pw.Text(
+                          'Poin Cash',
+                          style: pw.TextStyle(
+                            fontSize: 7,
+                            color: PdfColors.orange700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    pw.Text(
+                      '- ${formatCurrency(transaction.poinCashUsed!.toInt())}',
+                      style: pw.TextStyle(
+                        fontSize: 7,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.orange700,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
               pw.SizedBox(height: 3),
 
               // Total - lebih kecil
@@ -1682,6 +1758,10 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
   Widget _buildStrukItem(Transaction transaction) {
     final points = _calculatePoints(transaction.totalPrice);
     final isPoinCashUsage = transaction.deliveryOption == 'poin_cash_usage';
+    final totalVoucherDiscount = transaction.voucherDiscount ?? 0;
+    final totalPoinCashUsed = transaction.poinCashUsed ?? 0;
+    final totalSetelahDiskon =
+        transaction.totalPrice - totalVoucherDiscount - totalPoinCashUsed;
     final deliveryIcon =
         isPoinCashUsage
             ? Icons
@@ -1872,16 +1952,70 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                       style: TextStyle(color: Colors.grey[600], fontSize: 11),
                     ),
                     const SizedBox(height: 3),
-                    Text(
-                      formatCurrency(transaction.totalPrice.toInt()),
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color:
+
+                    // ✅ PERBAIKAN: Tampilkan total yang sudah terpotong
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Jika ada diskon, tampilkan harga asli yang dicoret
+                        if (!isPoinCashUsage &&
+                            (totalVoucherDiscount > 0 ||
+                                totalPoinCashUsed > 0)) ...[
+                          Text(
+                            formatCurrency(transaction.totalPrice.toInt()),
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 11,
+                              color: Colors.grey[400],
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                        ],
+
+                        // Total setelah diskon
+                        Text(
+                          formatCurrency(
                             isPoinCashUsage
-                                ? Colors.red[700]
-                                : Colors.black87, // ✅ Merah untuk penggunaan
-                      ),
+                                ? transaction.totalPrice.toInt()
+                                : totalSetelahDiskon
+                                    .toInt(), // ✅ GUNAKAN TOTAL SETELAH DISKON
+                          ),
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            color:
+                                isPoinCashUsage
+                                    ? Colors.red[700]
+                                    : Colors.black87,
+                          ),
+                        ),
+
+                        // Info hemat (opsional)
+                        if (!isPoinCashUsage &&
+                            (totalVoucherDiscount > 0 ||
+                                totalPoinCashUsed > 0)) ...[
+                          const SizedBox(height: 2),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green[50],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'Hemat ${formatCurrency((totalVoucherDiscount + totalPoinCashUsed).toInt())}',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green[700],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
@@ -2519,6 +2653,123 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                           'Ongkos Kirim',
                                           formatCurrency(ongkir.toInt()),
                                         ),
+                                        if (transaction.voucherDiscount !=
+                                                null &&
+                                            transaction.voucherDiscount! >
+                                                0) ...[
+                                          const SizedBox(height: 6),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              bottom: 6,
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.local_offer,
+                                                      size: 14,
+                                                      color: Colors.green[700],
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          'Diskon Voucher',
+                                                          style: GoogleFonts.robotoMono(
+                                                            fontSize: 11,
+                                                            color:
+                                                                Colors
+                                                                    .green[700],
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                        if (transaction
+                                                                .voucherCode !=
+                                                            null)
+                                                          Text(
+                                                            transaction
+                                                                .voucherCode!,
+                                                            style: GoogleFonts.robotoMono(
+                                                              fontSize: 9,
+                                                              color:
+                                                                  Colors
+                                                                      .grey[600],
+                                                            ),
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                                Text(
+                                                  '- ${formatCurrency(transaction.voucherDiscount!.toInt())}',
+                                                  style: GoogleFonts.robotoMono(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.green[700],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+
+                                        // ✅ TAMBAHKAN POIN CASH (jika digunakan)
+                                        if (transaction.poinCashUsed != null &&
+                                            transaction.poinCashUsed! > 0) ...[
+                                          const SizedBox(height: 6),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              bottom: 6,
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons
+                                                          .account_balance_wallet,
+                                                      size: 14,
+                                                      color: Colors.orange[700],
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      'Poin Cash',
+                                                      style:
+                                                          GoogleFonts.robotoMono(
+                                                            fontSize: 11,
+                                                            color:
+                                                                Colors
+                                                                    .orange[700],
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                Text(
+                                                  '- ${formatCurrency(transaction.poinCashUsed!.toInt())}',
+                                                  style: GoogleFonts.robotoMono(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.orange[700],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+
                                         const SizedBox(height: 8),
                                         Container(
                                           padding: const EdgeInsets.all(12),
@@ -2529,7 +2780,6 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                             ),
                                             border: Border.all(
                                               color: Colors.green[200]!,
-                                              width: 1,
                                             ),
                                           ),
                                           child: Row(
@@ -2545,8 +2795,15 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                                 ),
                                               ),
                                               Text(
+                                                // ✅ HITUNG TOTAL SETELAH DIKURANGI VOUCHER & POIN CASH
                                                 formatCurrency(
-                                                  transaction.totalPrice
+                                                  (transaction.totalPrice -
+                                                          (transaction
+                                                                  .voucherDiscount ??
+                                                              0) -
+                                                          (transaction
+                                                                  .poinCashUsed ??
+                                                              0))
                                                       .toInt(),
                                                 ),
                                                 style: GoogleFonts.robotoMono(
@@ -2558,6 +2815,87 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                             ],
                                           ),
                                         ),
+
+                                        // ✅ TAMBAHKAN INFO PENGHEMATAN (jika ada diskon atau poin cash)
+                                        if ((transaction.voucherDiscount !=
+                                                    null &&
+                                                transaction.voucherDiscount! >
+                                                    0) ||
+                                            (transaction.poinCashUsed != null &&
+                                                transaction.poinCashUsed! >
+                                                    0)) ...[
+                                          const SizedBox(height: 12),
+                                          Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.blue[50],
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: Colors.blue[200]!,
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.savings,
+                                                  color: Colors.blue[700],
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        'Total Penghematan',
+                                                        style:
+                                                            GoogleFonts.robotoMono(
+                                                              fontSize: 10,
+                                                              color:
+                                                                  Colors
+                                                                      .blue[900],
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        formatCurrency(
+                                                          ((transaction.voucherDiscount ??
+                                                                      0) +
+                                                                  (transaction
+                                                                          .poinCashUsed ??
+                                                                      0))
+                                                              .toInt(),
+                                                        ),
+                                                        style:
+                                                            GoogleFonts.poppins(
+                                                              fontSize: 16,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w900,
+                                                              color:
+                                                                  Colors
+                                                                      .blue[900],
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Icon(
+                                                  Icons.check_circle,
+                                                  color: Colors.green[600],
+                                                  size: 24,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ] else ...[
                                         // ✅ UNTUK POIN CASH - Tampilan Minus
                                         Container(
