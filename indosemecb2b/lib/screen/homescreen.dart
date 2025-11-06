@@ -515,6 +515,22 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         print(
             '📦 [HOME] displayedProducts (after category filter): ${displayedProducts.length}');
 
+      List<Product> baseProducts;
+      
+      if (selectedCategory == 'Semua') {
+        baseProducts = allProducts
+            .where((p) => allowedProductIds.contains(p.id))
+            .toList();
+      } else {
+        baseProducts = allProducts
+            .where((p) =>
+                allowedProductIds.contains(p.id) &&
+                p.category == selectedCategory)
+            .toList();
+      }
+
+      print('📦 [HOME] baseProducts (after category filter): ${baseProducts.length}');
+
         // Flash Sale
         print('\n🏠 [HOME] ========== LOADING FLASH SALE ==========');
         flashSaleProducts = _productService.getFlashSaleProductsByKoperasi(
@@ -522,6 +538,25 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         );
         print(
             '✅ [HOME] Flash sale products loaded: ${flashSaleProducts.length}');
+
+      final flashSaleProductIds = flashSaleProducts.map((p) => p.id).toSet();
+      
+      displayedProducts = baseProducts
+          .where((p) => !flashSaleProductIds.contains(p.id))
+          .toList();
+      
+      displayedProducts.sort((a, b) {
+        final aDiscount = a.discountPercentage ?? 0;
+        final bDiscount = b.discountPercentage ?? 0;
+        return bDiscount.compareTo(aDiscount);
+      });
+
+      // 👇 PRINT UNTUK PROMOSI KHUSUS ANDA
+      print('📦 [HOME] displayedProducts (exclude flash sale): ${displayedProducts.length}');
+      if (displayedProducts.isNotEmpty) {
+        print('   First 3 IDs: ${displayedProducts.take(3).map((p) => p.id).join(", ")}');
+        print('   First 3 Names: ${displayedProducts.take(3).map((p) => p.name).join(", ")}');
+      }
 
         // ⭐ Top Rated Products
         final filteredProducts =
@@ -550,6 +585,15 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               .toList();
         }
         print('📦 [HOME] freshProducts after filter: ${freshProducts.length}');
+
+        final excludeIds = {
+        ...flashSaleProductIds,
+        ...displayedProducts.take(10).map((p) => p.id),
+      };
+      
+      // 👇 PRINT UNTUK PRODUK TERBARU
+      print('\n🆕 [HOME] Preparing Newest Products...');
+      print('   Excluding ${excludeIds.length} products (Flash Sale + Promosi Khusus)');
 
         // ⭐ Newest Products
         if (selectedCategory == 'Semua') {
