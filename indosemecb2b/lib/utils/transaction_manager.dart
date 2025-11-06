@@ -22,7 +22,7 @@ class TransactionManager {
   }
 
   // Buat transaksi dari keranjang
-  static Future<bool> createTransaction({
+  static Future<String?> createTransaction({
     required List<CartItem> cartItems,
     required String deliveryOption,
     Map<String, dynamic>? alamat,
@@ -34,18 +34,16 @@ class TransactionManager {
       print('📦 Creating transaction...');
 
       final userLogin = await UserDataManager.getCurrentUserLogin();
-      print('👤 User login: $userLogin');
-
       if (userLogin == null) {
         print('❌ No user logged in');
-        return false;
+        return null;
       }
 
-      // Generate ID transaksi unik
+      // 🆔 Generate ID transaksi unik
       final transactionId = 'TRX${DateTime.now().millisecondsSinceEpoch}';
       print('🆔 Transaction ID: $transactionId');
 
-      // Convert CartItem ke TransactionItem
+      // 🛒 Konversi item keranjang ke item transaksi
       final items =
           cartItems.map((cartItem) {
             return TransactionItem(
@@ -55,28 +53,22 @@ class TransactionManager {
               quantity: cartItem.quantity,
               imageUrl: cartItem.imageUrl,
               category: cartItem.category,
-              
             );
           }).toList();
 
-      print('📦 Items count: ${items.length}');
-
-      // Hitung total
+      // 💰 Hitung total harga + ongkir tetap
       final total =
           cartItems.fold<double>(0.0, (sum, item) => sum + item.totalPrice) +
           5000.0;
 
-      print('💰 Total price: $total');
-
-      // ⭐ RANDOMIZE STATUS (jika tidak ada initialStatus)
+      // 🏷️ Tentukan status awal
       final status = initialStatus ?? _getRandomStatus();
-      print('📊 Transaction status (randomized): $status');
 
-      // ✅ Ambil metode pembayaran dari alamat jika tidak diberikan langsung
+      // 💳 Tentukan metode pembayaran
       final finalMetodePembayaran =
           metodePembayaran ?? alamat?['metode_pembayaran'] ?? 'Tidak Diketahui';
 
-      // ✅ AMBIL DATA VOUCHER DARI ALAMAT
+      // 🎟️ Voucher (jika ada)
       final voucherCode = alamat?['voucher_code'] as String?;
       final voucherDiscountRaw = alamat?['voucher_discount'];
       final voucherDiscount =
@@ -86,10 +78,7 @@ class TransactionManager {
                   : voucherDiscountRaw as double)
               : null;
 
-      print('🎟️ Voucher Code: $voucherCode');
-      print('💰 Voucher Discount: $voucherDiscount');
-
-      // Buat objek transaksi
+      // 🧾 Buat objek transaksi
       final transaction = Transaction(
         id: transactionId,
         date: DateTime.now(),
@@ -100,87 +89,34 @@ class TransactionManager {
         totalPrice: total,
         catatanPengiriman: catatanPengiriman,
         metodePembayaran: finalMetodePembayaran,
-        voucherCode: voucherCode, // ✅ SIMPAN VOUCHER CODE
-        voucherDiscount: voucherDiscount, // ✅ SIMPAN VOUCHER DISCOUNT
+        voucherCode: voucherCode,
+        voucherDiscount: voucherDiscount,
       );
 
-      print('✅ Transaction object created with status: $status');
-      print('💳 Metode pembayaran: $finalMetodePembayaran');
-      if (voucherCode != null) {
-        print(
-          '🎟️ Voucher applied: $voucherCode (Discount: Rp${voucherDiscount?.toStringAsFixed(0)})',
-        );
-      }
-      if (catatanPengiriman != null && catatanPengiriman.isNotEmpty) {
-        print('📝 Catatan pengiriman: $catatanPengiriman');
-      }
-
-      // Ambil daftar transaksi yang sudah ada
+      // 📂 Ambil transaksi lama
       final transactions = await getTransactions();
-      print('📋 Existing transactions: ${transactions.length}');
-
-      // Tambahkan transaksi baru di awal list
       transactions.insert(0, transaction);
-      print('➕ Transaction added to list. New count: ${transactions.length}');
 
-      // ✅ Convert ke Map dan tambahkan flags jika Poin Cash
-      final transactionMaps =
-          transactions.map((t) {
-            final tMap = t.toMap();
-
-            // ⭐ TAMBAHKAN FLAGS DARI ALAMAT (jika ada)
-            if (t.deliveryOption == 'poin_cash_usage' && t.alamat != null) {
-              if (t.alamat!['isPoinCashUsage'] == true) {
-                tMap['isPoinCashUsage'] = true;
-                tMap['amount'] = t.alamat!['amount'] ?? t.totalPrice;
-                print(
-                  '✅ Added Poin Cash flags: isPoinCashUsage=true, amount=${tMap['amount']}',
-                );
-              }
-            }
-
-            return tMap;
-          }).toList();
-
-      // Simpan ke storage
+      // 💾 Simpan ke storage
       final saved = await UserDataManager.saveTransactions(
         userLogin,
-        transactionMaps,
+        transactions.map((t) => t.toMap()).toList(),
       );
 
       print('💾 Save result: $saved');
 
-      // Verifikasi data tersimpan
+      // ✅ Kembalikan transactionId jika berhasil
       if (saved) {
-        final verifyTransactions = await UserDataManager.getTransactions(
-          userLogin,
-        );
-        print(
-          '✓ Verification - Transactions in storage: ${verifyTransactions.length}',
-        );
-
-        // ⭐ Verifikasi status & voucher tersimpan
-        final savedTransaction = verifyTransactions.firstWhere(
-          (t) => t['id'] == transactionId,
-          orElse: () => <String, dynamic>{},
-        );
-        if (savedTransaction.isNotEmpty) {
-          print('✓ Saved transaction status: ${savedTransaction['status']}');
-          print(
-            '✓ Saved metode pembayaran: ${savedTransaction['metodePembayaran']}',
-          );
-          print('✓ Saved voucher code: ${savedTransaction['voucher_code']}');
-          print(
-            '✓ Saved voucher discount: ${savedTransaction['voucher_discount']}',
-          );
-        }
+        print('✅ Transaction created successfully with ID: $transactionId');
+        return transactionId;
+      } else {
+        print('❌ Failed to save transaction');
+        return null;
       }
-
-      return saved;
-    } catch (e) {
+    } catch (e, st) {
       debugPrint('❌ Error creating transaction: $e');
-      debugPrint('Stack trace: ${StackTrace.current}');
-      return false;
+      debugPrint('Stack trace: $st');
+      return null;
     }
   }
 

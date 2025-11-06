@@ -169,8 +169,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
-      final transactionId = 'TRX${DateTime.now().millisecondsSinceEpoch}';
-
       // Extract alamat
       String penerimaName = 'N/A';
       String alamatLengkap = 'Alamat tidak tersedia';
@@ -244,7 +242,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
 
       // ✅ SIMPAN TRANSAKSI DENGAN METADATA POIN CASH
-      final alamatData = {
+      final alamatData = <String, dynamic>{
         'nama_penerima': penerimaName,
         'nomor_hp': nomorHP,
         'alamat_lengkap': alamatLengkap,
@@ -256,15 +254,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'metode_pembayaran': isKombinasi ? actualPaymentMethod : paymentType,
         'voucher_code': _selectedVoucher?.code,
         'voucher_discount': getVoucherDiscount(),
-
-        // ⭐ TAMBAHKAN METADATA POIN CASH (jika digunakan)
-        if (isPoinCashOnly || isKombinasi) ...{
-          'poin_cash_used': poinCashUsed,
-          'is_using_poin_cash': true,
-        },
       };
 
-      final success = await TransactionManager.createTransaction(
+      // ⭐ TAMBAHKAN METADATA POIN CASH (jika digunakan)
+      if (isPoinCashOnly || isKombinasi) {
+        alamatData['poin_cash_used'] = poinCashUsed;
+        alamatData['is_using_poin_cash'] = true;
+      }
+
+      // ⭐ DAPATKAN TRANSACTION ID DARI createTransaction
+      final transactionId = await TransactionManager.createTransaction(
         cartItems: _cartItems,
         deliveryOption: widget.deliveryOption,
         alamat: alamatData,
@@ -276,7 +275,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 : null, // Langsung selesai jika full Poin Cash
       );
 
-      if (success) {
+      // ✅ CEK APAKAH TRANSAKSI BERHASIL DIBUAT
+      if (transactionId != null && transactionId.isNotEmpty) {
+        print('✅ Transaction created with ID: $transactionId');
+
         // ✅ USE VOUCHER (MARK AS USED)
         if (_selectedVoucher != null) {
           await VoucherManager.useVoucher(_selectedVoucher!.id, transactionId);
@@ -290,7 +292,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         await CartManager.clearCart();
 
         // Prepare transaction data
-        final transactionData = {
+        final transactionData = <String, dynamic>{
           'no_transaksi': transactionId,
           'id': transactionId,
           'tanggal': DateTime.now().toIso8601String(),
@@ -330,13 +332,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           'catatanPengiriman': widget.catatanPengiriman ?? '',
           'delivery_note': widget.catatanPengiriman ?? '',
           'totalPrice': getTotal(),
-
-          // ⭐ TAMBAHKAN METADATA POIN CASH
-          if (isPoinCashOnly || isKombinasi) ...{
-            'poin_cash_used': poinCashUsed,
-            'is_using_poin_cash': true,
-          },
         };
+
+        // ⭐ TAMBAHKAN METADATA POIN CASH
+        if (isPoinCashOnly || isKombinasi) {
+          transactionData['poin_cash_used'] = poinCashUsed;
+          transactionData['is_using_poin_cash'] = true;
+        }
 
         if (mounted) {
           final firstProductImage =

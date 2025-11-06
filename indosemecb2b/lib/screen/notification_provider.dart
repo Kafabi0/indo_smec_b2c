@@ -228,9 +228,8 @@ class NotificationProvider with ChangeNotifier {
         'orderId': orderId,
         'deliveryTime': deliveryTime,
         'trackingData': {
-          'transaction_id':
-              transactionData?['transaction_id'] ??
-              'TXN-${DateTime.now().millisecondsSinceEpoch}',
+          'transaction_id': transactionData?['transaction_id'] ?? orderId,
+
           'order_id': orderId,
           'courier_name': transactionData?['courier_name'] ?? 'Kurir Sistem',
           'courier_id': transactionData?['courier_id'] ?? 'C001',
