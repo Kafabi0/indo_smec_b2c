@@ -201,7 +201,7 @@ class PaymentSuccessScreen extends StatelessWidget {
     final discount = voucherDiscount ?? 0.0;
     final poinCash = poinCashUsed ?? 0.0;
     final subtotal =
-        totalPembayaran - 5000 + discount + poinCash; // ✅ HITUNG ULANG
+        totalPembayaran + 5000 - discount - poinCash; // ✅ HITUNG ULANG
 
     return Container(
       decoration: BoxDecoration(

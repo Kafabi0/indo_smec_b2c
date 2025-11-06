@@ -144,6 +144,7 @@ class NotificationProvider with ChangeNotifier {
   }
 
   // ✅ PERBAIKAN KUNCI - Simpan semua data transaksi lengkap
+  // ✅ PERBAIKAN - Hitung total final yang sudah dikurangi poin cash
   Future<void> addPaymentSuccessNotification({
     required String orderId,
     required String paymentMethod,
@@ -154,7 +155,7 @@ class NotificationProvider with ChangeNotifier {
     print('💳 [NotifProvider] Creating payment notification...');
     print('   Order ID: $orderId');
     print('   Method: $paymentMethod');
-    print('   Total: $total');
+    print('   Total (before poin cash): $total');
 
     // ✅ DEBUG: Print transaction data yang diterima
     if (transactionData != null) {
@@ -162,7 +163,19 @@ class NotificationProvider with ChangeNotifier {
       print('   📋 Metode Pembayaran: ${transactionData['metode_pembayaran']}');
       print('   📋 Voucher: ${transactionData['voucher_code']}');
       print('   📋 Catatan: ${transactionData['catatan_pengiriman']}');
+      print('   📋 Poin Cash Used: ${transactionData['poin_cash_used']}');
     }
+
+    // ✅ HITUNG TOTAL FINAL (sudah dikurangi poin cash)
+    final poinCashUsed =
+        transactionData?['poin_cash_used'] ??
+        transactionData?['poinCashUsed'] ??
+        0.0;
+    final totalFinal =
+        total - (poinCashUsed is int ? poinCashUsed.toDouble() : poinCashUsed);
+
+    print('   💰 Poin Cash Used: $poinCashUsed');
+    print('   💰 Total Final (after poin cash): $totalFinal');
 
     // ✅ PASTIKAN transactionData LENGKAP dengan semua field yang dibutuhkan
     final completeTransactionData =
@@ -173,14 +186,19 @@ class NotificationProvider with ChangeNotifier {
               'no_transaksi': orderId,
               'id': orderId,
               'metode_pembayaran': paymentMethod,
-              'total_pembayaran': total,
+              'total_pembayaran':
+                  totalFinal, // ✅ Gunakan total yang sudah dikurangi
               'status': transactionData['status'] ?? 'Pembayaran Lunas',
+              'poin_cash_used': poinCashUsed, // ✅ Pastikan ada
+              'poinCashUsed':
+                  poinCashUsed, // ✅ Duplicate key untuk compatibility
             }
             : {
               'no_transaksi': orderId,
               'id': orderId,
               'metode_pembayaran': paymentMethod,
-              'total_pembayaran': total,
+              'total_pembayaran':
+                  totalFinal, // ✅ Gunakan total yang sudah dikurangi
               'status': 'Pembayaran Lunas',
             };
 
@@ -193,7 +211,7 @@ class NotificationProvider with ChangeNotifier {
       date: DateTime.now(),
       isRead: false,
       image: productImage,
-      total: total,
+      total: totalFinal, // ✅ Simpan total yang sudah dikurangi poin cash
       detailButtonText: 'Lihat Detail',
       orderId: orderId,
       transactionData: completeTransactionData, // ✅ Simpan data lengkap
@@ -201,6 +219,7 @@ class NotificationProvider with ChangeNotifier {
 
     await addNotification(notification);
     print('✅ [NotifProvider] Payment notification added with complete data');
+    print('   Total in notification: $totalFinal');
   }
 
   Future<void> addOrderShippedNotification({

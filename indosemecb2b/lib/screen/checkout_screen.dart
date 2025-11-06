@@ -340,6 +340,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           transactionData['is_using_poin_cash'] = true;
         }
 
+        // Di method _processCheckout, setelah transaksi berhasil (sekitar baris 336)
+
         if (mounted) {
           final firstProductImage =
               _cartItems.isNotEmpty ? _cartItems.first.imageUrl : null;
@@ -367,14 +369,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             transactionData: transactionData,
           );
 
+          // ✅ PERBAIKAN: Hitung total final dan kirim poinCashUsed
+          final totalFinal =
+              getTotal() - poinCashUsed; // Total setelah dikurangi poin cash
+
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
               builder:
                   (_) => PaymentSuccessScreen(
-                    totalPembayaran: getTotal(),
+                    totalPembayaran:
+                        totalFinal, // ✅ Total sudah dikurangi poin cash
                     metodePembayaran: paymentType,
                     tanggal: DateTime.now(),
                     voucherDiscount: getVoucherDiscount(),
+                    poinCashUsed: poinCashUsed, // ✅ TAMBAHKAN INI
                   ),
             ),
             (route) => false,
