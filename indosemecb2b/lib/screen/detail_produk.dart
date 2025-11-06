@@ -462,19 +462,22 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ),
                 child:
                     widget.product.imageUrl != null
-                        ? Image.network(
-                          widget.product.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Center(
-                              child: Icon(
-                                Icons.image,
-                                size: 100,
-                                color: Colors.grey[400],
-                              ),
-                            );
-                          },
-                        )
+                        ? Hero(
+                            tag: 'product_${widget.product.id}',
+                            child: Image.network(
+                              widget.product.imageUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Center(
+                                  child: Icon(
+                                    Icons.image,
+                                    size: 100,
+                                    color: Colors.grey[400],
+                                  ),
+                                );
+                              },
+                            ),
+                          )
                         : Icon(Icons.image, size: 100, color: Colors.grey[400]),
               ),
             ),
@@ -756,47 +759,41 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                             ),
                                             child: Stack(
                                               children: [
-                                                ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  child:
-                                                      product.imageUrl != null
-                                                          ? Image.network(
-                                                            product.imageUrl!,
-                                                            width:
-                                                                double.infinity,
-                                                            height:
-                                                                double.infinity,
-                                                            fit: BoxFit.cover,
-                                                            errorBuilder: (
-                                                              context,
-                                                              error,
-                                                              stackTrace,
-                                                            ) {
-                                                              return Center(
+                                                Hero(
+                                                  tag: 'product_${product.id}',
+                                                  child: ClipRRect(
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    child:
+                                                        product.imageUrl != null
+                                                            ? Image.network(
+                                                                product.imageUrl!,
+                                                                width: double.infinity,
+                                                                height: double.infinity,
+                                                                fit: BoxFit.cover,
+                                                                errorBuilder: (
+                                                                  context,
+                                                                  error,
+                                                                  stackTrace,
+                                                                ) {
+                                                                  return Center(
+                                                                    child: Icon(
+                                                                      Icons.image,
+                                                                      size: 40,
+                                                                      color: Colors.grey[400],
+                                                                    ),
+                                                                  );
+                                                                },
+                                                              )
+                                                            : Center(
                                                                 child: Icon(
                                                                   Icons.image,
                                                                   size: 40,
-                                                                  color:
-                                                                      Colors
-                                                                          .grey[400],
+                                                                  color: Colors.grey[400],
                                                                 ),
-                                                              );
-                                                            },
-                                                          )
-                                                          : Center(
-                                                            child: Icon(
-                                                              Icons.image,
-                                                              size: 40,
-                                                              color:
-                                                                  Colors
-                                                                      .grey[400],
-                                                            ),
-                                                          ),
-                                                ),
-                                                if (product
-                                                        .discountPercentage !=
-                                                    null)
+                                                              ),
+                                                  ),
+                                                ), 
+                                                if (product.discountPercentage != null)
                                                   Positioned(
                                                     top: 8,
                                                     left: 8,
