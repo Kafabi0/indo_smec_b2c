@@ -903,7 +903,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     children: [
                       if (_selectedVoucher != null)
                         Text(
-                          formatRupiah(getSubtotal() + getBiayaPengiriman()),
+                          formatRupiah(getSubtotal()),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],

@@ -81,6 +81,7 @@ class PaymentSuccessScreen extends StatelessWidget {
             const SizedBox(height: 24),
             _buildSectionDetail(),
             const SizedBox(height: 12),
+
             _buildPoinSection(),
             const SizedBox(height: 12),
             _buildHelpSection(),
@@ -200,8 +201,7 @@ class PaymentSuccessScreen extends StatelessWidget {
   Widget _buildSectionDetail() {
     final discount = voucherDiscount ?? 0.0;
     final poinCash = poinCashUsed ?? 0.0;
-    final subtotal =
-        totalPembayaran + 5000 - discount - poinCash; // ✅ HITUNG ULANG
+    final subtotal = totalPembayaran - discount - poinCash; // ✅ HITUNG ULANG
 
     return Container(
       decoration: BoxDecoration(
@@ -225,7 +225,7 @@ class PaymentSuccessScreen extends StatelessWidget {
           _buildDetailRow("Waktu", DateFormat("HH:mm").format(tanggal)),
           _buildDetailRow("Metode Pemesanan", "Reguler"),
           _buildDetailRow("Subtotal Produk", formatRupiah(subtotal)),
-          _buildDetailRow("Biaya Pengiriman", "Rp5.000"),
+          // _buildDetailRow("Biaya Pengiriman", "Rp5.000"),
 
           // ✅ Diskon Voucher
           if (discount > 0) ...[
@@ -251,6 +251,11 @@ class PaymentSuccessScreen extends StatelessWidget {
             formatRupiah(totalPembayaran),
             bold: true,
             color: Colors.blue[800],
+          ),
+          _buildDetailRow(
+            "note",
+            "Subtotal sudah termasuk biaya pengiriman",
+            fontSize: 11,
           ),
 
           // ✅ Info Penghematan
@@ -351,6 +356,7 @@ class PaymentSuccessScreen extends StatelessWidget {
     String value, {
     bool bold = false,
     Color? color,
+    double? fontSize, // ✅ UBAH dari TextStyle menjadi double?
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -364,7 +370,7 @@ class PaymentSuccessScreen extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: fontSize ?? 13, // ✅ Tambahkan default value
               color: color ?? Colors.black87,
               fontWeight: bold ? FontWeight.bold : FontWeight.w500,
             ),
