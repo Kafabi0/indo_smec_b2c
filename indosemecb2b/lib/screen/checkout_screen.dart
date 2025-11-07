@@ -169,7 +169,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
-      // Extract alamat
+      // Extract alamat data...
       String penerimaName = 'N/A';
       String alamatLengkap = 'Alamat tidak tersedia';
       String nomorHP = 'N/A';
@@ -183,28 +183,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         nomorHP = widget.alamat!['nomor_hp']?.toString() ?? 'N/A';
 
         final List<String> alamatParts = [];
-
         if (widget.alamat!['alamat_lengkap'] != null &&
             widget.alamat!['alamat_lengkap'].toString().isNotEmpty) {
           alamatParts.add(widget.alamat!['alamat_lengkap'].toString());
         }
-
         if (widget.alamat!['kelurahan'] != null) {
           alamatParts.add('Kel. ${widget.alamat!['kelurahan']}');
         }
-
         if (widget.alamat!['kecamatan'] != null) {
           alamatParts.add('Kec. ${widget.alamat!['kecamatan']}');
         }
-
         if (widget.alamat!['kota'] != null) {
           alamatParts.add(widget.alamat!['kota'].toString());
         }
-
         if (widget.alamat!['provinsi'] != null) {
           alamatParts.add(widget.alamat!['provinsi'].toString());
         }
-
         if (widget.alamat!['kodepos'] != null) {
           alamatParts.add(widget.alamat!['kodepos'].toString());
         }
@@ -214,7 +208,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         }
       }
 
-      // ✅ CEK APAKAH PEMBAYARAN KOMBINASI
+      // ✅ CEK APAKAH PEMBAYARAN KOMBINASI ATAU POIN CASH FULL
       bool isKombinasi = paymentType.startsWith('Kombinasi');
       bool isPoinCashOnly = paymentType == 'Poin Cash';
       double poinCashUsed = 0.0;
@@ -222,7 +216,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       if (isKombinasi) {
         // Extract jumlah Poin Cash yang digunakan
-        // Format: "Kombinasi: Poin Cash (Rp50000) + GoPay"
         final regex = RegExp(r'Poin Cash \(Rp(\d+)\)');
         final match = regex.firstMatch(paymentType);
 
@@ -230,7 +223,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           poinCashUsed = double.parse(match.group(1)!);
           print('💰 Poin Cash digunakan dalam kombinasi: Rp$poinCashUsed');
 
-          // Extract metode pembayaran sisanya
           final parts = paymentType.split(' + ');
           if (parts.length > 1) {
             actualPaymentMethod = parts[1];
@@ -241,7 +233,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         print('💰 Poin Cash digunakan (full): Rp$poinCashUsed');
       }
 
-      // ✅ SIMPAN TRANSAKSI DENGAN METADATA POIN CASH
+      // ✅ SIMPAN TRANSAKSI DENGAN METADATA
       final alamatData = <String, dynamic>{
         'nama_penerima': penerimaName,
         'nomor_hp': nomorHP,
@@ -262,24 +254,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         alamatData['is_using_poin_cash'] = true;
       }
 
-      // ⭐ DAPATKAN TRANSACTION ID DARI createTransaction
+      // ⭐ PENTING: Status SELALU "Diproses" (tidak ada yang langsung "Selesai")
       final transactionId = await TransactionManager.createTransaction(
         cartItems: _cartItems,
         deliveryOption: widget.deliveryOption,
         alamat: alamatData,
         catatanPengiriman: widget.catatanPengiriman,
         metodePembayaran: isKombinasi ? actualPaymentMethod : paymentType,
-        initialStatus:
-            isPoinCashOnly
-                ? 'Selesai'
-                : null, // Langsung selesai jika full Poin Cash
+        initialStatus: 'Diproses', // ⭐ SELALU "Diproses"
       );
 
       // ✅ CEK APAKAH TRANSAKSI BERHASIL DIBUAT
       if (transactionId != null && transactionId.isNotEmpty) {
         print('✅ Transaction created with ID: $transactionId');
 
-        // ✅ USE VOUCHER (MARK AS USED)
+        // ✅ USE VOUCHER
         if (_selectedVoucher != null) {
           await VoucherManager.useVoucher(_selectedVoucher!.id, transactionId);
         }
@@ -297,7 +286,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           'id': transactionId,
           'tanggal': DateTime.now().toIso8601String(),
           'date': DateTime.now().toIso8601String(),
-          'status': isPoinCashOnly ? 'Selesai' : 'Diproses',
+          'status': 'Diproses', // ⭐ SELALU "Diproses"
           'metode_pembayaran': paymentType,
           'voucher_code': _selectedVoucher?.code,
           'voucher_discount': getVoucherDiscount(),
@@ -340,8 +329,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           transactionData['is_using_poin_cash'] = true;
         }
 
-        // Di method _processCheckout, setelah transaksi berhasil (sekitar baris 336)
-
         if (mounted) {
           final firstProductImage =
               _cartItems.isNotEmpty ? _cartItems.first.imageUrl : null;
@@ -369,20 +356,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             transactionData: transactionData,
           );
 
-          // ✅ PERBAIKAN: Hitung total final dan kirim poinCashUsed
-          final totalFinal =
-              getTotal() - poinCashUsed; // Total setelah dikurangi poin cash
+          // ✅ HITUNG TOTAL FINAL
+          final totalFinal = getTotal() - poinCashUsed;
 
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
               builder:
                   (_) => PaymentSuccessScreen(
-                    totalPembayaran:
-                        totalFinal, // ✅ Total sudah dikurangi poin cash
+                    totalPembayaran: totalFinal,
                     metodePembayaran: paymentType,
                     tanggal: DateTime.now(),
                     voucherDiscount: getVoucherDiscount(),
-                    poinCashUsed: poinCashUsed, // ✅ TAMBAHKAN INI
+                    poinCashUsed: poinCashUsed,
                   ),
             ),
             (route) => false,
@@ -966,6 +951,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             return;
                           }
 
+                          // ⭐ STEP 1: Pilih metode pembayaran pertama
                           final selectedPayment = await Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -976,39 +962,43 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             ),
                           );
 
-                          if (selectedPayment != null && mounted) {
-                            // Cek apakah menggunakan kombinasi
-                            if (selectedPayment is Map) {
-                              final poinCashUsed =
-                                  selectedPayment['poinCashUsed'] ?? 0.0;
-                              final remaining =
-                                  selectedPayment['remaining'] ?? 0.0;
+                          if (selectedPayment == null || !mounted) return;
 
-                              if (remaining > 0) {
-                                // Masih ada sisa - perlu metode pembayaran tambahan
-                                final additionalPayment = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => PaymentMethodScreen(
-                                          totalPembayaran: remaining,
-                                        ),
-                                  ),
+                          // ⭐ STEP 2: Cek apakah menggunakan Poin Cash
+                          if (selectedPayment is Map) {
+                            final poinCashUsed =
+                                selectedPayment['poinCashUsed'] ?? 0.0;
+                            final remaining =
+                                selectedPayment['remaining'] ?? 0.0;
+                            final isFullPayment =
+                                selectedPayment['isFullPayment'] ?? false;
+
+                            if (isFullPayment) {
+                              // ✅ LUNAS DENGAN POIN CASH - Status tetap "Diproses"
+                              await _processCheckout('Poin Cash');
+                            } else if (remaining > 0) {
+                              // ✅ KOMBINASI - Pilih metode lain (BUKAN POIN CASH)
+                              final additionalPayment = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => PaymentMethodScreen(
+                                        totalPembayaran: remaining,
+                                        // ⭐ PASS FLAG agar Poin Cash tidak bisa dipilih lagi
+                                        isFromCombination: true,
+                                      ),
+                                ),
+                              );
+
+                              if (additionalPayment != null && mounted) {
+                                await _processCheckout(
+                                  'Kombinasi: Poin Cash (Rp${poinCashUsed.toInt()}) + $additionalPayment',
                                 );
-
-                                if (additionalPayment != null && mounted) {
-                                  await _processCheckout(
-                                    'Kombinasi: Poin Cash (Rp${poinCashUsed.toInt()}) + $additionalPayment',
-                                  );
-                                }
-                              } else {
-                                // Lunas dengan Poin Cash
-                                await _processCheckout('Poin Cash');
                               }
-                            } else {
-                              // Metode pembayaran biasa
-                              await _processCheckout(selectedPayment);
                             }
+                          } else {
+                            // ✅ Metode pembayaran biasa
+                            await _processCheckout(selectedPayment);
                           }
                         },
                 style: ElevatedButton.styleFrom(

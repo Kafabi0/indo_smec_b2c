@@ -13,10 +13,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class PaymentMethodScreen extends StatefulWidget {
   final double totalPembayaran;
+  final bool isFromCombination; // ⭐ FLAG BARU
 
-  const PaymentMethodScreen({Key? key, required this.totalPembayaran})
-    : assert(totalPembayaran > 0, 'Total pembayaran harus lebih dari 0'),
-      super(key: key);
+  const PaymentMethodScreen({
+    Key? key,
+    required this.totalPembayaran,
+    this.isFromCombination = false, // ⭐ DEFAULT FALSE
+  }) : assert(totalPembayaran > 0, 'Total pembayaran harus lebih dari 0'),
+       super(key: key);
 
   @override
   State<PaymentMethodScreen> createState() => _PaymentMethodScreenState();
@@ -98,7 +102,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     }
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Pilih Metode Pembayaran"),
+        title: Text(
+          widget.isFromCombination
+              ? "Pilih Metode Pembayaran Tambahan"
+              : "Pilih Metode Pembayaran",
+        ),
         backgroundColor: Colors.white,
         elevation: 1,
         iconTheme: const IconThemeData(color: Colors.black),
@@ -119,8 +127,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Total Pembayaran",
+                Text(
+                  widget.isFromCombination
+                      ? "Sisa Pembayaran"
+                      : "Total Pembayaran",
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 Text(
@@ -134,6 +144,35 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 24),
+
+          if (widget.isFromCombination) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange[300]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.warning_amber, color: Colors.orange[700]),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '⚠️ Poin Cash sudah digunakan. Pilih metode pembayaran LAIN untuk sisa pembayaran.',
+                      style: TextStyle(
+                        color: Colors.orange[900],
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
 
           const SizedBox(height: 24),
           if (_isSaldoKlikActive) ...[
@@ -158,15 +197,19 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             imageUrl:
                 "https://i.pinimg.com/736x/65/c4/1d/65c41db5a939f1e45c5f1ff1244689f5.jpg",
             title: "Poin Cash",
-            subtitle: "Saldo: ${formatCurrency(_poinCash.toInt())}",
+            subtitle:
+                widget.isFromCombination
+                    ? "❌ Tidak dapat digunakan lagi"
+                    : "Saldo: ${formatCurrency(_poinCash.toInt())}",
             badge:
-                _poinCash >= widget.totalPembayaran
-                    ? "Tersedia"
-                    : "Tidak Cukup",
+                widget.isFromCombination
+                    ? "Sudah Digunakan"
+                    : (_poinCash >= widget.totalPembayaran
+                        ? "Tersedia"
+                        : "Tidak Cukup"),
             paymentType: "Poin Cash",
             isEnabled:
-                _poinCash >
-                0, // Bisa dipakai meski tidak cukup (untuk potongan)
+                !widget.isFromCombination && _poinCash > 0, // ⭐ KEY LOGIC
           ),
 
           // E-Wallet Section
@@ -415,9 +458,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   ),
                   decoration: BoxDecoration(
                     color:
-                        badge == "Tidak Cukup"
+                        badge == "Tidak Cukup" || badge == "Sudah Digunakan"
                             ? Colors.red.shade100
-                            : Colors.orange.shade100,
+                            : (badge == "Tersedia"
+                                ? Colors.green.shade100
+                                : Colors.orange.shade100),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -426,9 +471,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color:
-                          badge == "Tidak Cukup"
+                          badge == "Tidak Cukup" || badge == "Sudah Digunakan"
                               ? Colors.red.shade800
-                              : Colors.orange.shade800,
+                              : (badge == "Tersedia"
+                                  ? Colors.green.shade800
+                                  : Colors.orange.shade800),
                     ),
                   ),
                 ),
@@ -478,7 +525,6 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                       final isPinSet = await PinManager.isPinSet(userLogin);
 
                       if (!isPinSet) {
-                        // Redirect ke pengaturan untuk set PIN
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(
@@ -490,6 +536,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                         );
                         return;
                       }
+
                       final double amountToUse =
                           _poinCash >= widget.totalPembayaran
                               ? widget.totalPembayaran
@@ -588,28 +635,42 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: Colors.green[50],
+                                      color:
+                                          remaining > 0
+                                              ? Colors.orange[50]
+                                              : Colors.green[50],
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
-                                        color: Colors.green[200]!,
+                                        color:
+                                            remaining > 0
+                                                ? Colors.orange[200]!
+                                                : Colors.green[200]!,
                                       ),
                                     ),
                                     child: Row(
                                       children: [
                                         Icon(
-                                          Icons.info_outline,
-                                          color: Colors.green[700],
+                                          remaining > 0
+                                              ? Icons.warning_amber
+                                              : Icons.info_outline,
+                                          color:
+                                              remaining > 0
+                                                  ? Colors.orange[700]
+                                                  : Colors.green[700],
                                           size: 20,
                                         ),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             remaining > 0
-                                                ? 'Anda perlu memilih metode pembayaran lain untuk sisa pembayaran'
-                                                : 'Pembayaran akan lunas dengan Poin Cash',
+                                                ? '⚠️ Poin Cash hanya bisa digunakan SEKALI. Anda perlu memilih metode pembayaran LAIN (bukan Poin Cash) untuk sisa pembayaran.'
+                                                : '✅ Pembayaran akan lunas dengan Poin Cash. Status transaksi akan "Diproses" sampai admin konfirmasi.',
                                             style: TextStyle(
                                               fontSize: 12,
-                                              color: Colors.green[900],
+                                              color:
+                                                  remaining > 0
+                                                      ? Colors.orange[900]
+                                                      : Colors.green[900],
                                             ),
                                           ),
                                         ),
@@ -715,7 +776,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                       await Future.delayed(const Duration(seconds: 1));
 
                       // Use Poin Cash
-                          'TRX${DateTime.now().millisecondsSinceEpoch}';
+                      'TRX${DateTime.now().millisecondsSinceEpoch}';
                       // ✅ SIMPLIFIED: Hanya validasi PIN & saldo
                       // Transaction save akan dilakukan di checkout.dart
                       final result =
@@ -730,12 +791,12 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
 
                       if (result['success'] == true) {
                         if (remaining > 0) {
-                          // Masih ada sisa, perlu metode pembayaran lain
+                          // ✅ MASIH ADA SISA - Pilih metode lain (BUKAN POIN CASH)
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  '✅ Poin Cash Rp${formatCurrency(amountToUse.toInt())} berhasil digunakan!\nSilakan pilih metode pembayaran untuk sisa Rp${formatCurrency(remaining.toInt())}',
+                                  '✅ Poin Cash ${formatCurrency(amountToUse.toInt())} berhasil!\nSekarang pilih metode pembayaran LAIN untuk sisa ${formatCurrency(remaining.toInt())}',
                                 ),
                                 backgroundColor: Colors.green,
                                 duration: const Duration(seconds: 4),
@@ -750,7 +811,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                             });
                           }
                         } else {
-                          // Lunas dengan Poin Cash
+                          // ✅ LUNAS DENGAN POIN CASH - Status tetap "Diproses"
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -761,10 +822,12 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                               ),
                             );
 
+                            // Return dengan flag full payment
                             Navigator.pop(context, {
                               'type': 'Poin Cash',
                               'poinCashUsed': amountToUse,
                               'remaining': 0.0,
+                              'isFullPayment': true, // ⭐ FLAG PENTING
                             });
                           }
                         }
