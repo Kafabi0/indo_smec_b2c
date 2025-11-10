@@ -45,7 +45,7 @@ class DetailPembayaranScreen extends StatelessWidget {
   double _hitungTotalFinal() {
     final subtotal = _hitungSubtotal();
     final biayaPengiriman = _convertToDouble(
-      transaksi['biaya_pengiriman'] ?? 5000.0,
+      transaksi['biaya_pengiriman'] ?? 0.0,
     );
     final biayaAdmin = _convertToDouble(transaksi['biaya_admin'] ?? 0.0);
     final voucherDiscount = _hitungVoucherDiscount();
@@ -114,9 +114,9 @@ class DetailPembayaranScreen extends StatelessWidget {
   double _hitungTotal() {
     final subtotal = _hitungSubtotal();
     final biayaPengiriman =
-        (transaksi['biaya_pengiriman'] ?? 5000.0) is int
-            ? ((transaksi['biaya_pengiriman'] ?? 5000.0) as int).toDouble()
-            : (transaksi['biaya_pengiriman'] ?? 5000.0);
+        (transaksi['biaya_pengiriman'] ?? 0.0) is int
+            ? ((transaksi['biaya_pengiriman'] ?? 0.0) as int).toDouble()
+            : (transaksi['biaya_pengiriman'] ?? 0.0);
     final biayaAdmin =
         (transaksi['biaya_admin'] ?? 0.0) is int
             ? ((transaksi['biaya_admin'] ?? 0.0) as int).toDouble()

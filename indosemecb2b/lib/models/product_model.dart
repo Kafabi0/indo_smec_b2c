@@ -10,6 +10,8 @@ class Product {
   final String? storeName;
   final String? storeDistance;
   final String? imageUrl;
+  final int? minOrderQty; // ✅ TAMBAH: Minimum order quantity
+  final String? unit;
 
   Product({
     required this.id,
@@ -23,6 +25,8 @@ class Product {
     this.storeName,
     this.storeDistance,
     this.imageUrl, // ✅ tambahkan ini
+    this.minOrderQty, // ✅ TAMBAH
+    this.unit = 'pcs',
   });
 
   // Hitung persentase diskon

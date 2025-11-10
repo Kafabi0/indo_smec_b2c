@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/models/koperasi_model.dart';
 import 'package:indosemecb2b/screen/fair_klik_screen.dart';
+import 'package:indosemecb2b/services/koperasi_service.dart';
 import 'package:intl/intl.dart';
 import 'package:indosemecb2b/screen/checkout_screen.dart';
 import 'package:indosemecb2b/screen/favorit.dart';
@@ -95,9 +97,64 @@ class CartScreenState extends State<CartScreen> with RouteAware {
     print('👤 [CART] Current user: $userLogin');
 
     if (userLogin != null) {
-      // ⭐ GUNAKAN getSelectedAlamat untuk mendapatkan alamat terpilih
+      // ⭐ Get selected alamat
       final selectedAlamat = await UserDataManager.getSelectedAlamat(userLogin);
-      final cartItems = await CartManager.getCartItems();
+
+      // ⭐ Get nearby koperasi untuk alamat ini
+      final List<Koperasi> nearbyKoperasi = [];
+      if (selectedAlamat != null) {
+        final koperasiList = KoperasiService.getAllKoperasi();
+
+        String normalize(String text) {
+          return text
+              .toLowerCase()
+              .trim()
+              .replaceAll(RegExp(r'\s+'), ' ')
+              .replaceAll(RegExp(r'[^\w\s]'), '')
+              .replaceAll(
+                RegExp(
+                  r'^(kecamatan|kelurahan|kota|kabupaten|desa)\s+',
+                  caseSensitive: false,
+                ),
+                '',
+              );
+        }
+
+        final kelurahan = normalize(
+          (selectedAlamat['kelurahan'] ?? '').toString(),
+        );
+        final kecamatan = normalize(
+          (selectedAlamat['kecamatan'] ?? '').toString(),
+        );
+        final kota = normalize((selectedAlamat['kota'] ?? '').toString());
+
+        for (var k in koperasiList) {
+          final kKelurahan = normalize(k.kelurahan);
+          final kKecamatan = normalize(k.kecamatan);
+          final kKota = normalize(k.kota);
+
+          if ((kKelurahan == kelurahan && kKecamatan == kecamatan) ||
+              (kKelurahan == kelurahan) ||
+              (kKecamatan == kecamatan && kKota == kota)) {
+            nearbyKoperasi.add(k);
+          }
+        }
+      }
+
+      // ⭐ Get allowed product IDs from koperasi
+      final Set<String> allowedProductIds = {};
+      for (var koperasi in nearbyKoperasi) {
+        allowedProductIds.addAll(koperasi.productIds);
+      }
+
+      print('🏪 [CART] Found ${nearbyKoperasi.length} nearby koperasi');
+      print('📦 [CART] Allowed products: ${allowedProductIds.length}');
+
+      // ⭐ Get cart items (filtered by allowed products)
+      final cartItems = await CartManager.getCartItems(
+        allowedProductIds:
+            allowedProductIds.isNotEmpty ? allowedProductIds.toList() : null,
+      );
 
       setState(() {
         _currentUserLogin = userLogin;
@@ -107,7 +164,7 @@ class CartScreenState extends State<CartScreen> with RouteAware {
       });
 
       print('✅ [CART] Alamat loaded: ${selectedAlamat?['label']}');
-      print('📦 [CART] Cart items: ${cartItems.length}');
+      print('📦 [CART] Cart items (filtered): ${cartItems.length}');
     } else {
       print('❌ [CART] No user logged in');
       setState(() {
@@ -166,6 +223,8 @@ class CartScreenState extends State<CartScreen> with RouteAware {
     }
   }
 
+  // lib/screen/cart_screen.dart
+
   void _handleCheckout() {
     if (_savedAlamat == null) {
       _showAlamatKosongDialog();
@@ -182,143 +241,275 @@ class CartScreenState extends State<CartScreen> with RouteAware {
       return;
     }
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    // ✅ VALIDASI MINIMUM ORDER (SUDAH BENAR)
+    final itemsBelowMinimum =
+        _cartItems.where((item) => !item.meetsMinimumOrder).toList();
+
+    if (itemsBelowMinimum.isNotEmpty) {
+      _showMinimumOrderDialog(itemsBelowMinimum);
+      return;
+    }
+
+    // Lanjut ke checkout
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => CheckoutScreen(
+              alamat: _savedAlamat,
+              deliveryOption: "reguler",
+              catatanPengiriman: _catatanPengiriman,
+            ),
       ),
-      builder: (_) => _buildDeliveryOptionsSheet(),
     );
   }
 
-  Widget _buildDeliveryOptionsSheet() {
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
+  // ✅ DIALOG MINIMUM ORDER
+  void _showMinimumOrderDialog(List<CartItem> itemsBelowMinimum) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.orange[700],
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Minimum Pembelian',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Tipe Pemesanan",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _optionButton(
-                        label: "Pesan Antar",
-                        icon: Icons.delivery_dining,
-                        isActive: selectedDeliveryType == "antar",
-                        onTap:
-                            () =>
-                                setState(() => selectedDeliveryType = "antar"),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  "Pilih salah satu tipe pengiriman",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  'Beberapa produk belum memenuhi minimum pembelian:',
+                  style: TextStyle(fontSize: 14, height: 1.5),
                 ),
                 const SizedBox(height: 12),
-                _radioShipping(
-                  title: "Reguler - Pilih Waktu (Rp5.000)",
-                  subtitle: selectedRegulerTime ?? "Pilih jadwal pengiriman",
-                  value: "reguler",
-                  groupValue: selectedShipping,
-                  onChanged: (v) {
-                    setState(() => selectedShipping = v!);
-                    _openTimePickerSheet();
-                  },
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.grey[300],
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(
-                          "Batal",
-                          style: TextStyle(color: Colors.blue[700]),
-                        ),
-                      ),
+                ...itemsBelowMinimum.map((item) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange[200]!),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[700],
-                          disabledBackgroundColor: Colors.grey[300],
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: () {
-                          if (selectedShipping == "reguler" &&
-                              selectedRegulerTime == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  "Silakan pilih waktu pengiriman dulu",
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
                                 ),
-                                backgroundColor: Colors.red,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            );
-
-                            return;
-                          }
-
-                          Navigator.pop(context);
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (_) => CheckoutScreen(
-                                    alamat: _savedAlamat,
-                                    deliveryOption:
-                                        "$selectedShipping - $selectedRegulerTime",
-                                    catatanPengiriman:
-                                        _catatanPengiriman, // ✅ PASS CATATAN
-                                  ),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          "Konfirmasi",
-                          style: TextStyle(color: Colors.white),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Saat ini: ${item.quantity} ${item.unit}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange[700],
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'Min: ${item.minOrderQty} ${item.unit}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                  );
+                }),
               ],
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Mengerti',
+                  style: TextStyle(
+                    color: Colors.blue[700],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-        );
-      },
     );
   }
+
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     shape: const RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  //     ),
+  //     builder: (_) => _buildDeliveryOptionsSheet(),
+  //   );
+  // }
+
+  // Widget _buildDeliveryOptionsSheet() {
+  //   return StatefulBuilder(
+  //     builder: (context, setState) {
+  //       return Container(
+  //         decoration: const BoxDecoration(
+  //           color: Colors.white,
+  //           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  //         ),
+  //         child: Padding(
+  //           padding: const EdgeInsets.all(20),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               const Text(
+  //                 "Tipe Pemesanan",
+  //                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //               ),
+  //               const SizedBox(height: 16),
+  //               Row(
+  //                 children: [
+  //                   Expanded(
+  //                     child: _optionButton(
+  //                       label: "Pesan Antar",
+  //                       icon: Icons.delivery_dining,
+  //                       isActive: selectedDeliveryType == "antar",
+  //                       onTap:
+  //                           () =>
+  //                               setState(() => selectedDeliveryType = "antar"),
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //               const SizedBox(height: 24),
+  //               const Text(
+  //                 "Pilih salah satu tipe pengiriman",
+  //                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+  //               ),
+  //               const SizedBox(height: 12),
+  //               _radioShipping(
+  //                 title: "Reguler - Pilih Waktu (Rp5.000)",
+  //                 subtitle: selectedRegulerTime ?? "Pilih jadwal pengiriman",
+  //                 value: "reguler",
+  //                 groupValue: selectedShipping,
+  //                 onChanged: (v) {
+  //                   setState(() => selectedShipping = v!);
+  //                   _openTimePickerSheet();
+  //                 },
+  //               ),
+  //               const SizedBox(height: 24),
+  //               Row(
+  //                 children: [
+  //                   Expanded(
+  //                     child: ElevatedButton(
+  //                       style: ElevatedButton.styleFrom(
+  //                         backgroundColor: Colors.white,
+  //                         disabledBackgroundColor: Colors.grey[300],
+  //                         padding: const EdgeInsets.symmetric(vertical: 16),
+  //                         shape: RoundedRectangleBorder(
+  //                           borderRadius: BorderRadius.circular(8),
+  //                         ),
+  //                       ),
+  //                       onPressed: () => Navigator.pop(context),
+  //                       child: Text(
+  //                         "Batal",
+  //                         style: TextStyle(color: Colors.blue[700]),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                   const SizedBox(width: 10),
+  //                   Expanded(
+  //                     child: ElevatedButton(
+  //                       style: ElevatedButton.styleFrom(
+  //                         backgroundColor: Colors.blue[700],
+  //                         disabledBackgroundColor: Colors.grey[300],
+  //                         padding: const EdgeInsets.symmetric(vertical: 16),
+  //                         shape: RoundedRectangleBorder(
+  //                           borderRadius: BorderRadius.circular(8),
+  //                         ),
+  //                       ),
+  //                       onPressed: () {
+  //                         if (selectedShipping == "reguler" &&
+  //                             selectedRegulerTime == null) {
+  //                           ScaffoldMessenger.of(context).showSnackBar(
+  //                             const SnackBar(
+  //                               content: Text(
+  //                                 "Silakan pilih waktu pengiriman dulu",
+  //                               ),
+  //                               backgroundColor: Colors.red,
+  //                             ),
+  //                           );
+
+  //                           return;
+  //                         }
+
+  //                         Navigator.pop(context);
+
+  //                         Navigator.push(
+  //                           context,
+  //                           MaterialPageRoute(
+  //                             builder:
+  //                                 (_) => CheckoutScreen(
+  //                                   alamat: _savedAlamat,
+  //                                   deliveryOption:
+  //                                       "$selectedShipping - $selectedRegulerTime",
+  //                                   catatanPengiriman:
+  //                                       _catatanPengiriman, // ✅ PASS CATATAN
+  //                                 ),
+  //                           ),
+  //                         );
+  //                       },
+  //                       child: const Text(
+  //                         "Konfirmasi",
+  //                         style: TextStyle(color: Colors.white),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //               const SizedBox(height: 16),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   void _showAlamatKosongDialog() {
     showDialog(
@@ -1178,224 +1369,273 @@ class CartScreenState extends State<CartScreen> with RouteAware {
     );
   }
 
+  // Di _buildCartItemCard, tambahkan indicator minimum order
   Widget _buildCartItemCard(CartItem item) {
     print('🛒 [CART] Product ID: ${item.productId}');
     final currentPrice = _productService.getProductPrice(item.productId);
+    final hasMinOrder = item.minOrderQty != null && item.minOrderQty! > 0;
+    final meetsMinOrder = item.meetsMinimumOrder;
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(
+          color:
+              hasMinOrder && !meetsMinOrder
+                  ? Colors.orange[300]!
+                  : Colors.grey[300]!,
+          width: hasMinOrder && !meetsMinOrder ? 2 : 1,
+        ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.grey[200]!, Colors.grey[100]!],
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                item.imageUrl ?? '',
-                height: 80,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image
+              Container(
                 width: 80,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Center(
-                    child: Icon(
-                      Icons.image_rounded,
-                      size: 40,
-                      color: Colors.grey[400],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.name,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
+                height: 80,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.grey[200]!, Colors.grey[100]!],
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Text(
-                      _formatPrice(currentPrice),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue[800],
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    if (item.originalPrice != null)
-                      Text(
-                        _formatPrice(item.originalPrice!),
-                        style: TextStyle(
-                          fontSize: 12,
-                          decoration: TextDecoration.lineThrough,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    item.imageUrl ?? '',
+                    height: 80,
+                    width: 80,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Icon(
+                          Icons.image_rounded,
+                          size: 40,
                           color: Colors.grey[400],
                         ),
-                      ),
-                  ],
+                      );
+                    },
+                  ),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+              const SizedBox(width: 12),
+
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ⭐ BADGE DISKON DENGAN FLASH SALE SUPPORT
-                    Builder(
-                      builder: (context) {
-                        // Cek apakah produk sedang flash sale
-                        final isFlashSale =
-                            FlashSaleService.isProductOnFlashSale(
-                              item.productId,
-                            );
-                        final flashDiscount =
-                            FlashSaleService.getFlashDiscountPercentage(
-                              item.productId,
-                            );
-
-                        // Tentukan diskon yang akan ditampilkan
-                        final discountToShow =
-                            isFlashSale
-                                ? flashDiscount
-                                : item.discountPercentage;
-
-                        if (discountToShow != null) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isFlashSale ? Colors.red : Colors.red[50],
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // Icon api hanya muncul saat flash sale
-                                if (isFlashSale) ...[
-                                  Icon(
-                                    Icons.local_fire_department,
-                                    color: Colors.white,
-                                    size: 10,
-                                  ),
-                                  SizedBox(width: 2),
-                                ],
-                                Text(
-                                  '$discountToShow%',
-                                  style: TextStyle(
-                                    color:
-                                        isFlashSale ? Colors.white : Colors.red,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                        return SizedBox.shrink();
-                      },
+                    Text(
+                      item.name,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const Spacer(),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
-                        GestureDetector(
-                          onTap: () => _removeItem(item.productId),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.red[50],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Icon(
-                              Icons.delete_outline,
-                              size: 20,
-                              color: Colors.red[400],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () {
-                            if (item.quantity > 1) {
-                              _updateQuantity(
-                                item.productId,
-                                item.quantity - 1,
-                              );
-                            }
-                          },
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Icon(
-                              Icons.remove,
-                              size: 18,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
                         Text(
-                          '${item.quantity}',
-                          style: const TextStyle(
+                          _formatPrice(currentPrice),
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            color: Colors.blue[800],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        GestureDetector(
-                          onTap: () {
-                            _updateQuantity(item.productId, item.quantity + 1);
-                          },
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: Colors.blue[700],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Icon(
-                              Icons.add,
-                              size: 18,
-                              color: Colors.white,
+                        const SizedBox(width: 6),
+                        if (item.originalPrice != null)
+                          Text(
+                            _formatPrice(item.originalPrice!),
+                            style: TextStyle(
+                              fontSize: 12,
+                              decoration: TextDecoration.lineThrough,
+                              color: Colors.grey[400],
                             ),
                           ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Badge diskon
+                        Builder(
+                          builder: (context) {
+                            final isFlashSale =
+                                FlashSaleService.isProductOnFlashSale(
+                                  item.productId,
+                                );
+                            final flashDiscount =
+                                FlashSaleService.getFlashDiscountPercentage(
+                                  item.productId,
+                                );
+                            final discountToShow =
+                                isFlashSale
+                                    ? flashDiscount
+                                    : item.discountPercentage;
+
+                            if (discountToShow != null) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      isFlashSale ? Colors.red : Colors.red[50],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (isFlashSale) ...[
+                                      Icon(
+                                        Icons.local_fire_department,
+                                        color: Colors.white,
+                                        size: 10,
+                                      ),
+                                      SizedBox(width: 2),
+                                    ],
+                                    Text(
+                                      '$discountToShow%',
+                                      style: TextStyle(
+                                        color:
+                                            isFlashSale
+                                                ? Colors.white
+                                                : Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                            return SizedBox.shrink();
+                          },
+                        ),
+                        const Spacer(),
+
+                        // Quantity controls
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => _removeItem(item.productId),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.red[50],
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Icon(
+                                  Icons.delete_outline,
+                                  size: 20,
+                                  color: Colors.red[400],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () {
+                                if (item.quantity > 1) {
+                                  _updateQuantity(
+                                    item.productId,
+                                    item.quantity - 1,
+                                  );
+                                }
+                              },
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(
+                                  Icons.remove,
+                                  size: 18,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              '${item.quantity}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            GestureDetector(
+                              onTap: () {
+                                _updateQuantity(
+                                  item.productId,
+                                  item.quantity + 1,
+                                );
+                              },
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[700],
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(
+                                  Icons.add,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+
+          // ✅ WARNING MINIMUM ORDER
+          if (hasMinOrder && !meetsMinOrder) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, size: 18, color: Colors.orange[700]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Minimal pembelian: ${item.minOrderQty} ${item.unit}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.orange[900],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

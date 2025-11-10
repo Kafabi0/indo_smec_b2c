@@ -136,7 +136,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   double getSubtotal() =>
       _cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
 
-  double getBiayaPengiriman() => 5000.0;
+  double getBiayaPengiriman() => 0.0;
 
   // ✅ CALCULATE DISCOUNT FROM VOUCHER
   double getVoucherDiscount() {
@@ -309,12 +309,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           'alamat': alamatLengkap,
           'metode_pengiriman':
               widget.deliveryOption.contains('xpress')
-                  ? 'Xpress (Rp5.000)'
-                  : 'Reguler (Rp5.000)',
+                  ? 'Xpress (Gratis)'
+                  : 'Reguler (Gratis)',
           'deliveryOption': widget.deliveryOption,
           'jadwal_pengiriman':
               'Dikirim : ${DateFormat('EEEE, d MMM yyyy, HH:mm', 'id_ID').format(DateTime.now())}',
-          'biaya_pengiriman': 5000.0,
+          'biaya_pengiriman': 0.0,
           'biaya_admin': 0.0,
           'delivery_option': widget.deliveryOption,
           'catatan_pengiriman': widget.catatanPengiriman ?? '',

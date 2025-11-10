@@ -140,12 +140,12 @@ class PaymentSuccessScreen extends StatelessWidget {
                       'alamat': latestTransaction.alamat,
                       'metode_pengiriman':
                           latestTransaction.deliveryOption == 'xpress'
-                              ? 'Xpress (Rp5.000)'
-                              : 'Reguler (Rp5.000)',
+                              ? 'Xpress (Gratis)'
+                              : 'Reguler (Gratis)',
                       'deliveryOption': latestTransaction.deliveryOption,
                       'jadwal_pengiriman':
                           'Dikirim : ${DateFormat('EEEE, d MMM yyyy, HH:mm').format(latestTransaction.date)}',
-                      'biaya_pengiriman': 5000.0,
+                      'biaya_pengiriman': 0.0,
                       'biaya_admin': 0.0,
                       'catatan_pengiriman': latestTransaction.catatanPengiriman,
                       'catatanPengiriman': latestTransaction.catatanPengiriman,
@@ -252,11 +252,11 @@ class PaymentSuccessScreen extends StatelessWidget {
             bold: true,
             color: Colors.blue[800],
           ),
-          _buildDetailRow(
-            "note",
-            "Subtotal sudah termasuk biaya pengiriman",
-            fontSize: 11,
-          ),
+          // _buildDetailRow(
+          //   "note",
+          //   "Subtotal sudah termasuk biaya pengiriman",
+          //   fontSize: 11,
+          // ),
 
           // ✅ Info Penghematan
           if (discount > 0 || poinCash > 0) ...[

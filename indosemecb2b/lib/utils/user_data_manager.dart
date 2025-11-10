@@ -1,6 +1,7 @@
 // lib/utils/user_data_manager.dart
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 class UserDataManager {
   // Ganti nama key supaya bisa menampung email / no telepon
@@ -89,7 +90,6 @@ class UserDataManager {
       return [];
     }
   }
-  // utils/user_data_manager.dart
 
   static Future<bool> setSelectedAlamatIndex(
     String userEmail,
@@ -171,7 +171,7 @@ class UserDataManager {
     }
   }
 
-  // ==================== KERANJANG ====================
+  // ==================== KERANJANG (LEGACY - Single Cart) ====================
   static Future<bool> saveCart(
     String loginValue,
     List<Map<String, dynamic>> cartItems,
@@ -197,6 +197,146 @@ class UserDataManager {
     } catch (e) {
       print('Error getting cart: $e');
       return [];
+    }
+  }
+
+  // ==================== KERANJANG (NEW - Per Location) ====================
+
+  /// ✅ Save cart specific to location
+  /// locationKey format: "kelurahan_kecamatan_kota" (normalized, lowercase, underscore)
+  static Future<bool> saveCartByLocation(
+    String loginValue,
+    String locationKey,
+    List<Map<String, dynamic>> cartItems,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Generate unique key: user_[encoded]_cart_location_[locationKey]
+      final encoded = base64Encode(utf8.encode(loginValue));
+      final key = 'user_${encoded}_cart_location_$locationKey';
+
+      debugPrint('💾 [UserDataManager] Saving cart to location key: $key');
+      debugPrint('💾 [UserDataManager] Cart items count: ${cartItems.length}');
+
+      final success = await prefs.setString(key, jsonEncode(cartItems));
+
+      if (success) {
+        debugPrint('✅ [UserDataManager] Cart saved successfully');
+      } else {
+        debugPrint('❌ [UserDataManager] Failed to save cart');
+      }
+
+      return success;
+    } catch (e) {
+      debugPrint('❌ [UserDataManager] Error saving cart by location: $e');
+      return false;
+    }
+  }
+
+  /// ✅ Get cart specific to location
+  static Future<List<Map<String, dynamic>>> getCartByLocation(
+    String loginValue,
+    String locationKey,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Generate same unique key
+      final encoded = base64Encode(utf8.encode(loginValue));
+      final key = 'user_${encoded}_cart_location_$locationKey';
+
+      debugPrint('📂 [UserDataManager] Loading cart from location key: $key');
+
+      final jsonString = prefs.getString(key);
+
+      if (jsonString == null || jsonString.isEmpty) {
+        debugPrint('📭 [UserDataManager] No cart found for this location');
+        return [];
+      }
+
+      final List decoded = jsonDecode(jsonString);
+      final cartItems = decoded.map((e) => e as Map<String, dynamic>).toList();
+
+      debugPrint('✅ [UserDataManager] Loaded ${cartItems.length} cart items');
+
+      return cartItems;
+    } catch (e) {
+      debugPrint('❌ [UserDataManager] Error getting cart by location: $e');
+      return [];
+    }
+  }
+
+  /// ✅ Get all cart keys for a user (untuk debugging atau migration)
+  static Future<List<String>> getAllCartKeys(String loginValue) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = base64Encode(utf8.encode(loginValue));
+      final prefix = 'user_${encoded}_cart_location_';
+
+      final allKeys = prefs.getKeys();
+      final cartKeys =
+          allKeys
+              .where((key) => key.startsWith(prefix))
+              .map((key) => key.replaceFirst(prefix, ''))
+              .toList();
+
+      debugPrint(
+        '🔑 [UserDataManager] Found ${cartKeys.length} cart locations for user',
+      );
+      for (var key in cartKeys) {
+        debugPrint('   - Location: $key');
+      }
+
+      return cartKeys;
+    } catch (e) {
+      debugPrint('❌ [UserDataManager] Error getting all cart keys: $e');
+      return [];
+    }
+  }
+
+  /// ✅ Clear cart for specific location
+  static Future<bool> clearCartByLocation(
+    String loginValue,
+    String locationKey,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = base64Encode(utf8.encode(loginValue));
+      final key = 'user_${encoded}_cart_location_$locationKey';
+
+      debugPrint(
+        '🗑️ [UserDataManager] Clearing cart for location: $locationKey',
+      );
+
+      return await prefs.remove(key);
+    } catch (e) {
+      debugPrint('❌ [UserDataManager] Error clearing cart by location: $e');
+      return false;
+    }
+  }
+
+  /// ✅ Clear all carts for a user (all locations)
+  static Future<bool> clearAllCarts(String loginValue) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = base64Encode(utf8.encode(loginValue));
+      final prefix = 'user_${encoded}_cart_location_';
+
+      final allKeys = prefs.getKeys();
+      final cartKeys = allKeys.where((key) => key.startsWith(prefix)).toList();
+
+      debugPrint(
+        '🗑️ [UserDataManager] Clearing ${cartKeys.length} cart locations',
+      );
+
+      for (var key in cartKeys) {
+        await prefs.remove(key);
+      }
+
+      debugPrint('✅ [UserDataManager] All carts cleared');
+      return true;
+    } catch (e) {
+      debugPrint('❌ [UserDataManager] Error clearing all carts: $e');
+      return false;
     }
   }
 
@@ -231,27 +371,7 @@ class UserDataManager {
     }
   }
 
-  // ==================== UTILITY ====================
-  static Future<void> clearUserData(String loginValue) async {
-    final prefs = await SharedPreferences.getInstance();
-    final keys = prefs.getKeys();
-    final encoded = base64Encode(utf8.encode(loginValue));
-    for (var key in keys) {
-      if (key.contains('user_${encoded}_')) {
-        await prefs.remove(key);
-      }
-    }
-  }
-
-  static Future<void> debugPrintAllKeys() async {
-    final prefs = await SharedPreferences.getInstance();
-    print('=== ALL STORED KEYS ===');
-    for (var key in prefs.getKeys()) {
-      print(key);
-    }
-    print('======================');
-  }
-
+  // ==================== NOTIFICATIONS ====================
   static Future<bool> saveNotifications(
     String loginValue,
     List<Map<String, dynamic>> notifications,
@@ -288,6 +408,56 @@ class UserDataManager {
     } catch (e) {
       print('❌ Error getting notifications: $e');
       return [];
+    }
+  }
+
+  // ==================== UTILITY ====================
+  static Future<void> clearUserData(String loginValue) async {
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys();
+    final encoded = base64Encode(utf8.encode(loginValue));
+    for (var key in keys) {
+      if (key.contains('user_${encoded}_')) {
+        await prefs.remove(key);
+      }
+    }
+  }
+
+  static Future<void> debugPrintAllKeys() async {
+    final prefs = await SharedPreferences.getInstance();
+    print('=== ALL STORED KEYS ===');
+    for (var key in prefs.getKeys()) {
+      print(key);
+    }
+    print('======================');
+  }
+
+  /// ✅ Debug: Print all carts for a user
+  static Future<void> debugPrintUserCarts(String loginValue) async {
+    try {
+      final cartKeys = await getAllCartKeys(loginValue);
+
+      print('\n📦 [DEBUG] ========== USER CARTS ==========');
+      print('👤 User: $loginValue');
+      print('🛒 Total cart locations: ${cartKeys.length}');
+
+      if (cartKeys.isEmpty) {
+        print('📭 No carts found');
+      } else {
+        for (var locationKey in cartKeys) {
+          final cartItems = await getCartByLocation(loginValue, locationKey);
+          print('\n📍 Location: $locationKey');
+          print('   Items: ${cartItems.length}');
+
+          for (var item in cartItems) {
+            print('   - ${item['name']} (qty: ${item['quantity']})');
+          }
+        }
+      }
+
+      print('==========================================\n');
+    } catch (e) {
+      print('❌ Error debugging user carts: $e');
     }
   }
 }

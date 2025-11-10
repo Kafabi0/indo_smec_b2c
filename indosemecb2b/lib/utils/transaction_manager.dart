@@ -57,7 +57,7 @@ class TransactionManager {
         0.0,
         (sum, item) => sum + item.totalPrice,
       );
-      final shipping = 5000.0;
+      final shipping = 0.0;
       final totalBeforeDiscount = subtotal + shipping;
 
       // ✅ Ambil data voucher dan poin cash dari alamat
