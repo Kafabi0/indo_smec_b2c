@@ -49,10 +49,13 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool isXpressSelected = true;
   String? selectedSubCategory;
   bool get hasSelectedAddress {
-    return isLoggedIn &&
-        userEmail.isNotEmpty &&
-        _savedAlamat != null &&
-        _listAlamat.isNotEmpty;
+    // ⭐ HANYA CEK JIKA USER SUDAH LOGIN
+    if (!isLoggedIn || userEmail.isEmpty) {
+      return true; // ✅ Guest user selalu bisa lihat produk
+    }
+
+    // User sudah login → cek alamat
+    return _savedAlamat != null && _listAlamat.isNotEmpty;
   }
 
   // Data produk & stores
@@ -140,7 +143,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
       if (mounted) {
         setState(() {
-          // Trigger rebuild untuk update harga
+          _isLoadingLocation = false;
         });
       }
     });
@@ -415,12 +418,17 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       await _loadAlamatData();
       await _loadPoinFromTransactions();
     } else {
-      print('❌ [HOME] User is not logged in');
+      print('❌ [HOME] User is not logged in - showing all products');
       setState(() {
         favoriteStatus = {};
         _savedAlamat = null;
         _totalPoinUMKM = 0;
         _totalPoinCash = 0;
+
+        // ✅ GUEST USER: Tampilkan semua produk (tidak filter koperasi)
+        _userLocation = null;
+        _nearbyKoperasi = [];
+        _isLoadingLocation = false; // ✅ Stop loading
       });
     }
   }
@@ -434,10 +442,26 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     print('🔍 [HOME] _loadAlamatData() dipanggil');
     print('📧 [HOME] userEmail: $userEmail');
 
-    if (userEmail.isNotEmpty) {
+    // ✅ Validasi awal
+    if (userEmail.isEmpty) {
+      print('⚠️ [HOME] userEmail kosong, tidak bisa load alamat');
+      if (mounted) {
+        setState(() {
+          _listAlamat = [];
+          _selectedAlamatIndex = 0;
+          _savedAlamat = null;
+          _userLocation = null;
+          _nearbyKoperasi = [];
+          _isLoadingLocation = false; // ✅ STOP LOADING
+        });
+      }
+      return;
+    }
+
+    try {
       print('⏳ [HOME] Mengambil alamat dari UserDataManager...');
 
-      // ⭐ Ambil alamat yang sedang dipilih
+      // Ambil alamat yang sedang dipilih
       final alamatList = await UserDataManager.getAlamatList(userEmail);
       final selectedIndex = await UserDataManager.getSelectedAlamatIndex(
         userEmail,
@@ -446,22 +470,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       print('📦 [HOME] Alamat list length: ${alamatList.length}');
       print('🎯 [HOME] Selected index: $selectedIndex');
 
-      if (alamatList.isNotEmpty) {
-        final validIndex =
-            selectedIndex < alamatList.length ? selectedIndex : 0;
-        print('✅ [HOME] Alamat terpilih: ${alamatList[validIndex]['label']}');
-
-        if (mounted) {
-          setState(() {
-            _listAlamat = alamatList;
-            _selectedAlamatIndex = validIndex;
-            _savedAlamat = alamatList[validIndex];
-          });
-
-          // ⭐ UPDATE LOKASI DARI ALAMAT YANG DIPILIH
-          await _updateLocationFromAddress(_savedAlamat!);
-        }
-      } else {
+      if (alamatList.isEmpty) {
         print('❌ [HOME] Tidak ada alamat tersimpan');
         if (mounted) {
           setState(() {
@@ -470,11 +479,41 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             _savedAlamat = null;
             _userLocation = null;
             _nearbyKoperasi = [];
+            _isLoadingLocation = false; // ✅ STOP LOADING
           });
         }
+        return;
       }
-    } else {
-      print('⚠️ [HOME] userEmail kosong, tidak bisa load alamat');
+
+      // Ada alamat, proses normal
+      final validIndex = selectedIndex < alamatList.length ? selectedIndex : 0;
+      print('✅ [HOME] Alamat terpilih: ${alamatList[validIndex]['label']}');
+
+      if (mounted) {
+        setState(() {
+          _listAlamat = alamatList;
+          _selectedAlamatIndex = validIndex;
+          _savedAlamat = alamatList[validIndex];
+        });
+
+        // ⭐ UPDATE LOKASI DARI ALAMAT YANG DIPILIH
+        await _updateLocationFromAddress(_savedAlamat!);
+      }
+    } catch (e, stackTrace) {
+      print('❌ [HOME] Error in _loadAlamatData: $e');
+      print('📜 [HOME] Stack: $stackTrace');
+
+      // ✅ CRITICAL FIX: Set loading false jika error
+      if (mounted) {
+        setState(() {
+          _listAlamat = [];
+          _selectedAlamatIndex = 0;
+          _savedAlamat = null;
+          _userLocation = null;
+          _nearbyKoperasi = [];
+          _isLoadingLocation = false; // ✅ STOP LOADING
+        });
+      }
     }
   }
 
@@ -490,10 +529,71 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     try {
       print('🔄 [HOME] ========== _loadData START ==========');
+      print('📍 [HOME] Is logged in: $isLoggedIn');
       print('📍 [HOME] Nearby koperasi count: ${_nearbyKoperasi.length}');
       print('🏷️ [HOME] Selected category: $selectedCategory');
 
-      // ✅ CRITICAL: If no koperasi, clear all products
+      // ✅ CRITICAL: Jika user belum login, tampilkan SEMUA produk
+      if (!isLoggedIn || userEmail.isEmpty) {
+        print('👤 [HOME] GUEST USER - Loading ALL products');
+
+        if (selectedCategory == 'Semua') {
+          displayedProducts = _productService.getAllProducts();
+        } else {
+          displayedProducts = _productService.getProductsByCategory(
+            selectedCategory,
+          );
+        }
+
+        flashSaleProducts = _productService.getActiveFlashSaleProducts();
+
+        final allProducts = _productService.getAllProducts();
+
+        if (selectedCategory == 'Semua') {
+          topRatedProducts = List<Product>.from(allProducts)
+            ..sort((a, b) => b.rating.compareTo(a.rating));
+
+          freshProducts = _productService.getFreshProducts().toList();
+          newestProducts = allProducts;
+          fruitAndVeggies = _productService.getFruitAndVeggies().toList();
+        } else {
+          final categoryProducts =
+              allProducts.where((p) => p.category == selectedCategory).toList();
+
+          topRatedProducts = List<Product>.from(categoryProducts)
+            ..sort((a, b) => b.rating.compareTo(a.rating));
+
+          freshProducts =
+              _productService
+                  .getFreshProducts()
+                  .where((p) => p.category == selectedCategory)
+                  .toList();
+
+          newestProducts = categoryProducts;
+
+          if (selectedCategory == 'Grocery' || selectedCategory == 'Food') {
+            fruitAndVeggies = _productService.getFruitAndVeggies().toList();
+          } else {
+            fruitAndVeggies = [];
+          }
+        }
+
+        categoryStores = _productService.getStoresByCategory(selectedCategory);
+        subCategories = _productService.getSubCategories(selectedCategory);
+        flagshipStore = _productService.getFlagshipStore(selectedCategory);
+
+        print('✅ [HOME] Guest user - All products loaded');
+        print('📊 [HOME] Total products: ${displayedProducts.length}');
+
+        if (mounted) setState(() {});
+
+        setState(() {
+          _isLoadingData = false;
+        });
+        return;
+      }
+
+      // ✅ User sudah login tapi belum ada koperasi → clear products
       if (_nearbyKoperasi.isEmpty) {
         print('❌ [HOME] NO KOPERASI FOUND - CLEARING ALL PRODUCTS');
 
@@ -517,6 +617,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         return;
       }
 
+      // ✅ User sudah login dan ada koperasi → filter products
       if (_nearbyKoperasi.isNotEmpty) {
         // Kumpulkan semua productIds dari koperasi yang match
         final Set<String> allowedProductIds = {};
@@ -594,18 +695,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           return bDiscount.compareTo(aDiscount);
         });
 
-        // 👇 PRINT UNTUK PROMOSI KHUSUS ANDA
         print(
           '📦 [HOME] displayedProducts (exclude flash sale): ${displayedProducts.length}',
         );
-        if (displayedProducts.isNotEmpty) {
-          print(
-            '   First 3 IDs: ${displayedProducts.take(3).map((p) => p.id).join(", ")}',
-          );
-          print(
-            '   First 3 Names: ${displayedProducts.take(3).map((p) => p.name).join(", ")}',
-          );
-        }
 
         // ⭐ Top Rated Products
         final filteredProducts =
@@ -643,7 +735,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ...displayedProducts.take(10).map((p) => p.id),
         };
 
-        // 👇 PRINT UNTUK PRODUK TERBARU
         print('\n🆕 [HOME] Preparing Newest Products...');
         print(
           '   Excluding ${excludeIds.length} products (Flash Sale + Promosi Khusus)',
@@ -676,49 +767,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         }
 
         print('📦 [HOME] fruitAndVeggies: ${fruitAndVeggies.length}');
-      } else {
-        // ⚠️ Tidak ada koperasi match
-        print(
-          '⚠️ [HOME] No matching koperasi, showing all products by category',
-        );
-
-        displayedProducts =
-            selectedCategory == 'Semua'
-                ? _productService.getAllProducts()
-                : _productService.getProductsByCategory(selectedCategory);
-
-        flashSaleProducts = _productService.getActiveFlashSaleProducts();
-
-        final allProducts = _productService.getAllProducts();
-
-        if (selectedCategory == 'Semua') {
-          topRatedProducts = List<Product>.from(allProducts)
-            ..sort((a, b) => b.rating.compareTo(a.rating));
-
-          freshProducts = _productService.getFreshProducts().toList();
-          newestProducts = allProducts;
-          fruitAndVeggies = _productService.getFruitAndVeggies().toList();
-        } else {
-          final categoryProducts =
-              allProducts.where((p) => p.category == selectedCategory).toList();
-
-          topRatedProducts = List<Product>.from(categoryProducts)
-            ..sort((a, b) => b.rating.compareTo(a.rating));
-
-          freshProducts =
-              _productService
-                  .getFreshProducts()
-                  .where((p) => p.category == selectedCategory)
-                  .toList();
-
-          newestProducts = categoryProducts;
-
-          if (selectedCategory == 'Grocery' || selectedCategory == 'Food') {
-            fruitAndVeggies = _productService.getFruitAndVeggies().toList();
-          } else {
-            fruitAndVeggies = [];
-          }
-        }
       }
 
       // Load stores & subcategories
@@ -1455,12 +1503,70 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             _buildLoginArea(),
             const SizedBox(height: 8),
 
-            // ⭐ KONDISI UTAMA: CEK APAKAH ADA ALAMAT TERPILIH
-            if (!hasSelectedAddress) ...[
-              // ❌ BELUM ADA ALAMAT → TAMPILKAN NO ADDRESS VIEW
+            // ⭐ KONDISI UTAMA: 3 STATE
+            if (!isLoggedIn || userEmail.isEmpty) ...[
+              // ========================================
+              // 👤 STATE 1: GUEST USER → SEMUA PRODUK
+              // ========================================
+              if (isDefaultLayout) ...[
+                const SizedBox(height: 4),
+
+                _buildSectionHeader(
+                  'FLASH SALE ${_getFlashSaleTimeRange()}',
+                  hasTimer: true,
+                ),
+
+                _buildFlashSaleSection(),
+                const SizedBox(height: 20),
+                _buildPromoBanner(),
+                const SizedBox(height: 20),
+                _buildSectionHeader(
+                  'Promosi Khusus Anda',
+                  products: displayedProducts,
+                ),
+
+                _buildProductGrid(displayedProducts.take(10).toList()),
+                const SizedBox(height: 20),
+                _buildSectionHeader(
+                  'Produk Rating Tertinggi',
+                  products: topRatedProducts,
+                ),
+                _buildProductGrid(topRatedProducts.take(10).toList()),
+                const SizedBox(height: 20),
+                _buildSectionHeader('Produk Segar', products: freshProducts),
+                _buildProductGrid(freshProducts.take(10).toList()),
+                const SizedBox(height: 20),
+                _buildSectionHeader('Produk Terbaru', products: newestProducts),
+                _buildProductGrid(newestProducts.take(10).toList()),
+                const SizedBox(height: 20),
+                _buildSectionHeader('Buah & Sayur', products: fruitAndVeggies),
+                _buildProductGrid(fruitAndVeggies.take(10).toList()),
+              ] else ...[
+                if (subCategories.isNotEmpty) ...[
+                  _buildCategoryShoppingSection(),
+                  const SizedBox(height: 8),
+                  _buildSubCategoryIndicator(),
+                  const SizedBox(height: 12),
+                ],
+
+                _buildSectionHeader('Nikmati Promonya!'),
+                _buildProductGrid(displayedProducts.take(10).toList()),
+                const SizedBox(height: 20),
+                _buildSectionHeader(
+                  'Rekomendasi Khusus Untukmu',
+                  showSeeAll: false,
+                ),
+                _buildRecommendationList(displayedProducts),
+              ],
+            ] else if (!hasSelectedAddress) ...[
+              // ========================================
+              // ❌ STATE 2: LOGIN TAPI BELUM ADA ALAMAT
+              // ========================================
               _buildNoAddressView(),
             ] else ...[
-              // ✅ SUDAH ADA ALAMAT → TAMPILKAN PRODUK NORMAL
+              // ========================================
+              // ✅ STATE 3: LOGIN DAN ADA ALAMAT → KOPERASI
+              // ========================================
               if (isDefaultLayout) ...[
                 const SizedBox(height: 4),
 
@@ -1559,9 +1665,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
             const SizedBox(height: 12),
 
-            // Deskripsi
+            // Deskripsi dengan nama user
             Text(
-              'Tambahkan alamat pengiriman untuk melihat produk UMKM di sekitar Anda',
+              'Hai ${userEmail.split('@').first}! Tambahkan alamat untuk melihat produk UMKM di sekitar Anda',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[600],
@@ -1983,64 +2089,77 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               if (!isLoggedIn) ...[
                 // ⭐ TAMPILKAN TOMBOL LOGIN YANG LEBIH MENARIK
                 Expanded(
-                  child: Container(
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.blue[600]!, Colors.blue[700]!],
+                  child: GestureDetector(
+                    onTap: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LoginPage(),
+                        ),
+                      );
+                      if (result == true || mounted) {
+                        _checkLoginStatus();
+                      }
+                    },
+                    child: Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.blue[600]!, Colors.blue[700]!],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.blue.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.person_outline,
+                              color: Colors.white,
+                              size: 24,
+                            ),
                           ),
-                          child: Icon(
-                            Icons.person_outline,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Login untuk Berbelanja',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Dapatkan produk UMKM terdekat',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios,
                             color: Colors.white,
-                            size: 24,
+                            size: 16,
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Login untuk Berbelanja',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                'Dapatkan produk UMKM terdekat',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -2105,8 +2224,37 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ],
           ),
 
-          // Info Koperasi (tetap sama seperti sebelumnya)
-          if (_nearbyKoperasi.isNotEmpty) ...[
+          // ✅ INFO BANNER UNTUK GUEST USER
+          if (!isLoggedIn) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue[700], size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Anda melihat semua produk. Login untuk produk UMKM terdekat!',
+                      style: TextStyle(
+                        color: Colors.blue[800],
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // Info Koperasi (hanya tampil jika user sudah login)
+          if (isLoggedIn && _nearbyKoperasi.isNotEmpty) ...[
             const SizedBox(height: 8),
             Column(
               children: [
@@ -2205,7 +2353,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ],
               ],
             ),
-          ] else if (_savedAlamat != null) ...[
+          ] else if (isLoggedIn &&
+              _savedAlamat != null &&
+              _nearbyKoperasi.isEmpty) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
