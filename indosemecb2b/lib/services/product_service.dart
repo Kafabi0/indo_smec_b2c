@@ -596,6 +596,8 @@ class ProductService {
       storeDistance: '1.5 km',
       imageUrl:
           'https://assets.klikindomaret.com/products/20122942/20122942_thumb.jpg?Version.20.03.1.01',
+      minOrderQty: 2, // ✅ Minimal 2 kg
+      unit: 'pcs',
     ),
     Product(
       id: '6',

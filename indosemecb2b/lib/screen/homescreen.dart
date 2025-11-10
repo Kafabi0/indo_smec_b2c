@@ -3887,6 +3887,10 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                                             product.imageUrl,
                                                         category:
                                                             product.category,
+                                                        minOrderQty:
+                                                            product
+                                                                .minOrderQty, // ✅ HARUS ADA
+                                                        unit: product.unit,
                                                       );
 
                                                   if (success) {
@@ -4167,6 +4171,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                           product.discountPercentage,
                                       imageUrl: product.imageUrl,
                                       category: product.category,
+                                      minOrderQty:
+                                          product.minOrderQty, // ✅ HARUS ADA
+                                      unit: product.unit,
                                     );
 
                                     if (success) {
@@ -4325,6 +4332,10 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                                     product.discountPercentage,
                                                 imageUrl: product.imageUrl,
                                                 category: product.category,
+                                                minOrderQty:
+                                                    product
+                                                        .minOrderQty, // ✅ HARUS ADA
+                                                unit: product.unit,
                                               );
 
                                           if (success) {
