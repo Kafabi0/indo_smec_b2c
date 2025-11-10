@@ -262,6 +262,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       discountPercentage: widget.product.discountPercentage,
       imageUrl: widget.product.imageUrl,
       category: widget.product.category,
+      minOrderQty: widget.product.minOrderQty, // ✅ TAMBAHKAN INI
+      unit: widget.product.unit,
     );
 
     if (success) {
@@ -463,21 +465,21 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 child:
                     widget.product.imageUrl != null
                         ? Hero(
-                            tag: 'product_${widget.product.id}',
-                            child: Image.network(
-                              widget.product.imageUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Center(
-                                  child: Icon(
-                                    Icons.image,
-                                    size: 100,
-                                    color: Colors.grey[400],
-                                  ),
-                                );
-                              },
-                            ),
-                          )
+                          tag: 'product_${widget.product.id}',
+                          child: Image.network(
+                            widget.product.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(
+                                child: Icon(
+                                  Icons.image,
+                                  size: 100,
+                                  color: Colors.grey[400],
+                                ),
+                              );
+                            },
+                          ),
+                        )
                         : Icon(Icons.image, size: 100, color: Colors.grey[400]),
               ),
             ),
@@ -497,127 +499,152 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 children: [
                   const SizedBox(height: 20),
                   // ✅ FIX 2: Display harga utama dengan flash sale
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Nama Produk
-                      Text(
-                        widget.product.name,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Nama Produk
+                        Text(
+                          widget.product.name,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      
-                      // ⭐ BAGIAN HARGA YANG DIPERBAIKI
-                      Builder(
-                        builder: (context) {
-                          // Cek status Flash Sale
-                          final isFlashSaleActive = FlashSaleService.isProductOnFlashSale(widget.product.id);
-                          final flashDiscountPercent = FlashSaleService.getFlashDiscountPercentage(widget.product.id);
-                          
-                          // Hitung harga
-                          final originalPrice = widget.product.originalPrice ?? widget.product.price;
-                          double displayPrice;
-                          double? priceToCompare;
-                          int? discountPercent;
-                          bool isFlashDiscount = false;
-                          
-                          if (isFlashSaleActive) {
-                            // 🔥 FLASH SALE AKTIF
-                            displayPrice = FlashSaleService.calculateFlashPrice(widget.product.id, originalPrice);
-                            priceToCompare = originalPrice;
-                            discountPercent = flashDiscountPercent;
-                            isFlashDiscount = true;
-                          } else {
-                            // ⏰ FLASH SALE TIDAK AKTIF
-                            if (widget.product.discountPercentage != null && widget.product.originalPrice != null) {
-                              // Ada diskon original
-                              displayPrice = widget.product.price;
-                              priceToCompare = widget.product.originalPrice;
-                              discountPercent = widget.product.discountPercentage;
-                              isFlashDiscount = false;
+                        const SizedBox(height: 12),
+
+                        // ⭐ BAGIAN HARGA YANG DIPERBAIKI
+                        Builder(
+                          builder: (context) {
+                            // Cek status Flash Sale
+                            final isFlashSaleActive =
+                                FlashSaleService.isProductOnFlashSale(
+                                  widget.product.id,
+                                );
+                            final flashDiscountPercent =
+                                FlashSaleService.getFlashDiscountPercentage(
+                                  widget.product.id,
+                                );
+
+                            // Hitung harga
+                            final originalPrice =
+                                widget.product.originalPrice ??
+                                widget.product.price;
+                            double displayPrice;
+                            double? priceToCompare;
+                            int? discountPercent;
+                            bool isFlashDiscount = false;
+
+                            if (isFlashSaleActive) {
+                              // 🔥 FLASH SALE AKTIF
+                              displayPrice =
+                                  FlashSaleService.calculateFlashPrice(
+                                    widget.product.id,
+                                    originalPrice,
+                                  );
+                              priceToCompare = originalPrice;
+                              discountPercent = flashDiscountPercent;
+                              isFlashDiscount = true;
                             } else {
-                              // Tidak ada diskon
-                              displayPrice = widget.product.price;
-                              priceToCompare = null;
-                              discountPercent = null;
-                              isFlashDiscount = false;
+                              // ⏰ FLASH SALE TIDAK AKTIF
+                              if (widget.product.discountPercentage != null &&
+                                  widget.product.originalPrice != null) {
+                                // Ada diskon original
+                                displayPrice = widget.product.price;
+                                priceToCompare = widget.product.originalPrice;
+                                discountPercent =
+                                    widget.product.discountPercentage;
+                                isFlashDiscount = false;
+                              } else {
+                                // Tidak ada diskon
+                                displayPrice = widget.product.price;
+                                priceToCompare = null;
+                                discountPercent = null;
+                                isFlashDiscount = false;
+                              }
                             }
-                          }
-                          
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Row Harga
-                              Row(
-                                children: [
-                                  // Harga Utama
-                                  Text(
-                                    'Rp${displayPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: isFlashDiscount ? Colors.red[700] : Colors.blue[700],
-                                    ),
-                                  ),
-                                  
-                                  // Harga Coret (jika ada)
-                                  if (priceToCompare != null) ...[
-                                    const SizedBox(width: 12),
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Row Harga
+                                Row(
+                                  children: [
+                                    // Harga Utama
                                     Text(
-                                      'Rp${priceToCompare.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
-                                      style: const TextStyle(
-                                        decoration: TextDecoration.lineThrough,
-                                        color: Colors.grey,
-                                        fontSize: 16,
+                                      'Rp${displayPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color:
+                                            isFlashDiscount
+                                                ? Colors.red[700]
+                                                : Colors.blue[700],
                                       ),
                                     ),
-                                  ],
-                                ],
-                              ),
-                              
-                              // Badge Diskon (jika ada)
-                              if (discountPercent != null) ...[
-                                const SizedBox(height: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isFlashDiscount ? Colors.red : Colors.blue[700],
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (isFlashDiscount) ...[
-                                        Icon(Icons.local_fire_department, color: Colors.white, size: 14),
-                                        SizedBox(width: 4),
-                                      ],
+
+                                    // Harga Coret (jika ada)
+                                    if (priceToCompare != null) ...[
+                                      const SizedBox(width: 12),
                                       Text(
-                                        '${discountPercent}%',
+                                        'Rp${priceToCompare.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}',
                                         style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
+                                          decoration:
+                                              TextDecoration.lineThrough,
+                                          color: Colors.grey,
+                                          fontSize: 16,
                                         ),
                                       ),
                                     ],
-                                  ),
+                                  ],
                                 ),
+
+                                // Badge Diskon (jika ada)
+                                if (discountPercent != null) ...[
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          isFlashDiscount
+                                              ? Colors.red
+                                              : Colors.blue[700],
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (isFlashDiscount) ...[
+                                          Icon(
+                                            Icons.local_fire_department,
+                                            color: Colors.white,
+                                            size: 14,
+                                          ),
+                                          SizedBox(width: 4),
+                                        ],
+                                        Text(
+                                          '${discountPercent}%',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ],
-                            ],
-                          );
-                        },
-                      ),
-                    ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
                   const SizedBox(height: 20),
 
@@ -762,38 +789,51 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                                 Hero(
                                                   tag: 'product_${product.id}',
                                                   child: ClipRRect(
-                                                    borderRadius: BorderRadius.circular(8),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
                                                     child:
                                                         product.imageUrl != null
                                                             ? Image.network(
-                                                                product.imageUrl!,
-                                                                width: double.infinity,
-                                                                height: double.infinity,
-                                                                fit: BoxFit.cover,
-                                                                errorBuilder: (
-                                                                  context,
-                                                                  error,
-                                                                  stackTrace,
-                                                                ) {
-                                                                  return Center(
-                                                                    child: Icon(
-                                                                      Icons.image,
-                                                                      size: 40,
-                                                                      color: Colors.grey[400],
-                                                                    ),
-                                                                  );
-                                                                },
-                                                              )
+                                                              product.imageUrl!,
+                                                              width:
+                                                                  double
+                                                                      .infinity,
+                                                              height:
+                                                                  double
+                                                                      .infinity,
+                                                              fit: BoxFit.cover,
+                                                              errorBuilder: (
+                                                                context,
+                                                                error,
+                                                                stackTrace,
+                                                              ) {
+                                                                return Center(
+                                                                  child: Icon(
+                                                                    Icons.image,
+                                                                    size: 40,
+                                                                    color:
+                                                                        Colors
+                                                                            .grey[400],
+                                                                  ),
+                                                                );
+                                                              },
+                                                            )
                                                             : Center(
-                                                                child: Icon(
-                                                                  Icons.image,
-                                                                  size: 40,
-                                                                  color: Colors.grey[400],
-                                                                ),
+                                                              child: Icon(
+                                                                Icons.image,
+                                                                size: 40,
+                                                                color:
+                                                                    Colors
+                                                                        .grey[400],
                                                               ),
+                                                            ),
                                                   ),
-                                                ), 
-                                                if (product.discountPercentage != null)
+                                                ),
+                                                if (product
+                                                        .discountPercentage !=
+                                                    null)
                                                   Positioned(
                                                     top: 8,
                                                     left: 8,

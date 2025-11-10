@@ -90,6 +90,8 @@ class _FavoritScreenState extends State<FavoritScreen> {
       imageUrl: product.imageUrl,
       category: product.category,
       quantity: 1,
+      minOrderQty: product.minOrderQty, // ✅ TAMBAHKAN INI
+      unit: product.unit,
     );
 
     if (mounted) {
