@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/utils/transaction_manager.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 import 'lacak.dart';
@@ -163,6 +164,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     final alamat = transaction.alamat ?? {};
 
@@ -187,22 +189,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   if (transaction.status == "Selesai") {
                     _handleBeliLagi();
                   } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) => TrackingScreen(
-                              trackingData: OrderTrackingModel(
-                                transactionId: transaction.id,
-                                courierName: "Tryan Gumilar",
-                                courierId: "D 4563 ADP",
-                                statusMessage: transaction.status,
-                                statusDesc: "Pesananmu sedang diproses",
-                                updatedAt: transaction.date,
-                              ),
-                            ),
-                      ),
-                    );
+                    // ⭐ GUNAKAN METHOD ASYNC
+                    _openTracking();
                   }
                 },
                 style: OutlinedButton.styleFrom(
@@ -429,12 +417,93 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
             const SizedBox(height: 18),
 
-            // ✅ GANTI DENGAN WIDGET BARU
+            // ✅ WIDGET RINCIAN BELANJA
             _buildRincianBelanja(),
           ],
         ),
       ),
     );
+  }
+
+  // ⭐ TAMBAHKAN METHOD ASYNC INI DI CLASS TransactionDetailScreen
+  Future<void> _openTracking() async {
+    print('📍 Opening tracking for: ${transaction.id}');
+
+    try {
+      // Tampilkan loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Ambil tracking data dari TransactionManager
+      final trackingModel = await TransactionManager.getOrderTrackingModel(
+        transaction.id,
+      );
+
+      // Tutup loading
+      if (mounted) {
+        Navigator.pop(context);
+      }
+
+      if (!mounted) return;
+
+      if (trackingModel != null) {
+        print('✅ Tracking data found with coordinates');
+        print('   Koperasi: ${trackingModel.koperasiName}');
+        print('   Delivery: ${trackingModel.deliveryAddress?['kelurahan']}');
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TrackingScreen(trackingData: trackingModel),
+          ),
+        );
+      } else {
+        // Fallback jika tidak ada tracking data
+        print('⚠️ No tracking data found, using fallback');
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (_) => TrackingScreen(
+                  trackingData: OrderTrackingModel(
+                    transactionId: transaction.id,
+                    orderId: transaction.id,
+                    courierName: "Tryan Gumilar",
+                    courierId: "D 4563 ADP",
+                    statusMessage: transaction.status,
+                    statusDesc: "Pesananmu sedang diproses",
+                    updatedAt: transaction.date,
+                  ),
+                ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error opening tracking: $e');
+
+      // Tutup loading jika masih ada
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal membuka tracking: $e'),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'Coba Lagi',
+            textColor: Colors.white,
+            onPressed: () => _openTracking(),
+          ),
+        ),
+      );
+    }
   }
 
   // ✅ WIDGET BARU: Rincian Belanja dengan Poin Cash

@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
 import 'package:indosemecb2b/utils/transaction_manager.dart';
-import 'package:indosemecb2b/screen/notification_provider.dart'; // ✅ TAMBAHAN
-import 'package:indosemecb2b/services/notifikasi.dart'; // ✅ TAMBAHAN
+import 'package:indosemecb2b/screen/notification_provider.dart';
+import 'package:indosemecb2b/services/notifikasi.dart';
 
 class TrackingServiceManager {
   static final TrackingServiceManager _instance =
@@ -16,11 +16,9 @@ class TrackingServiceManager {
 
   final Map<String, TrackingData> _trackings = {};
 
-  // ✅ TAMBAHAN - Untuk akses NotificationProvider dan NotificationService
   NotificationProvider? _notificationProvider;
   NotificationService? _notificationService;
 
-  // ✅ TAMBAHAN - Method untuk set providers
   void setNotificationProviders({
     required NotificationProvider notificationProvider,
     required NotificationService notificationService,
@@ -30,18 +28,28 @@ class TrackingServiceManager {
     print('✅ Notification providers set in TrackingServiceManager');
   }
 
-  Future<void> startTracking(String transactionId) async {
+  // ⭐ BARU: Start tracking dengan koordinat real
+  Future<void> startTrackingWithCoordinates({
+    required String transactionId,
+    required LatLng koperasiLocation,
+    required LatLng deliveryLocation,
+  }) async {
     if (_trackings.containsKey(transactionId)) {
       print('⚠️ Tracking sudah berjalan untuk $transactionId');
       return;
     }
 
     print('🚀 Starting tracking for $transactionId');
+    print(
+      '📍 Koperasi: ${koperasiLocation.latitude}, ${koperasiLocation.longitude}',
+    );
+    print(
+      '🏠 Tujuan: ${deliveryLocation.latitude}, ${deliveryLocation.longitude}',
+    );
 
     try {
-      final start = LatLng(-6.9379454, 107.661099);
-      final end = LatLng(-6.9254643, 107.6604138);
-      final route = await _getRouteFromOSRM(start, end);
+      // ⭐ Gunakan koordinat real dari koperasi & alamat
+      final route = await _getRouteFromOSRM(koperasiLocation, deliveryLocation);
 
       final trackingData = TrackingData(
         transactionId: transactionId,
@@ -55,10 +63,26 @@ class TrackingServiceManager {
       _trackings[transactionId] = trackingData;
       _startTimer(transactionId);
 
-      print('✅ Tracking started for $transactionId');
+      print('✅ Tracking started with real coordinates');
+      print('📊 Route length: ${route.length} points');
     } catch (e) {
       print('❌ Error starting tracking: $e');
     }
+  }
+
+  // ⭐ FALLBACK: Jika tidak ada koordinat (backward compatibility)
+  Future<void> startTracking(String transactionId) async {
+    print('⚠️ Using fallback coordinates (backward compatibility)');
+
+    // Koordinat default Bandung area
+    final start = LatLng(-6.9379454, 107.661099);
+    final end = LatLng(-6.9254643, 107.6604138);
+
+    await startTrackingWithCoordinates(
+      transactionId: transactionId,
+      koperasiLocation: start,
+      deliveryLocation: end,
+    );
   }
 
   void stopTracking(String transactionId) {
@@ -171,12 +195,9 @@ class TrackingServiceManager {
           tracking.currentIndex++;
           tracking.currentPosition = tracking.route[tracking.currentIndex];
 
-          // ✅ SIMPAN STATUS SEBELUMNYA
           final previousStatus = tracking.status;
-
           _updateStatus(tracking);
 
-          // ✅ CEK PERUBAHAN STATUS DAN KIRIM NOTIFIKASI
           if (previousStatus != tracking.status) {
             _sendStatusChangeNotification(transactionId, tracking.status);
           }
@@ -185,21 +206,17 @@ class TrackingServiceManager {
         tracking.notifier.value = tracking.currentPosition;
         tracking.statusNotifier.value = tracking.status;
       } else {
-        // ⭐ SIMPAN STATUS SEBELUMNYA
         final previousStatus = tracking.status;
 
-        // Set ke "Pesanan telah sampai"
         tracking.status = "Pesanan telah sampai";
         tracking.statusDesc = "Pesanan berhasil diantarkan ke alamat tujuan";
         tracking.notifier.value = tracking.currentPosition;
         tracking.statusNotifier.value = tracking.status;
 
-        // ✅ KIRIM NOTIFIKASI PESANAN TELAH SAMPAI (jika belum pernah dikirim)
         if (previousStatus != "Pesanan telah sampai") {
           _sendStatusChangeNotification(transactionId, tracking.status);
         }
 
-        // Update status transaksi
         TransactionManager.updateTransactionStatus(
           transactionId,
           "Pesanan telah sampai",
@@ -236,7 +253,6 @@ class TrackingServiceManager {
     );
   }
 
-  // ✅ METHOD BARU - Kirim notifikasi saat status berubah
   Future<void> _sendStatusChangeNotification(
     String transactionId,
     String newStatus,
@@ -244,7 +260,6 @@ class TrackingServiceManager {
     try {
       print('🔔 Sending notification for status change: $newStatus');
 
-      // Ambil data transaksi untuk notifikasi
       final transactions = await TransactionManager.getTransactions();
       final transaction = transactions.firstWhere(
         (t) => t.id == transactionId,
@@ -276,9 +291,7 @@ class TrackingServiceManager {
         'voucherDiscount': transaction.voucherDiscount,
       };
 
-      // Kirim notifikasi berdasarkan status
       if (newStatus == "Sedang dikirim") {
-        // 📱 Push Notification
         if (_notificationService != null) {
           await _notificationService!.showOrderShippedNotification(
             orderId: transactionId,
@@ -287,7 +300,6 @@ class TrackingServiceManager {
           );
         }
 
-        // 🔔 In-App Notification
         if (_notificationProvider != null) {
           await _notificationProvider!.addOrderShippedNotification(
             orderId: transactionId,
@@ -302,7 +314,6 @@ class TrackingServiceManager {
 
         print('✅ Notification sent: Sedang dikirim');
       } else if (newStatus == "Pesanan telah sampai") {
-        // 📱 Push Notification
         if (_notificationService != null) {
           await _notificationService!.showOrderArrivedNotification(
             orderId: transactionId,
@@ -310,7 +321,6 @@ class TrackingServiceManager {
           );
         }
 
-        // 🔔 In-App Notification
         if (_notificationProvider != null) {
           await _notificationProvider!.addOrderArrivedNotification(
             orderId: transactionId,
@@ -329,20 +339,32 @@ class TrackingServiceManager {
     }
   }
 
+  // ⭐ OSRM Route dengan error handling lebih baik
   Future<List<LatLng>> _getRouteFromOSRM(LatLng start, LatLng end) async {
-    final url = Uri.parse(
-      'https://router.project-osrm.org/route/v1/driving/'
-      '${start.longitude},${start.latitude};${end.longitude},${end.latitude}'
-      '?overview=full&geometries=geojson',
-    );
+    try {
+      final url = Uri.parse(
+        'https://router.project-osrm.org/route/v1/driving/'
+        '${start.longitude},${start.latitude};${end.longitude},${end.latitude}'
+        '?overview=full&geometries=geojson',
+      );
 
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final coords = data['routes'][0]['geometry']['coordinates'] as List;
-      return coords.map((c) => LatLng(c[1], c[0])).toList();
-    } else {
-      throw Exception('Gagal memuat rute');
+      print('🌐 Fetching route from OSRM...');
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final coords = data['routes'][0]['geometry']['coordinates'] as List;
+        final route = coords.map((c) => LatLng(c[1], c[0])).toList();
+        print('✅ Route fetched: ${route.length} points');
+        return route;
+      } else {
+        throw Exception('OSRM API error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Error fetching route: $e');
+      print('⚠️ Using direct line as fallback');
+      // Fallback: buat garis lurus jika OSRM gagal
+      return [start, end];
     }
   }
 

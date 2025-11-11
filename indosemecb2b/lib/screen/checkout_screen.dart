@@ -5,12 +5,14 @@
 // ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/models/koperasi_model.dart';
 import 'package:indosemecb2b/models/transaction.dart';
 import 'package:indosemecb2b/screen/main_navigasi.dart';
 import 'package:indosemecb2b/screen/metode_pembayaran.dart';
 import 'package:indosemecb2b/screen/notification_provider.dart';
 import 'package:indosemecb2b/screen/pembayaran_berhasil.dart';
 import 'package:indosemecb2b/screen/transaksi.dart';
+import 'package:indosemecb2b/services/koperasi_service.dart';
 import 'package:indosemecb2b/services/notifikasi.dart';
 import 'package:indosemecb2b/utils/cart_manager.dart';
 import 'package:indosemecb2b/utils/saldo_klik_manager.dart';
@@ -169,6 +171,30 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
+      // ⭐ AMBIL KOORDINAT DARI ALAMAT YANG DIPILIH
+      final deliveryLat = widget.alamat?['latitude'] as double?;
+      final deliveryLng = widget.alamat?['longitude'] as double?;
+
+      print('📍 Delivery coordinates from selected address:');
+      print('   Lat: $deliveryLat, Lng: $deliveryLng');
+
+      // ⭐ 1. AMBIL KOPERASI TERDEKAT BERDASARKAN ALAMAT PENGIRIMAN
+      Koperasi? koperasi;
+
+      if (deliveryLat != null && deliveryLng != null) {
+        // Gunakan koordinat alamat yang dipilih user
+        koperasi = await KoperasiService.getNearestKoperasi(
+          userLatitude: deliveryLat,
+          userLongitude: deliveryLng,
+        );
+        print(
+          '✅ Koperasi dicari berdasarkan alamat terpilih: ${koperasi?.name}',
+        );
+      } else {
+        // Fallback jika alamat tidak punya koordinat
+        koperasi = await KoperasiService.getNearestKoperasi();
+        print('⚠️ Koperasi dicari berdasarkan GPS/cache: ${koperasi?.name}');
+      }
       // Extract alamat data...
       String penerimaName = 'N/A';
       String alamatLengkap = 'Alamat tidak tersedia';
@@ -215,7 +241,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       String actualPaymentMethod = paymentType;
 
       if (isKombinasi) {
-        // Extract jumlah Poin Cash yang digunakan
         final regex = RegExp(r'Poin Cash \(Rp(\d+)\)');
         final match = regex.firstMatch(paymentType);
 
@@ -243,30 +268,59 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'kota': widget.alamat?['kota'],
         'provinsi': widget.alamat?['provinsi'],
         'kodepos': widget.alamat?['kodepos'],
+        'latitude': widget.alamat?['latitude'], // ⭐ TAMBAHKAN
+        'longitude': widget.alamat?['longitude'], // ⭐ TAMBAHKAN
         'metode_pembayaran': isKombinasi ? actualPaymentMethod : paymentType,
         'voucher_code': _selectedVoucher?.code,
         'voucher_discount': getVoucherDiscount(),
       };
 
-      // ⭐ TAMBAHKAN METADATA POIN CASH (jika digunakan)
+      // ⭐ TAMBAHKAN METADATA POIN CASH
       if (isPoinCashOnly || isKombinasi) {
         alamatData['poin_cash_used'] = poinCashUsed;
         alamatData['is_using_poin_cash'] = true;
       }
 
-      // ⭐ PENTING: Status SELALU "Diproses" (tidak ada yang langsung "Selesai")
+      // ⭐ TAMBAHKAN DATA KOPERASI KE ALAMAT
+      if (koperasi != null) {
+        alamatData['koperasi_id'] = koperasi.id;
+        alamatData['koperasi_name'] = koperasi.name;
+        alamatData['koperasi_latitude'] = koperasi.latitude;
+        alamatData['koperasi_longitude'] = koperasi.longitude;
+        print('✅ Koperasi data added to transaction');
+      }
+
+      // ⭐ PENTING: Status SELALU "Diproses"
       final transactionId = await TransactionManager.createTransaction(
         cartItems: _cartItems,
         deliveryOption: widget.deliveryOption,
         alamat: alamatData,
         catatanPengiriman: widget.catatanPengiriman,
         metodePembayaran: isKombinasi ? actualPaymentMethod : paymentType,
-        initialStatus: 'Diproses', // ⭐ SELALU "Diproses"
+        initialStatus: 'Diproses',
       );
 
       // ✅ CEK APAKAH TRANSAKSI BERHASIL DIBUAT
       if (transactionId != null && transactionId.isNotEmpty) {
         print('✅ Transaction created with ID: $transactionId');
+
+        // ⭐ SIMPAN TRACKING DATA
+        if (koperasi != null &&
+            widget.alamat?['latitude'] != null &&
+            widget.alamat?['longitude'] != null) {
+          print('📍 Saving tracking data...');
+          await TransactionManager.saveTrackingData(
+            transactionId: transactionId,
+            koperasiId: koperasi.id,
+            koperasiName: koperasi.name,
+            koperasiLatitude: koperasi.latitude,
+            koperasiLongitude: koperasi.longitude,
+            deliveryLatitude: widget.alamat!['latitude'],
+            deliveryLongitude: widget.alamat!['longitude'],
+            deliveryAddress: alamatData,
+          );
+          print('✅ Tracking data saved');
+        }
 
         // ✅ USE VOUCHER
         if (_selectedVoucher != null) {
@@ -286,7 +340,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           'id': transactionId,
           'tanggal': DateTime.now().toIso8601String(),
           'date': DateTime.now().toIso8601String(),
-          'status': 'Diproses', // ⭐ SELALU "Diproses"
+          'status': 'Diproses',
           'metode_pembayaran': paymentType,
           'voucher_code': _selectedVoucher?.code,
           'voucher_discount': getVoucherDiscount(),
@@ -321,6 +375,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           'catatanPengiriman': widget.catatanPengiriman ?? '',
           'delivery_note': widget.catatanPengiriman ?? '',
           'totalPrice': getTotal(),
+          // ⭐ TAMBAHKAN KOPERASI INFO
+          'koperasi_name': koperasi?.name,
         };
 
         // ⭐ TAMBAHKAN METADATA POIN CASH

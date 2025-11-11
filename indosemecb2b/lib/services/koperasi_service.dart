@@ -9,7 +9,7 @@ class KoperasiService {
     // ========================================
     // KOTA BANDUNG - KOPERASI BESAR
     // ========================================
-    
+
     // 🏪 KOPERASI 1: Antapani Kidul (LENGKAP!)
     Koperasi(
       id: 'kop1',
@@ -19,25 +19,56 @@ class KoperasiService {
       kota: 'Kota Bandung',
       latitude: -6.912429,
       longitude: 107.654358,
-      description: 'Koperasi besar yang melayani UMKM di wilayah Antapani Kidul',
+      description:
+          'Koperasi besar yang melayani UMKM di wilayah Antapani Kidul',
       productIds: [
         // Produk Reguler (Food, Grocery, Fashion, Herbal)
-        '1', '2', '9', '10', '15', '20', '21', '27', '33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45',
+        '1',
+        '2',
+        '9',
+        '10',
+        '15',
+        '20',
+        '21',
+        '27',
+        '33',
+        '34',
+        '35',
+        '36',
+        '37',
+        '38',
+        '39',
+        '40',
+        '41',
+        '42',
+        '43',
+        '44',
+        '45',
 
         '71', '72', '73',
 
         '74', '75', '76',
-        
+
         // ⭐ FLASH SALE - SEMUA PAKET (100-120)
-        '100', '101', '102', '103', '104', '105', '106', '107', '108', '109', '110',
+        '100',
+        '101',
+        '102',
+        '103',
+        '104',
+        '105',
+        '106',
+        '107',
+        '108',
+        '109',
+        '110',
         '111', '112', '113', '114', '115', '116', '117', '118', '119', '120',
-        
+
         // Produk Lokal Buah & Sayur (121-125)
         '121', '122', '123', '124', '125',
-        
+
         // Produk Tambahan
         '46', '47', '48', '49', '50', '51', '52', '53', '54', '68', '69', '70',
-        
+
         // Jasa (126-137)
         '126', '127', '128', '129', '130',
         '134', '135', '136', '137',
@@ -57,13 +88,12 @@ class KoperasiService {
       productIds: [
         // Produk Reguler
         '3', '4', '5', '11', '16', '21', '28', '34', '46',
-        
+
         // ⭐ FLASH SALE - FOKUS: Fashion & Herbal (partial)
-        '101', '107', '109',              // Flash Sale Pagi (3 produk)
-        '105', '108', '110',              // Flash Sale Siang (3 produk)
+        '101', '107', '109', // Flash Sale Pagi (3 produk)
+        '105', '108', '110', // Flash Sale Siang (3 produk)
         '111', '112', '113', '115', '119', // Flash Sale Sore (5 produk - FULL!)
-        '100', '114', '120',              // Flash Sale Malam (3 produk)
-        
+        '100', '114', '120', // Flash Sale Malam (3 produk)
         // Jasa Bengkel
         '138', '139', '140', '141', '142', '143',
       ],
@@ -82,11 +112,21 @@ class KoperasiService {
       productIds: [
         // Produk Reguler
         '6', '7', '8', '12', '17', '22', '29', '35', '47',
-        
+
         // ⭐ FLASH SALE - SEMUA PAKET (100-120)
-        '100', '101', '102', '103', '104', '105', '106', '107', '108', '109', '110',
+        '100',
+        '101',
+        '102',
+        '103',
+        '104',
+        '105',
+        '106',
+        '107',
+        '108',
+        '109',
+        '110',
         '111', '112', '113', '114', '115', '116', '117', '118', '119', '120',
-        
+
         // Jasa Service Elektronik
         '144', '145', '146', '147', '148', '149', '150',
       ],
@@ -95,7 +135,7 @@ class KoperasiService {
     // ========================================
     // KABUPATEN BANDUNG - KOPERASI MENENGAH
     // ========================================
-    
+
     // 🏪 KOPERASI 4: Cileunyi (PERTANIAN)
     Koperasi(
       id: 'kop4',
@@ -109,12 +149,12 @@ class KoperasiService {
       productIds: [
         // Produk Reguler Pertanian
         '13', '14', '18', '23', '30', '36', '48', '55',
-        
+
         // ⭐ FLASH SALE - FOKUS: Pertanian & Herbal
-        '103',                    // Flash Sale Pagi (1 produk)
-        '102', '106', '110',      // Flash Sale Siang (3 produk)
-        '109', '111', '115',      // Flash Sale Sore (3 produk)
-        '114',                    // Flash Sale Malam (1 produk)
+        '103', // Flash Sale Pagi (1 produk)
+        '102', '106', '110', // Flash Sale Siang (3 produk)
+        '109', '111', '115', // Flash Sale Sore (3 produk)
+        '114', // Flash Sale Malam (1 produk)
       ],
     ),
 
@@ -131,19 +171,19 @@ class KoperasiService {
       productIds: [
         // Produk Reguler
         '19', '24', '25', '31', '37', '49', '56',
-        
+
         // ⭐ FLASH SALE - FOKUS: Fashion & Kerajinan (minimal)
-        '104',        // Flash Sale Pagi (1 produk)
-        '108',        // Flash Sale Siang (1 produk)
-        '119',        // Flash Sale Sore (1 produk)
-        '120',        // Flash Sale Malam (1 produk)
+        '104', // Flash Sale Pagi (1 produk)
+        '108', // Flash Sale Siang (1 produk)
+        '119', // Flash Sale Sore (1 produk)
+        '120', // Flash Sale Malam (1 produk)
       ],
     ),
 
     // ========================================
     // KOTA CIMAHI - KOPERASI KECIL
     // ========================================
-    
+
     // 🏪 KOPERASI 6: Cimahi (KECIL)
     Koperasi(
       id: 'kop6',
@@ -157,12 +197,12 @@ class KoperasiService {
       productIds: [
         // Produk Reguler
         '26', '32', '38', '50', '57',
-        
+
         // ⭐ FLASH SALE - FOKUS: Snack & Minuman (minimal)
-        '105',        // Flash Sale Pagi (1 produk)
+        '105', // Flash Sale Pagi (1 produk)
         '107', '108', // Flash Sale Siang (2 produk)
-        '112',        // Flash Sale Sore (1 produk)
-        '107',        // Flash Sale Malam (1 produk)
+        '112', // Flash Sale Sore (1 produk)
+        '107', // Flash Sale Malam (1 produk)
       ],
     ),
   ];
@@ -172,7 +212,9 @@ class KoperasiService {
     final location = await LocationService.getUserLocation();
 
     if (location == null) {
-      print('⚠️ [KoperasiService] Lokasi tidak terdeteksi, tampilkan semua koperasi');
+      print(
+        '⚠️ [KoperasiService] Lokasi tidak terdeteksi, tampilkan semua koperasi',
+      );
       return _allKoperasi;
     }
 
@@ -183,49 +225,60 @@ class KoperasiService {
     print('📍 [KoperasiService] Lokasi user: $kelurahan, $kecamatan, $kota');
 
     // 1. Cari koperasi di kelurahan yang sama
-    List<Koperasi> filtered = _allKoperasi.where((k) {
-      final match = k.matchLocation(kelurahan: kelurahan);
-      if (match) {
-        print('✅ [KoperasiService] Match found: ${k.name} (kelurahan)');
-      }
-      return match;
-    }).toList();
+    List<Koperasi> filtered =
+        _allKoperasi.where((k) {
+          final match = k.matchLocation(kelurahan: kelurahan);
+          if (match) {
+            print('✅ [KoperasiService] Match found: ${k.name} (kelurahan)');
+          }
+          return match;
+        }).toList();
 
     if (filtered.isNotEmpty) {
-      print('✅ [KoperasiService] Ditemukan ${filtered.length} koperasi di $kelurahan');
+      print(
+        '✅ [KoperasiService] Ditemukan ${filtered.length} koperasi di $kelurahan',
+      );
       return filtered;
     }
 
     // 2. Fallback ke kecamatan
-    filtered = _allKoperasi.where((k) {
-      final match = k.matchLocation(kecamatan: kecamatan);
-      if (match) {
-        print('✅ [KoperasiService] Match found: ${k.name} (kecamatan)');
-      }
-      return match;
-    }).toList();
+    filtered =
+        _allKoperasi.where((k) {
+          final match = k.matchLocation(kecamatan: kecamatan);
+          if (match) {
+            print('✅ [KoperasiService] Match found: ${k.name} (kecamatan)');
+          }
+          return match;
+        }).toList();
 
     if (filtered.isNotEmpty) {
-      print('✅ [KoperasiService] Ditemukan ${filtered.length} koperasi di $kecamatan');
+      print(
+        '✅ [KoperasiService] Ditemukan ${filtered.length} koperasi di $kecamatan',
+      );
       return filtered;
     }
 
     // 3. Fallback ke kota
-    filtered = _allKoperasi.where((k) {
-      final match = k.matchLocation(kota: kota);
-      if (match) {
-        print('✅ [KoperasiService] Match found: ${k.name} (kota)');
-      }
-      return match;
-    }).toList();
+    filtered =
+        _allKoperasi.where((k) {
+          final match = k.matchLocation(kota: kota);
+          if (match) {
+            print('✅ [KoperasiService] Match found: ${k.name} (kota)');
+          }
+          return match;
+        }).toList();
 
     if (filtered.isNotEmpty) {
-      print('✅ [KoperasiService] Ditemukan ${filtered.length} koperasi di $kota');
+      print(
+        '✅ [KoperasiService] Ditemukan ${filtered.length} koperasi di $kota',
+      );
       return filtered;
     }
 
     // 4. Jika tidak ada, tampilkan semua
-    print('⚠️ [KoperasiService] Tidak ada koperasi di lokasi ini, tampilkan semua');
+    print(
+      '⚠️ [KoperasiService] Tidak ada koperasi di lokasi ini, tampilkan semua',
+    );
     return _allKoperasi;
   }
 
@@ -242,9 +295,10 @@ class KoperasiService {
     print('📦 Jumlah produk di koperasi: ${nearestKoperasi.productIds.length}');
 
     final allProducts = ProductService().getAllProducts();
-    final filteredProducts = allProducts
-        .where((p) => nearestKoperasi.productIds.contains(p.id))
-        .toList();
+    final filteredProducts =
+        allProducts
+            .where((p) => nearestKoperasi.productIds.contains(p.id))
+            .toList();
 
     print('✅ Produk terfilter: ${filteredProducts.length}');
 
@@ -265,12 +319,30 @@ class KoperasiService {
   }
 
   // ============ GET NEAREST KOPERASI ============
-  static Future<Koperasi?> getNearestKoperasi() async {
-    final location = await LocationService.getUserLocation();
-    if (location == null) return null;
+  static Future<Koperasi?> getNearestKoperasi({
+    double? userLatitude,
+    double? userLongitude,
+  }) async {
+    double? userLat;
+    double? userLon;
 
-    final userLat = location['latitude'] as double;
-    final userLon = location['longitude'] as double;
+    // ⭐ PRIORITAS 1: Gunakan koordinat yang dipass (dari alamat yang dipilih)
+    if (userLatitude != null && userLongitude != null) {
+      userLat = userLatitude;
+      userLon = userLongitude;
+      print('✅ Using provided coordinates: $userLat, $userLon');
+    }
+    // PRIORITAS 2: Fallback ke LocationService
+    else {
+      final location = await LocationService.getUserLocation();
+      if (location == null) {
+        print('❌ No location available');
+        return null;
+      }
+      userLat = location['latitude'] as double;
+      userLon = location['longitude'] as double;
+      print('⚠️ Using cached/GPS location: $userLat, $userLon');
+    }
 
     Koperasi? nearest;
     double minDistance = double.infinity;
@@ -290,7 +362,10 @@ class KoperasiService {
     }
 
     if (nearest != null) {
-      print('🎯 Koperasi terdekat: ${nearest.name} (${minDistance.toStringAsFixed(1)} km)');
+      print(
+        '🎯 Koperasi terdekat: ${nearest.name} (${minDistance.toStringAsFixed(1)} km)',
+      );
+      print('   Dari koordinat: $userLat, $userLon');
     }
 
     return nearest;

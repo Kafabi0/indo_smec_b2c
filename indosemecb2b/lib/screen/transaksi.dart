@@ -617,7 +617,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
 
                         Text(
                           currentTransaction.deliveryOption == 'topup'
-                              ? 'Top-Up Saldo Klik' // ✅ ADD
+                              ? 'Top-Up Saldo Klik'
                               : currentTransaction.deliveryOption == 'xpress'
                               ? 'Belanja Xpress'
                               : 'Belanja Xtra',
@@ -703,7 +703,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
 
                         const SizedBox(height: 14),
 
-                        // ⭐ Jika status "Pesanan telah sampai", tampilkan tombol konfirmasi
+                        // ⭐ Status: Pesanan telah sampai
                         if (currentTransaction.status == "Pesanan telah sampai")
                           Column(
                             children: [
@@ -773,30 +773,10 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                                     ),
                                   ),
                                   const SizedBox(width: 8),
+                                  // ⭐ BUTTON 1: Tracking dari "Pesanan telah sampai"
                                   OutlinedButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (_) => TrackingScreen(
-                                                trackingData: OrderTrackingModel(
-                                                  transactionId:
-                                                      currentTransaction.id,
-                                                  courierName: "Tryan Gumilar",
-                                                  courierId: "D 4563 ADP",
-                                                  statusMessage:
-                                                      currentTransaction.status,
-                                                  statusDesc:
-                                                      "Pesananmu sedang diproses",
-                                                  updatedAt:
-                                                      currentTransaction.date ??
-                                                      DateTime.now(),
-                                                ),
-                                              ),
-                                        ),
-                                      );
-                                    },
+                                    onPressed:
+                                        () => _openTracking(currentTransaction),
                                     style: OutlinedButton.styleFrom(
                                       side: BorderSide(
                                         color: Colors.blue[700]!,
@@ -818,8 +798,8 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                               ),
                             ],
                           )
-                        else if (currentTransaction.deliveryOption ==
-                            'topup') // ✅ ADD
+                        // ⭐ Status: Top-Up
+                        else if (currentTransaction.deliveryOption == 'topup')
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -862,6 +842,7 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                               ),
                             ],
                           )
+                        // ⭐ Status: Lainnya (Diproses, Selesai, dll)
                         else
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -869,30 +850,10 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                               OutlinedButton(
                                 onPressed: () {
                                   if (currentTransaction.status == "Selesai") {
-                                    // ✅ PANGGIL METHOD BELI LAGI
                                     _handleBeliLagi(currentTransaction);
                                   } else {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (_) => TrackingScreen(
-                                              trackingData: OrderTrackingModel(
-                                                transactionId:
-                                                    currentTransaction.id,
-                                                courierName: "Tryan Gumilar",
-                                                courierId: "D 4563 ADP",
-                                                statusMessage:
-                                                    currentTransaction.status,
-                                                statusDesc:
-                                                    "Pesananmu sedang diproses",
-                                                updatedAt:
-                                                    currentTransaction.date ??
-                                                    DateTime.now(),
-                                              ),
-                                            ),
-                                      ),
-                                    );
+                                    // ⭐ BUTTON 2: Lacak dari status lain
+                                    _openTracking(currentTransaction);
                                   }
                                 },
                                 style: OutlinedButton.styleFrom(
@@ -912,7 +873,6 @@ class _TransaksiScreenState extends State<TransaksiScreen>
                                   ),
                                 ),
                               ),
-
                               Text(
                                 'Total ${formatRupiah(_calculateFinalTotal(currentTransaction))}',
                                 style: const TextStyle(
@@ -932,6 +892,60 @@ class _TransaksiScreenState extends State<TransaksiScreen>
         );
       },
     );
+  }
+
+  // ⭐ TAMBAHKAN METHOD BARU INI
+  Future<void> _openTracking(Transaction transaction) async {
+    print('📍 Opening tracking for: ${transaction.id}');
+
+    try {
+      // Ambil tracking data dari TransactionManager
+      final trackingModel = await TransactionManager.getOrderTrackingModel(
+        transaction.id,
+      );
+
+      if (!mounted) return;
+
+      if (trackingModel != null) {
+        print('✅ Tracking data found, opening with real coordinates');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TrackingScreen(trackingData: trackingModel),
+          ),
+        );
+      } else {
+        // Fallback jika tidak ada tracking data
+        print('⚠️ No tracking data, using fallback');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (_) => TrackingScreen(
+                  trackingData: OrderTrackingModel(
+                    transactionId: transaction.id,
+                    orderId: transaction.id,
+                    courierName: "Tryan Gumilar",
+                    courierId: "D 4563 ADP",
+                    statusMessage: transaction.status,
+                    statusDesc: "Pesananmu sedang diproses",
+                    updatedAt: transaction.date,
+                  ),
+                ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error opening tracking: $e');
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal membuka tracking: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
   // Tambahkan method ini di dalam class _TransaksiScreenState
 

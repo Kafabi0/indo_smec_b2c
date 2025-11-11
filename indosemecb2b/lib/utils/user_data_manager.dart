@@ -387,6 +387,87 @@ class UserDataManager {
     }
   }
 
+  // ============================================================
+  // ⭐ TRACKING DATA METHODS - Tambahkan ini ke UserDataManager
+  // ============================================================
+
+  /// Simpan data tracking untuk transaksi
+  static Future<bool> saveTrackingData(
+    String userLogin,
+    String transactionId,
+    Map<String, dynamic> trackingData,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'tracking_${userLogin}_$transactionId';
+
+      final jsonString = jsonEncode(trackingData);
+      final saved = await prefs.setString(key, jsonString);
+
+      print('💾 [UserDataManager] Tracking data saved: $key');
+      print('   - Koperasi: ${trackingData['koperasi_name']}');
+      print('   - Delivery: ${trackingData['delivery_address']?['kelurahan']}');
+
+      return saved;
+    } catch (e) {
+      print('❌ [UserDataManager] Error saving tracking data: $e');
+      return false;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getTrackingData(
+    String userLogin,
+    String transactionId,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'tracking_${userLogin}_$transactionId';
+
+      final jsonString = prefs.getString(key);
+      if (jsonString == null) {
+        print('⚠️ No tracking data found for: $key');
+        return null;
+      }
+
+      final data = jsonDecode(jsonString) as Map<String, dynamic>;
+      print('✅ Tracking data loaded: $key');
+      return data;
+    } catch (e) {
+      print('❌ Error loading tracking data: $e');
+      return null;
+    }
+  }
+
+  static Future<bool> deleteTrackingData(
+    String userLogin,
+    String transactionId,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'tracking_${userLogin}_$transactionId';
+
+      final removed = await prefs.remove(key);
+      print('🗑️ Tracking data deleted: $key');
+      return removed;
+    } catch (e) {
+      print('❌ Error deleting tracking data: $e');
+      return false;
+    }
+  }
+
+  // ⭐ HELPER: Get all tracking keys for debug
+  static Future<List<String>> getAllTrackingKeys() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final allKeys = prefs.getKeys();
+
+      return allKeys.where((key) => key.startsWith('tracking_')).toList();
+    } catch (e) {
+      print('❌ Error getting tracking keys: $e');
+      return [];
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> getNotifications(
     String loginValue,
   ) async {

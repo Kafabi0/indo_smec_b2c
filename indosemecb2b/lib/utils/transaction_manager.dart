@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
+import 'package:indosemecb2b/models/tracking.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart';
 import 'package:indosemecb2b/models/transaction.dart';
 import 'package:indosemecb2b/models/cart_item.dart';
+import 'package:latlong2/latlong.dart';
 
 class TransactionManager {
   static final StreamController<void> _statusController =
@@ -18,7 +20,122 @@ class TransactionManager {
     return statuses[random.nextInt(statuses.length)];
   }
 
-  // ✅ FIXED: Tambahkan parameter untuk voucher dan poin cash
+  // ⭐ BARU: Simpan tracking data
+  static Future<bool> saveTrackingData({
+    required String transactionId,
+    required String koperasiId,
+    required String koperasiName,
+    required double koperasiLatitude,
+    required double koperasiLongitude,
+    required double deliveryLatitude,
+    required double deliveryLongitude,
+    required Map<String, dynamic> deliveryAddress,
+  }) async {
+    try {
+      final userLogin = await UserDataManager.getCurrentUserLogin();
+      if (userLogin == null) return false;
+
+      final trackingData = {
+        'transaction_id': transactionId,
+        'koperasi_id': koperasiId,
+        'koperasi_name': koperasiName,
+        'koperasi_lat': koperasiLatitude,
+        'koperasi_lon': koperasiLongitude,
+        'delivery_lat': deliveryLatitude,
+        'delivery_lon': deliveryLongitude,
+        'delivery_address': deliveryAddress,
+        'created_at': DateTime.now().toIso8601String(),
+      };
+
+      return await UserDataManager.saveTrackingData(
+        userLogin,
+        transactionId,
+        trackingData,
+      );
+    } catch (e) {
+      debugPrint('❌ Error saving tracking data: $e');
+      return false;
+    }
+  }
+
+  // ⭐ BARU: Ambil tracking data
+  static Future<Map<String, dynamic>?> getTrackingData(
+    String transactionId,
+  ) async {
+    try {
+      final userLogin = await UserDataManager.getCurrentUserLogin();
+      if (userLogin == null) return null;
+
+      return await UserDataManager.getTrackingData(userLogin, transactionId);
+    } catch (e) {
+      debugPrint('❌ Error getting tracking data: $e');
+      return null;
+    }
+  }
+
+  // ⭐ BARU: Buat OrderTrackingModel dari transaction
+  static Future<OrderTrackingModel?> getOrderTrackingModel(
+    String transactionId,
+  ) async {
+    try {
+      final transactions = await getTransactions();
+      final transaction = transactions.firstWhere(
+        (t) => t.id == transactionId,
+        orElse: () => throw Exception('Transaction not found'),
+      );
+
+      final trackingData = await getTrackingData(transactionId);
+
+      return OrderTrackingModel(
+        transactionId: transactionId,
+        orderId: transactionId,
+        courierName: "Kurir ${Random().nextInt(99) + 1}",
+        courierId: "DM-${Random().nextInt(999).toString().padLeft(3, '0')}",
+        statusMessage: transaction.status,
+        statusDesc: _getStatusDescription(transaction.status),
+        updatedAt: transaction.date,
+        // ⭐ Data dari tracking
+        koperasiId: trackingData?['koperasi_id'],
+        koperasiName: trackingData?['koperasi_name'],
+        koperasiLocation: trackingData != null
+            ? LatLng(
+                trackingData['koperasi_lat'],
+                trackingData['koperasi_lon'],
+              )
+            : null,
+        deliveryLocation: trackingData != null
+            ? LatLng(
+                trackingData['delivery_lat'],
+                trackingData['delivery_lon'],
+              )
+            : null,
+        deliveryAddress: trackingData?['delivery_address'],
+      );
+    } catch (e) {
+      debugPrint('❌ Error getting order tracking model: $e');
+      return null;
+    }
+  }
+
+  static String _getStatusDescription(String status) {
+    switch (status) {
+      case 'Diproses':
+        return 'Pesanan sedang diproses';
+      case 'Sedang dikirim':
+        return 'Kurir sedang dalam perjalanan';
+      case 'Hampir sampai':
+        return 'Kurir sebentar lagi tiba';
+      case 'Pesanan telah sampai':
+        return 'Pesanan sudah tiba di lokasi';
+      case 'Selesai':
+        return 'Pesanan telah selesai';
+      case 'Dibatalkan':
+        return 'Pesanan telah dibatalkan';
+      default:
+        return 'Status tidak diketahui';
+    }
+  }
+
   static Future<String?> createTransaction({
     required List<CartItem> cartItems,
     required String deliveryOption,
@@ -39,20 +156,17 @@ class TransactionManager {
       final transactionId = 'TRX${DateTime.now().millisecondsSinceEpoch}';
       print('🆔 Transaction ID: $transactionId');
 
-      // 🛒 Konversi item keranjang ke item transaksi
-      final items =
-          cartItems.map((cartItem) {
-            return TransactionItem(
-              productId: cartItem.productId,
-              name: cartItem.name,
-              price: cartItem.price,
-              quantity: cartItem.quantity,
-              imageUrl: cartItem.imageUrl,
-              category: cartItem.category,
-            );
-          }).toList();
+      final items = cartItems.map((cartItem) {
+        return TransactionItem(
+          productId: cartItem.productId,
+          name: cartItem.name,
+          price: cartItem.price,
+          quantity: cartItem.quantity,
+          imageUrl: cartItem.imageUrl,
+          category: cartItem.category,
+        );
+      }).toList();
 
-      // ✅ FIXED: Hitung total SEBELUM diskon dan potongan
       final subtotal = cartItems.fold<double>(
         0.0,
         (sum, item) => sum + item.totalPrice,
@@ -60,27 +174,23 @@ class TransactionManager {
       final shipping = 0.0;
       final totalBeforeDiscount = subtotal + shipping;
 
-      // ✅ Ambil data voucher dan poin cash dari alamat
       final voucherCode = alamat?['voucher_code'] as String?;
       final voucherDiscountRaw = alamat?['voucher_discount'];
-      final voucherDiscount =
-          voucherDiscountRaw != null
-              ? (voucherDiscountRaw is int
-                  ? voucherDiscountRaw.toDouble()
-                  : voucherDiscountRaw as double)
-              : 0.0;
+      final voucherDiscount = voucherDiscountRaw != null
+          ? (voucherDiscountRaw is int
+              ? voucherDiscountRaw.toDouble()
+              : voucherDiscountRaw as double)
+          : 0.0;
 
       final poinCashUsedRaw = alamat?['poin_cash_used'];
-      final poinCashUsed =
-          poinCashUsedRaw != null
-              ? (poinCashUsedRaw is int
-                  ? poinCashUsedRaw.toDouble()
-                  : poinCashUsedRaw as double)
-              : 0.0;
+      final poinCashUsed = poinCashUsedRaw != null
+          ? (poinCashUsedRaw is int
+              ? poinCashUsedRaw.toDouble()
+              : poinCashUsedRaw as double)
+          : 0.0;
 
       final isUsingPoinCash = alamat?['is_using_poin_cash'] == true;
 
-      // ✅ FIXED: Total akhir = total - voucher discount - poin cash
       final finalTotal = totalBeforeDiscount - voucherDiscount - poinCashUsed;
 
       print('💰 Subtotal: $subtotal');
@@ -93,8 +203,6 @@ class TransactionManager {
       final finalMetodePembayaran =
           metodePembayaran ?? alamat?['metode_pembayaran'] ?? 'Tidak Diketahui';
 
-      // ✅ FIXED: Simpan totalPrice sebagai total SEBELUM diskon
-      // Nanti final total dihitung di getter
       final transaction = Transaction(
         id: transactionId,
         date: DateTime.now(),
@@ -102,16 +210,15 @@ class TransactionManager {
         deliveryOption: deliveryOption,
         alamat: alamat,
         items: items,
-        totalPrice: totalBeforeDiscount, // ✅ Total sebelum diskon
+        totalPrice: totalBeforeDiscount,
         catatanPengiriman: catatanPengiriman,
         metodePembayaran: finalMetodePembayaran,
         voucherCode: voucherCode,
         voucherDiscount: voucherDiscount,
-        poinCashUsed: poinCashUsed, // ✅ TAMBAHKAN
-        isUsingPoinCash: isUsingPoinCash, // ✅ TAMBAHKAN
+        poinCashUsed: poinCashUsed,
+        isUsingPoinCash: isUsingPoinCash,
       );
 
-      // 📂 Simpan transaksi
       final transactions = await getTransactions();
       transactions.insert(0, transaction);
 
@@ -406,7 +513,7 @@ class TransactionManager {
   static Future<double> getTotalSpending() async {
     final transactions = await getTransactions();
     return transactions.fold<double>(0.0, (sum, t) {
-      return sum + t.finalTotal; // ✅ Gunakan finalTotal
+      return sum + t.finalTotal;
     });
   }
 
@@ -416,7 +523,7 @@ class TransactionManager {
       sum,
       t,
     ) {
-      return sum + t.finalTotal; // ✅ Gunakan finalTotal
+      return sum + t.finalTotal;
     });
   }
 
@@ -424,3 +531,34 @@ class TransactionManager {
     _statusController.close();
   }
 }
+
+// ⭐ TAMBAHKAN MODEL INI
+// class OrderTrackingModel {
+//   final String? transactionId;
+//   final String? orderId;
+//   final String? courierName;
+//   final String? courierId;
+//   final String? statusMessage;
+//   final String? statusDesc;
+//   final DateTime? updatedAt;
+//   final String? koperasiId;
+//   final String? koperasiName;
+//   final LatLng? koperasiLocation;
+//   final LatLng? deliveryLocation;
+//   final Map<String, dynamic>? deliveryAddress;
+
+//   OrderTrackingModel({
+//     this.transactionId,
+//     this.orderId,
+//     this.courierName,
+//     this.courierId,
+//     this.statusMessage,
+//     this.statusDesc,
+//     this.updatedAt,
+//     this.koperasiId,
+//     this.koperasiName,
+//     this.koperasiLocation,
+//     this.deliveryLocation,
+//     this.deliveryAddress,
+//   });
+// }

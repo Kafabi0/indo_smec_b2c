@@ -25,7 +25,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
   bool _isUserInteracting = false;
   Timer? _userInactivityTimer;
 
-  // ⭐ Listener untuk di-dispose
   VoidCallback? _positionListener;
   VoidCallback? _statusListener;
 
@@ -35,20 +34,29 @@ class _TrackingScreenState extends State<TrackingScreen> {
   String _statusDesc = "Kurir sedang menunggu konfirmasi toko";
   List<Map<String, String>> _statusList = [];
 
-  @override
+  // ⭐ Info tambahan untuk display
+  String _koperasiName = "Loading...";
+  String _deliveryAddress = "Loading...";
+
   @override
   void initState() {
     super.initState();
 
-    // ⚠️ VALIDASI STATUS SEBELUM INIT TRACKING
     final initialStatus = widget.trackingData.statusMessage;
     print('🔍 TrackingScreen initState - Status: $initialStatus');
 
-    // ✅ Jangan start tracking jika status sudah Selesai atau Dibatalkan
+    // ⭐ Ambil info koperasi & alamat
+    _koperasiName = widget.trackingData.koperasiName ?? "Koperasi";
+    if (widget.trackingData.deliveryAddress != null) {
+      final addr = widget.trackingData.deliveryAddress!;
+      _deliveryAddress =
+          '${addr['alamat_lengkap']}, ${addr['kelurahan']}, ${addr['kecamatan']}';
+    }
+
+    // Skip tracking jika sudah selesai/dibatalkan
     if (initialStatus == 'Selesai' || initialStatus == 'Dibatalkan') {
       print('⚠️ Status $initialStatus - Skip tracking initialization');
 
-      // Set initial state saja tanpa start tracking
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
 
@@ -70,13 +78,11 @@ class _TrackingScreenState extends State<TrackingScreen> {
           ];
         });
       });
-      return; // ⚠️ PENTING: Return untuk skip tracking service
+      return;
     }
 
-    // ✅ Hanya init tracking untuk status yang masih dalam proses
     print('✅ Status dalam proses - Initializing tracking');
 
-    // Setup notification providers
     final notificationProvider = Provider.of<NotificationProvider>(
       context,
       listen: false,
@@ -87,21 +93,34 @@ class _TrackingScreenState extends State<TrackingScreen> {
       notificationService: notificationService,
     );
 
-    // Start tracking dan init
     final transactionId = widget.trackingData.transactionId;
     if (transactionId != null) {
-      TrackingServiceManager().startTracking(transactionId);
       _initTrackingData(transactionId);
     }
   }
 
-  // ✅ Method terpisah untuk init tracking data
   Future<void> _initTrackingData(String transactionId) async {
     print('🔍 Initializing tracking for: $transactionId');
 
     if (!_trackingService.hasTracking(transactionId)) {
       print('📦 Starting new tracking...');
-      await _trackingService.startTracking(transactionId);
+
+      // ⭐ CEK: Apakah ada koordinat koperasi & alamat?
+      if (widget.trackingData.koperasiLocation != null &&
+          widget.trackingData.deliveryLocation != null) {
+        print('✅ Using real coordinates from tracking data');
+        print('📍 Koperasi: ${widget.trackingData.koperasiLocation}');
+        print('🏠 Delivery: ${widget.trackingData.deliveryLocation}');
+
+        await _trackingService.startTrackingWithCoordinates(
+          transactionId: transactionId,
+          koperasiLocation: widget.trackingData.koperasiLocation!,
+          deliveryLocation: widget.trackingData.deliveryLocation!,
+        );
+      } else {
+        print('⚠️ No coordinates found, using fallback');
+        await _trackingService.startTracking(transactionId);
+      }
     } else {
       print('✅ Tracking already exists');
     }
@@ -128,35 +147,28 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
     print('✅ Initial state set - Status: $_statusPesanan');
 
-    // ⭐ Listen to position updates
     _positionListener = () {
       if (!mounted) return;
 
       final tracking = _trackingService.getTracking(transactionId);
       if (tracking == null) return;
 
-      print('🔄 Position update - Status: ${tracking.status}');
-
       setState(() {
         _posisiKurir = tracking.currentPosition;
         _statusList = _trackingService.getStatusHistory(transactionId);
       });
 
-      // Auto move camera if not interacting
       if (!_isUserInteracting && _posisiKurir != null) {
         _mapController.move(_posisiKurir!, 16);
       }
     };
     tracking.notifier.addListener(_positionListener!);
 
-    // ⭐ Listen to status updates
     _statusListener = () {
       if (!mounted) return;
 
       final tracking = _trackingService.getTracking(transactionId);
       if (tracking == null) return;
-
-      print('🔄 Status update - New status: ${tracking.status}');
 
       setState(() {
         _statusPesanan = tracking.status;
@@ -171,7 +183,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
   void dispose() {
     _userInactivityTimer?.cancel();
 
-    // ⭐ Remove listeners sebelum dispose
     final transactionId = widget.trackingData.transactionId;
     if (transactionId != null) {
       final tracking = _trackingService.getTracking(transactionId);
@@ -186,28 +197,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
     }
 
     super.dispose();
-  }
-
-  String formatDate(DateTime? date) {
-    if (date == null) return "-";
-    return DateFormat("dd MMMM yyyy | HH:mm", "id_ID").format(date);
-  }
-
-  IconData _getStatusIcon(String statusTitle) {
-    switch (statusTitle) {
-      case "Menyiapkan pesanan":
-        return Icons.receipt_long;
-      case "Sedang dikirim":
-        return Icons.local_shipping;
-      case "Hampir sampai":
-        return Icons.location_on;
-      case "Pesanan telah sampai":
-        return Icons.check_circle;
-      case "Selesai":
-        return Icons.done_all;
-      default:
-        return Icons.info_outline;
-    }
   }
 
   @override
@@ -285,6 +274,54 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
             const SizedBox(height: 20),
 
+            // ⭐ INFO KOPERASI & ALAMAT TUJUAN
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.store, color: Colors.blue[700], size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Dari: $_koperasiName',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue[900],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.location_on, color: Colors.red[700], size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Ke: $_deliveryAddress',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
             // ================= MAP =================
             const Text(
               "Lokasi Kurir",
@@ -354,55 +391,79 @@ class _TrackingScreenState extends State<TrackingScreen> {
                                 Polyline(
                                   points: _rute,
                                   strokeWidth: 4,
-                                  color: Colors.green,
+                                  color: Colors.blue,
                                 ),
                               ],
                             ),
                             if (_rute.isNotEmpty)
                               MarkerLayer(
                                 markers: [
+                                  // ⭐ Marker Koperasi (Start)
                                   Marker(
                                     point: _rute.first,
-                                    width: 50,
-                                    height: 50,
+                                    width: 80,
+                                    height: 80,
                                     child: Column(
-                                      children: const [
-                                        Icon(
-                                          Icons.location_pin,
-                                          color: Colors.red,
-                                          size: 32,
-                                        ),
-                                        Expanded(
-                                          child: Text(
-                                            "Jemput",
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.black,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue,
+                                            borderRadius: BorderRadius.circular(
+                                              4,
                                             ),
                                           ),
+                                          child: const Text(
+                                            "Koperasi",
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                        const Icon(
+                                          Icons.store,
+                                          color: Colors.blue,
+                                          size: 32,
                                         ),
                                       ],
                                     ),
                                   ),
+                                  // ⭐ Marker Tujuan (End)
                                   Marker(
                                     point: _rute.last,
-                                    width: 50,
-                                    height: 50,
+                                    width: 80,
+                                    height: 80,
                                     child: Column(
-                                      children: const [
-                                        Icon(
-                                          Icons.location_pin,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            "Tujuan",
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                        const Icon(
+                                          Icons.location_on,
                                           color: Colors.red,
                                           size: 32,
-                                        ),
-                                        Text(
-                                          "Tujuan",
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.black,
-                                          ),
                                         ),
                                       ],
                                     ),
@@ -488,7 +549,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
                   "Status Pesanan",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                // Debug info badge
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -511,7 +571,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
             ),
             const SizedBox(height: 10),
 
-            // Timeline Cards - Multiple cards bertambah seiring progress
             ..._statusList.map((status) {
               final isLatest = status["title"] == _statusPesanan;
               return Container(
@@ -524,7 +583,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                     BoxShadow(
                       color: Colors.black12,
                       blurRadius: 6,
-                      offset: Offset(0, 2),
+                      offset: const Offset(0, 2),
                     ),
                   ],
                   border: Border.all(
