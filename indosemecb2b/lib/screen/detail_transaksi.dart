@@ -190,7 +190,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     _handleBeliLagi();
                   } else {
                     // ⭐ GUNAKAN METHOD ASYNC
-                    _openTracking();
+                    _openTracking(transaction);
                   }
                 },
                 style: OutlinedButton.styleFrom(
@@ -426,34 +426,19 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   }
 
   // ⭐ TAMBAHKAN METHOD ASYNC INI DI CLASS TransactionDetailScreen
-  Future<void> _openTracking() async {
+  Future<void> _openTracking(Transaction transaction) async {
     print('📍 Opening tracking for: ${transaction.id}');
 
     try {
-      // Tampilkan loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
-
       // Ambil tracking data dari TransactionManager
       final trackingModel = await TransactionManager.getOrderTrackingModel(
         transaction.id,
       );
 
-      // Tutup loading
-      if (mounted) {
-        Navigator.pop(context);
-      }
-
       if (!mounted) return;
 
       if (trackingModel != null) {
-        print('✅ Tracking data found with coordinates');
-        print('   Koperasi: ${trackingModel.koperasiName}');
-        print('   Delivery: ${trackingModel.deliveryAddress?['kelurahan']}');
-
+        print('✅ Tracking data found, opening with real coordinates');
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -462,8 +447,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         );
       } else {
         // Fallback jika tidak ada tracking data
-        print('⚠️ No tracking data found, using fallback');
-
+        print('⚠️ No tracking data, using fallback');
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -484,23 +468,12 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       }
     } catch (e) {
       print('❌ Error opening tracking: $e');
-
-      // Tutup loading jika masih ada
-      if (mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal membuka tracking: $e'),
           backgroundColor: Colors.red,
-          action: SnackBarAction(
-            label: 'Coba Lagi',
-            textColor: Colors.white,
-            onPressed: () => _openTracking(),
-          ),
         ),
       );
     }

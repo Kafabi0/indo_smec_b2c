@@ -89,26 +89,28 @@ class TransactionManager {
       return OrderTrackingModel(
         transactionId: transactionId,
         orderId: transactionId,
-        courierName: "Kurir ${Random().nextInt(99) + 1}",
-        courierId: "DM-${Random().nextInt(999).toString().padLeft(3, '0')}",
+        courierName: "Tryan Gumilar",
+        courierId: "D 4563 ADP",
         statusMessage: transaction.status,
         statusDesc: _getStatusDescription(transaction.status),
         updatedAt: transaction.date,
         // ⭐ Data dari tracking
         koperasiId: trackingData?['koperasi_id'],
         koperasiName: trackingData?['koperasi_name'],
-        koperasiLocation: trackingData != null
-            ? LatLng(
-                trackingData['koperasi_lat'],
-                trackingData['koperasi_lon'],
-              )
-            : null,
-        deliveryLocation: trackingData != null
-            ? LatLng(
-                trackingData['delivery_lat'],
-                trackingData['delivery_lon'],
-              )
-            : null,
+        koperasiLocation:
+            trackingData != null
+                ? LatLng(
+                  trackingData['koperasi_lat'],
+                  trackingData['koperasi_lon'],
+                )
+                : null,
+        deliveryLocation:
+            trackingData != null
+                ? LatLng(
+                  trackingData['delivery_lat'],
+                  trackingData['delivery_lon'],
+                )
+                : null,
         deliveryAddress: trackingData?['delivery_address'],
       );
     } catch (e) {
@@ -156,16 +158,17 @@ class TransactionManager {
       final transactionId = 'TRX${DateTime.now().millisecondsSinceEpoch}';
       print('🆔 Transaction ID: $transactionId');
 
-      final items = cartItems.map((cartItem) {
-        return TransactionItem(
-          productId: cartItem.productId,
-          name: cartItem.name,
-          price: cartItem.price,
-          quantity: cartItem.quantity,
-          imageUrl: cartItem.imageUrl,
-          category: cartItem.category,
-        );
-      }).toList();
+      final items =
+          cartItems.map((cartItem) {
+            return TransactionItem(
+              productId: cartItem.productId,
+              name: cartItem.name,
+              price: cartItem.price,
+              quantity: cartItem.quantity,
+              imageUrl: cartItem.imageUrl,
+              category: cartItem.category,
+            );
+          }).toList();
 
       final subtotal = cartItems.fold<double>(
         0.0,
@@ -176,18 +179,20 @@ class TransactionManager {
 
       final voucherCode = alamat?['voucher_code'] as String?;
       final voucherDiscountRaw = alamat?['voucher_discount'];
-      final voucherDiscount = voucherDiscountRaw != null
-          ? (voucherDiscountRaw is int
-              ? voucherDiscountRaw.toDouble()
-              : voucherDiscountRaw as double)
-          : 0.0;
+      final voucherDiscount =
+          voucherDiscountRaw != null
+              ? (voucherDiscountRaw is int
+                  ? voucherDiscountRaw.toDouble()
+                  : voucherDiscountRaw as double)
+              : 0.0;
 
       final poinCashUsedRaw = alamat?['poin_cash_used'];
-      final poinCashUsed = poinCashUsedRaw != null
-          ? (poinCashUsedRaw is int
-              ? poinCashUsedRaw.toDouble()
-              : poinCashUsedRaw as double)
-          : 0.0;
+      final poinCashUsed =
+          poinCashUsedRaw != null
+              ? (poinCashUsedRaw is int
+                  ? poinCashUsedRaw.toDouble()
+                  : poinCashUsedRaw as double)
+              : 0.0;
 
       final isUsingPoinCash = alamat?['is_using_poin_cash'] == true;
 

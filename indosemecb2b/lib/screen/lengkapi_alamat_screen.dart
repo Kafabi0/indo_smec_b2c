@@ -581,44 +581,44 @@ class _LengkapiAlamatScreenState extends State<LengkapiAlamatScreen> {
                       });
                     },
                   ),
-                  const SizedBox(height: 12),
-                  _buildOptionCard(
-                    icon: Icons.edit_location_alt_outlined,
-                    iconColor: Colors.green,
-                    iconBgColor: Colors.green[50]!,
-                    title: 'Input Manual',
-                    description: 'Isi alamat secara manual untuk orang lain',
-                    onTap: () {
-                      print('📝 Input manual - closing bottom sheet');
-                      Navigator.pop(context); // Tutup bottom sheet
-                      // ⭐ Gunakan addPostFrameCallback untuk memastikan context valid
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        _navigateToManual();
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Divider(color: Colors.grey[300]),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        size: 16,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Anda bisa mengirim ke alamat orang lain dengan input manual',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  // const SizedBox(height: 12),
+                  // _buildOptionCard(
+                  //   icon: Icons.edit_location_alt_outlined,
+                  //   iconColor: Colors.green,
+                  //   iconBgColor: Colors.green[50]!,
+                  //   title: 'Input Manual',
+                  //   description: 'Isi alamat secara manual untuk orang lain',
+                  //   onTap: () {
+                  //     print('📝 Input manual - closing bottom sheet');
+                  //     Navigator.pop(context); // Tutup bottom sheet
+                  //     // ⭐ Gunakan addPostFrameCallback untuk memastikan context valid
+                  //     WidgetsBinding.instance.addPostFrameCallback((_) {
+                  //       _navigateToManual();
+                  //     });
+                  //   },
+                  // ),
+                  // const SizedBox(height: 16),
+                  // Divider(color: Colors.grey[300]),
+                  // const SizedBox(height: 8),
+                  // Row(
+                  //   children: [
+                  //     Icon(
+                  //       Icons.info_outline,
+                  //       size: 16,
+                  //       color: Colors.grey[600],
+                  //     ),
+                  //     const SizedBox(width: 8),
+                  //     Expanded(
+                  //       child: Text(
+                  //         'Anda bisa mengirim ke alamat orang lain dengan input manual',
+                  //         style: TextStyle(
+                  //           fontSize: 12,
+                  //           color: Colors.grey[600],
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
                 ],
               ),
             );

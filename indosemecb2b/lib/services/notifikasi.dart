@@ -1,4 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:indosemecb2b/models/tracking.dart';
+import 'package:indosemecb2b/screen/lacak.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:flutter/material.dart';
@@ -101,19 +104,77 @@ class NotificationService {
     }
 
     try {
-      // Parse payload (berisi data transaksi dalam format JSON)
       final Map<String, dynamic> payloadData = json.decode(response.payload!);
-
       debugPrint('📦 Payload data keys: ${payloadData.keys}');
+      debugPrint('📋 Notification type: ${payloadData['notification_type']}');
 
-      // ✅ Navigate ke DetailPembayaranScreen
       if (navigatorKey?.currentContext != null) {
-        Navigator.of(navigatorKey!.currentContext!).push(
-          MaterialPageRoute(
-            builder: (_) => DetailPembayaranScreen(transaksi: payloadData),
-          ),
-        );
-        debugPrint('✅ Navigating to detail screen');
+        final notificationType = payloadData['notification_type'];
+
+        if (notificationType == 'order_shipped' ||
+            notificationType == 'order_arrived') {
+          debugPrint('🚚 Opening tracking screen from notification');
+          final trackingData = payloadData['trackingData'];
+
+          if (trackingData != null) {
+            final trackingModel = OrderTrackingModel(
+              transactionId:
+                  trackingData['transaction_id'] ?? payloadData['no_transaksi'],
+              orderId: trackingData['order_id'] ?? payloadData['no_transaksi'],
+              courierName:  'Tryan Gumilar',
+              courierId: 'D 4563 ADP',
+              statusMessage: trackingData['status_message'] ?? 'Sedang dikirim',
+              statusDesc:
+                  trackingData['status_desc'] ?? 'Pesanan dalam perjalanan',
+              updatedAt: DateTime.now(),
+              koperasiName: trackingData['koperasi_name'],
+              koperasiLocation:
+                  trackingData['koperasi_latitude'] != null &&
+                          trackingData['koperasi_longitude'] != null
+                      ? LatLng(
+                        trackingData['koperasi_latitude'],
+                        trackingData['koperasi_longitude'],
+                      )
+                      : null,
+              deliveryLocation:
+                  trackingData['delivery_latitude'] != null &&
+                          trackingData['delivery_longitude'] != null
+                      ? LatLng(
+                        trackingData['delivery_latitude'],
+                        trackingData['delivery_longitude'],
+                      )
+                      : null,
+              deliveryAddress: {
+                'alamat_lengkap': trackingData['alamat_lengkap'],
+                'kelurahan': trackingData['kelurahan'],
+                'kecamatan': trackingData['kecamatan'],
+              },
+            );
+
+            Navigator.of(navigatorKey!.currentContext!).push(
+              MaterialPageRoute(
+                builder: (_) => TrackingScreen(trackingData: trackingModel),
+              ),
+            );
+            debugPrint('✅ Navigating to tracking screen');
+          } else {
+            debugPrint(
+              '⚠️ No tracking data in payload, using basic detail screen',
+            );
+            Navigator.of(navigatorKey!.currentContext!).push(
+              MaterialPageRoute(
+                builder: (_) => DetailPembayaranScreen(transaksi: payloadData),
+              ),
+            );
+          }
+        } else {
+          Navigator.of(navigatorKey!.currentContext!).push(
+            MaterialPageRoute(
+              builder: (_) => DetailPembayaranScreen(transaksi: payloadData),
+            ),
+          );
+          debugPrint('✅ Navigating to detail screen');
+        }
       } else {
         debugPrint('❌ Navigator key context is null');
       }
@@ -280,11 +341,47 @@ class NotificationService {
       iOS: iosDetails,
     );
 
+    // ⭐ SIAPKAN PAYLOAD DENGAN TRACKING DATA LENGKAP
     String payload;
     if (transactionData != null) {
-      payload = json.encode(transactionData);
+      final enrichedData = {
+        ...transactionData,
+        'notification_type': 'order_shipped',
+        'delivery_time': deliveryTime,
+        // ⭐ TRACKING DATA
+        'trackingData': {
+          'transaction_id': transactionData['transaction_id'] ?? orderId,
+          'order_id': orderId,
+          'courier_name': 'Tryan Gumilar',
+          'courier_id': 'D 4563 ADP',
+          'status_message': transactionData['status'] ?? 'Sedang dikirim',
+          'status_desc':
+              transactionData['status_desc'] ?? 'Pesanan dalam perjalanan',
+          // Koordinat Koperasi
+          'koperasi_id': transactionData['koperasi_id'],
+          'koperasi_name': transactionData['koperasi_name'],
+          'koperasi_latitude': transactionData['koperasi_latitude'],
+          'koperasi_longitude': transactionData['koperasi_longitude'],
+          // Koordinat Alamat Tujuan
+          'delivery_latitude':
+              transactionData['latitude'] ??
+              transactionData['delivery_latitude'],
+          'delivery_longitude':
+              transactionData['longitude'] ??
+              transactionData['delivery_longitude'],
+          'alamat_lengkap': transactionData['alamat_lengkap'],
+          'kelurahan': transactionData['kelurahan'],
+          'kecamatan': transactionData['kecamatan'],
+        },
+      };
+      payload = json.encode(enrichedData);
+      debugPrint('📦 Shipping notification payload with tracking data created');
     } else {
-      payload = json.encode({'no_transaksi': orderId});
+      payload = json.encode({
+        'no_transaksi': orderId,
+        'notification_type': 'order_shipped',
+      });
+      debugPrint('⚠️ No transaction data for shipping notification');
     }
 
     await _notifications.show(
@@ -327,11 +424,45 @@ class NotificationService {
       iOS: iosDetails,
     );
 
+    // ⭐ SIAPKAN PAYLOAD DENGAN TRACKING DATA LENGKAP
     String payload;
     if (transactionData != null) {
-      payload = json.encode(transactionData);
+      final enrichedData = {
+        ...transactionData,
+        'notification_type': 'order_arrived',
+        // ⭐ TRACKING DATA
+        'trackingData': {
+          'transaction_id': transactionData['transaction_id'] ?? orderId,
+          'order_id': orderId,
+          'courier_name': 'Tryan Gumilar',
+          'courier_id':'D 4563 ADP',
+          'status_message': 'Pesanan telah sampai',
+          'status_desc': 'Pesanan telah tiba di tujuan',
+          // Koordinat Koperasi
+          'koperasi_id': transactionData['koperasi_id'],
+          'koperasi_name': transactionData['koperasi_name'],
+          'koperasi_latitude': transactionData['koperasi_latitude'],
+          'koperasi_longitude': transactionData['koperasi_longitude'],
+          // Koordinat Alamat Tujuan
+          'delivery_latitude':
+              transactionData['latitude'] ??
+              transactionData['delivery_latitude'],
+          'delivery_longitude':
+              transactionData['longitude'] ??
+              transactionData['delivery_longitude'],
+          'alamat_lengkap': transactionData['alamat_lengkap'],
+          'kelurahan': transactionData['kelurahan'],
+          'kecamatan': transactionData['kecamatan'],
+        },
+      };
+      payload = json.encode(enrichedData);
+      debugPrint('📦 Arrival notification payload with tracking data created');
     } else {
-      payload = json.encode({'no_transaksi': orderId});
+      payload = json.encode({
+        'no_transaksi': orderId,
+        'notification_type': 'order_arrived',
+      });
+      debugPrint('⚠️ No transaction data for arrival notification');
     }
 
     await _notifications.show(

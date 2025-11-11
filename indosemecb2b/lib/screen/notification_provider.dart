@@ -144,7 +144,6 @@ class NotificationProvider with ChangeNotifier {
   }
 
   // ✅ PERBAIKAN KUNCI - Simpan semua data transaksi lengkap
-  // ✅ PERBAIKAN - Hitung total final yang sudah dikurangi poin cash
   Future<void> addPaymentSuccessNotification({
     required String orderId,
     required String paymentMethod,
@@ -157,7 +156,6 @@ class NotificationProvider with ChangeNotifier {
     print('   Method: $paymentMethod');
     print('   Total (before poin cash): $total');
 
-    // ✅ DEBUG: Print transaction data yang diterima
     if (transactionData != null) {
       print('   📋 Transaction Data Keys: ${transactionData.keys}');
       print('   📋 Metode Pembayaran: ${transactionData['metode_pembayaran']}');
@@ -166,7 +164,6 @@ class NotificationProvider with ChangeNotifier {
       print('   📋 Poin Cash Used: ${transactionData['poin_cash_used']}');
     }
 
-    // ✅ HITUNG TOTAL FINAL (sudah dikurangi poin cash)
     final poinCashUsed =
         transactionData?['poin_cash_used'] ??
         transactionData?['poinCashUsed'] ??
@@ -177,28 +174,23 @@ class NotificationProvider with ChangeNotifier {
     print('   💰 Poin Cash Used: $poinCashUsed');
     print('   💰 Total Final (after poin cash): $totalFinal');
 
-    // ✅ PASTIKAN transactionData LENGKAP dengan semua field yang dibutuhkan
     final completeTransactionData =
         transactionData != null
             ? {
               ...transactionData,
-              // Pastikan field-field penting ada
               'no_transaksi': orderId,
               'id': orderId,
               'metode_pembayaran': paymentMethod,
-              'total_pembayaran':
-                  totalFinal, // ✅ Gunakan total yang sudah dikurangi
+              'total_pembayaran': totalFinal,
               'status': transactionData['status'] ?? 'Pembayaran Lunas',
-              'poin_cash_used': poinCashUsed, // ✅ Pastikan ada
-              'poinCashUsed':
-                  poinCashUsed, // ✅ Duplicate key untuk compatibility
+              'poin_cash_used': poinCashUsed,
+              'poinCashUsed': poinCashUsed,
             }
             : {
               'no_transaksi': orderId,
               'id': orderId,
               'metode_pembayaran': paymentMethod,
-              'total_pembayaran':
-                  totalFinal, // ✅ Gunakan total yang sudah dikurangi
+              'total_pembayaran': totalFinal,
               'status': 'Pembayaran Lunas',
             };
 
@@ -211,10 +203,10 @@ class NotificationProvider with ChangeNotifier {
       date: DateTime.now(),
       isRead: false,
       image: productImage,
-      total: totalFinal, // ✅ Simpan total yang sudah dikurangi poin cash
+      total: totalFinal,
       detailButtonText: 'Lihat Detail',
       orderId: orderId,
-      transactionData: completeTransactionData, // ✅ Simpan data lengkap
+      transactionData: completeTransactionData,
     );
 
     await addNotification(notification);
@@ -222,6 +214,7 @@ class NotificationProvider with ChangeNotifier {
     print('   Total in notification: $totalFinal');
   }
 
+  // ⭐ UPDATE: Simpan tracking data lengkap
   Future<void> addOrderShippedNotification({
     required String orderId,
     required String deliveryTime,
@@ -231,6 +224,43 @@ class NotificationProvider with ChangeNotifier {
     print('🚚 [NotifProvider] Creating order shipped notification...');
     print('   Order ID: $orderId');
     print('   Delivery time: $deliveryTime');
+
+    // ⭐ AMBIL TRACKING DATA LENGKAP DARI TRANSACTION
+    Map<String, dynamic>? fullTrackingData;
+    if (transactionData != null) {
+      fullTrackingData = {
+        'transaction_id': transactionData['transaction_id'] ?? orderId,
+        'order_id': orderId,
+        'courier_name':  'Tryan Gumilar',
+        'courier_id':  'D 4563 ADP',
+        'status_message': transactionData['status'] ?? 'Sedang dikirim',
+        'status_desc':
+            transactionData['status_desc'] ?? 'Pesanan dalam perjalanan',
+        // ⭐ KOORDINAT KOPERASI
+        'koperasi_id': transactionData['koperasi_id'],
+        'koperasi_name': transactionData['koperasi_name'],
+        'koperasi_latitude': transactionData['koperasi_latitude'],
+        'koperasi_longitude': transactionData['koperasi_longitude'],
+        // ⭐ KOORDINAT ALAMAT TUJUAN
+        'delivery_latitude':
+            transactionData['latitude'] ?? transactionData['delivery_latitude'],
+        'delivery_longitude':
+            transactionData['longitude'] ??
+            transactionData['delivery_longitude'],
+        'alamat_lengkap': transactionData['alamat_lengkap'],
+        'kelurahan': transactionData['kelurahan'],
+        'kecamatan': transactionData['kecamatan'],
+      };
+
+      print('   📍 Tracking Data Created:');
+      print('      Koperasi: ${fullTrackingData['koperasi_name']}');
+      print(
+        '      Koperasi Coords: (${fullTrackingData['koperasi_latitude']}, ${fullTrackingData['koperasi_longitude']})',
+      );
+      print(
+        '      Delivery Coords: (${fullTrackingData['delivery_latitude']}, ${fullTrackingData['delivery_longitude']})',
+      );
+    }
 
     final notification = AppNotification(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -246,26 +276,15 @@ class NotificationProvider with ChangeNotifier {
       transactionData: {
         'orderId': orderId,
         'deliveryTime': deliveryTime,
-        'trackingData': {
-          'transaction_id': transactionData?['transaction_id'] ?? orderId,
-
-          'order_id': orderId,
-          'courier_name': transactionData?['courier_name'] ?? 'Kurir Sistem',
-          'courier_id': transactionData?['courier_id'] ?? 'C001',
-          'status_message': 'Sedang dikirim',
-          'route':
-              transactionData?['route'] ??
-              [
-                {'lat': -6.2, 'lng': 106.8},
-                {'lat': -6.21, 'lng': 106.82},
-              ],
-        },
+        'trackingData': fullTrackingData,
         ...?transactionData,
       },
     );
 
     await addNotification(notification);
-    print('✅ [NotifProvider] Order shipped notification added');
+    print(
+      '✅ [NotifProvider] Order shipped notification added with tracking data',
+    );
   }
 
   Future<void> addOrderArrivedNotification({
@@ -275,6 +294,33 @@ class NotificationProvider with ChangeNotifier {
   }) async {
     print('✅ [NotifProvider] Creating order arrived notification...');
     print('   Order ID: $orderId');
+
+    // ⭐ AMBIL TRACKING DATA LENGKAP
+    Map<String, dynamic>? fullTrackingData;
+    if (transactionData != null) {
+      fullTrackingData = {
+        'transaction_id': transactionData['transaction_id'] ?? orderId,
+        'order_id': orderId,
+        'courier_name': 'Tryan Gumilar',
+        'courier_id':  'D 4563 ADP',
+        'status_message': 'Pesanan telah sampai',
+        'status_desc': 'Pesanan telah tiba di tujuan',
+        // ⭐ KOORDINAT KOPERASI
+        'koperasi_id': transactionData['koperasi_id'],
+        'koperasi_name': transactionData['koperasi_name'],
+        'koperasi_latitude': transactionData['koperasi_latitude'],
+        'koperasi_longitude': transactionData['koperasi_longitude'],
+        // ⭐ KOORDINAT ALAMAT TUJUAN
+        'delivery_latitude':
+            transactionData['latitude'] ?? transactionData['delivery_latitude'],
+        'delivery_longitude':
+            transactionData['longitude'] ??
+            transactionData['delivery_longitude'],
+        'alamat_lengkap': transactionData['alamat_lengkap'],
+        'kelurahan': transactionData['kelurahan'],
+        'kecamatan': transactionData['kecamatan'],
+      };
+    }
 
     final notification = AppNotification(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -287,11 +333,17 @@ class NotificationProvider with ChangeNotifier {
       image: productImage,
       detailButtonText: 'Konfirmasi Penerimaan',
       orderId: orderId,
-      transactionData: transactionData,
+      transactionData: {
+        'orderId': orderId,
+        'trackingData': fullTrackingData,
+        ...?transactionData,
+      },
     );
 
     await addNotification(notification);
-    print('✅ [NotifProvider] Order arrived notification added');
+    print(
+      '✅ [NotifProvider] Order arrived notification added with tracking data',
+    );
   }
 
   Future<void> markAsRead(String notifId) async {

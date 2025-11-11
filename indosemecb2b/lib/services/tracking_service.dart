@@ -368,6 +368,111 @@ class TrackingServiceManager {
     }
   }
 
+  Future<void> _sendTrackingNotification(
+    String transactionId,
+    String status,
+    String statusDesc,
+  ) async {
+    if (_notificationProvider == null || _notificationService == null) {
+      print('⚠️ Notification providers not set');
+      return;
+    }
+
+    try {
+      final tracking = getTracking(transactionId);
+      if (tracking == null) return;
+
+      // Ambil data transaksi untuk mendapatkan tracking info
+      final allTransactions = await TransactionManager.getTransactions();
+      final transaction = allTransactions.firstWhere(
+        (t) => t.id == transactionId,
+        orElse: () => throw Exception('Transaction not found'),
+      );
+
+      final alamat = transaction.alamat ?? {};
+
+      // Siapkan tracking data lengkap
+      final trackingData = {
+        'transaction_id': transactionId,
+        'order_id': transactionId,
+        'status': status,
+        'status_desc': statusDesc,
+        'courier_name':  'Tryan Gumilar',
+        'courier_id':'D 4563 ADP',
+        // Koordinat Koperasi
+        'koperasi_id': alamat['koperasi_id'],
+        'koperasi_name': alamat['koperasi_name'],
+        'koperasi_latitude': alamat['koperasi_latitude'],
+        'koperasi_longitude': alamat['koperasi_longitude'],
+        // Koordinat Alamat Tujuan
+        'latitude': alamat['latitude'],
+        'longitude': alamat['longitude'],
+        'delivery_latitude': alamat['latitude'],
+        'delivery_longitude': alamat['longitude'],
+        'alamat_lengkap': alamat['alamat_lengkap'],
+        'kelurahan': alamat['kelurahan'],
+        'kecamatan': alamat['kecamatan'],
+      };
+
+      print('📍 Tracking Data for Notification:');
+      print('   Koperasi: ${trackingData['koperasi_name']}');
+      print(
+        '   Koperasi Coords: (${trackingData['koperasi_latitude']}, ${trackingData['koperasi_longitude']})',
+      );
+      print(
+        '   Delivery Coords: (${trackingData['delivery_latitude']}, ${trackingData['delivery_longitude']})',
+      );
+
+      // Kirim notifikasi berdasarkan status
+      if (status == 'Sedang dikirim') {
+        final deliveryTime = DateFormat(
+          'dd MMM yyyy, HH:mm',
+        ).format(DateTime.now().add(const Duration(hours: 1)));
+
+        // Kirim ke NotificationProvider (in-app)
+        await _notificationProvider!.addOrderShippedNotification(
+          orderId: transactionId,
+          deliveryTime: deliveryTime,
+          productImage:
+              transaction.items.isNotEmpty
+                  ? transaction.items.first.imageUrl
+                  : null,
+          transactionData: trackingData,
+        );
+
+        // Kirim ke NotificationService (system notification)
+        await _notificationService!.showOrderShippedNotification(
+          orderId: transactionId,
+          deliveryTime: deliveryTime,
+          transactionData: trackingData,
+        );
+
+        print('✅ Sent "Sedang dikirim" notification with tracking data');
+      } else if (status == 'Pesanan telah sampai') {
+        // Kirim ke NotificationProvider (in-app)
+        await _notificationProvider!.addOrderArrivedNotification(
+          orderId: transactionId,
+          productImage:
+              transaction.items.isNotEmpty
+                  ? transaction.items.first.imageUrl
+                  : null,
+          transactionData: trackingData,
+        );
+
+        // Kirim ke NotificationService (system notification)
+        await _notificationService!.showOrderArrivedNotification(
+          orderId: transactionId,
+          transactionData: trackingData,
+        );
+
+        print('✅ Sent "Pesanan telah sampai" notification with tracking data');
+      }
+    } catch (e) {
+      print('❌ Error sending tracking notification: $e');
+    }
+  }
+  
+
   void disposeAll() {
     for (var tracking in _trackings.values) {
       tracking.timer?.cancel();
