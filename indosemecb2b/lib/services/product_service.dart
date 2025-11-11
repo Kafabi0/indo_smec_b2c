@@ -2821,6 +2821,14 @@ class ProductService {
     return fruitVeggieProducts;
   }
 
+  Product? getProductById(String productId) {
+    try {
+      return _allProducts.firstWhere((p) => p.id == productId);
+    } catch (e) {
+      return null;
+    }
+  }
+
   // ============================================================
   // SECTION 5: SPECIFIC CATEGORY FILTERS
   // ============================================================
