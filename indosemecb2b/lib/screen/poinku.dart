@@ -1139,7 +1139,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
   // ✅ FUNGSI GENERATE PDF
   Future<File> _generatePDF(Transaction transaction) async {
     final pdf = pw.Document();
-    final ongkir = 5000.0;
+    final ongkir = 0.0;
     final subtotal = transaction.totalPrice - ongkir;
 
     // Menggunakan format kertas yang lebih sempit seperti struk kasir
@@ -2106,7 +2106,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
     int pointsEarned =
         isPoinCashUsage ? 0 : _calculatePoints(transaction.totalPrice);
     int cashPointsEarned = pointsEarned * 10;
-    final ongkir = isPoinCashUsage ? 0.0 : 5000.0;
+    final ongkir = isPoinCashUsage ? 0.0 : 0.0;
     final subtotal = transaction.totalPrice - ongkir;
 
     showModalBottomSheet(
