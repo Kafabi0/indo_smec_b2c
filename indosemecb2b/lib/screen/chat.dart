@@ -213,53 +213,52 @@ class _ChatPageState extends State<ChatPage> {
         ],
       ),
       // Info Banner di bawah
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.blue[50],
-          border: Border(top: BorderSide(color: Colors.blue[100]!, width: 1)),
-        ),
-        child: SafeArea(
-          child: Row(
-            children: [
-              Icon(Icons.lock_outline, color: Colors.blue[700], size: 16),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Chat Anda dienkripsi end-to-end',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.blue[800],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.green[100],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.schedule, color: Colors.green[700], size: 12),
-                    const SizedBox(width: 4),
-                    Text(
-                      '24/7',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.green[700],
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      // bottomNavigationBar: Container(
+      //   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      //   decoration: BoxDecoration(
+      //     color: Colors.blue[50],
+      //     border: Border(top: BorderSide(color: Colors.blue[100]!, width: 1)),
+      //   ),
+      //   child: SafeArea(
+      //     child: Row(
+      //       // children: [
+      //       //   Icon(Icons.lock_outline, color: Colors.blue[700], size: 16),
+      //       //   const SizedBox(width: 8),
+      //       //   // Expanded(
+      //       //   //   child: Text(
+      //       //   //     'Chat Anda dienkripsi end-to-end',
+      //       //   //     style: TextStyle(
+      //       //   //       fontSize: 12,
+      //       //   //       color: Colors.blue[800],
+      //       //   //       fontWeight: FontWeight.w500,
+      //       //   //     ),
+      //       //   //   ),
+      //       //   // ),
+      //       //   // Container(
+      //       //   //   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      //       //   //   decoration: BoxDecoration(
+      //       //   //     color: Colors.green[100],
+      //       //   //     borderRadius: BorderRadius.circular(12),
+      //       //   //   ),
+      //       //   //   child: Row(
+      //       //   //     mainAxisSize: MainAxisSize.min,
+      //       //   //     children: [
+      //       //   //       Icon(Icons.schedule, color: Colors.green[700], size: 12),
+      //       //   //       const SizedBox(width: 4),
+      //       //   //       Text(
+      //       //   //         '24/7',
+      //       //   //         style: TextStyle(
+      //       //   //           fontSize: 11,
+      //       //   //           color: Colors.green[700],
+      //       //   //           fontWeight: FontWeight.bold,
+      //       //   //         ),
+      //       //   //       ),
+      //       //   //     ],
+      //       //   //   ),
+      //       // ],
+      //     ),
+      //   ),
+      // ),
     );
   }
 
