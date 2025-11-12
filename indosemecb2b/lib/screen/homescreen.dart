@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:indosemecb2b/screen/chat.dart';
 import 'package:indosemecb2b/screen/detail_produk.dart';
 import 'package:indosemecb2b/screen/notif.dart';
 import 'package:indosemecb2b/screen/poinku.dart';
@@ -1626,6 +1627,35 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
             const SizedBox(height: 50),
           ],
+        ),
+      ),
+      floatingActionButton: Container(
+        margin: EdgeInsets.only(bottom: 10),
+        child: FloatingActionButton.extended(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ChatPage()),
+            );
+          },
+          backgroundColor: Colors.blue[700],
+          elevation: 6,
+          icon: Container(
+            padding: EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.headset_mic, color: Colors.white, size: 22),
+          ),
+          label: Text(
+            'Live Chat',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
         ),
       ),
     );
