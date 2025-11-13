@@ -1518,7 +1518,12 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                       ),
                     ),
                     pw.Text(
-                      formatCurrency(transaction.totalPrice.toInt()),
+                      formatCurrency(
+                        (transaction.totalPrice -
+                                (transaction.voucherDiscount ?? 0) -
+                                (transaction.poinCashUsed ?? 0))
+                            .toInt(),
+                      ),
                       style: pw.TextStyle(
                         fontSize: 10,
                         fontWeight: pw.FontWeight.bold,
