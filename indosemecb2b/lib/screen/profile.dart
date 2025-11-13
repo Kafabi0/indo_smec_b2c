@@ -15,6 +15,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:indosemecb2b/screen/login.dart';
 import 'package:indosemecb2b/utils/user_data_manager.dart';
+import 'package:indosemecb2b/screen/resolusi_komplain.dart';
+import 'package:indosemecb2b/screen/review_aplikasi.dart';
 
 class ProfileScreen extends StatefulWidget {
   final VoidCallback? onLogout;
@@ -727,10 +729,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   },
                 ),
 
-                _menuItem('Resolusi Komplain', 'Daftar Komplain'),
+                _menuItem(
+                  'Resolusi Komplain', 
+                  'Daftar Komplain',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ResolusiKomplainScreen(),
+                      ),
+                    );
+                  },
+                ),
                 _menuItem(
                   'Review Aplikasi',
                   'Berikan Penilaianmu untuk IndoSmec B2C',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ReviewAplikasiScreen(),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
