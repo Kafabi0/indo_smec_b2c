@@ -410,7 +410,7 @@ class _FavoritScreenState extends State<FavoritScreen> {
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: Colors.blue,
                         ),
                       ),
                       if (product.originalPrice != null &&
