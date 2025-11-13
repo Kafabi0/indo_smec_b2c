@@ -1063,6 +1063,9 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
   String _currentUserPhone = '';
   String _metodePembayaran = '';
 
+  bool _isChartExpanded = false;
+  Map<int, double> _monthlySpending = {};
+
   @override
   void initState() {
     super.initState();
@@ -1093,6 +1096,100 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
       _transactions = transactions;
       _isLoading = false;
     });
+    _calculateMonthlySpending();
+  }
+
+  void _calculateMonthlySpending() {
+    final now = DateTime.now();
+    final Map<int, double> spending = {};
+
+    // Inisialisasi 6 bulan terakhir dengan 0
+    for (int i = 5; i >= 0; i--) {
+      final month = DateTime(now.year, now.month - i, 1);
+      spending[month.month] = 0;
+    }
+
+    // Hitung total spending per bulan (hanya transaksi Selesai)
+    for (var transaction in _transactions) {
+      if (transaction.status == 'Selesai' &&
+          transaction.deliveryOption != 'poin_cash_usage' && // Skip poin cash usage
+          transaction.deliveryOption != 'topup') { // Skip topup
+        final transactionMonth = transaction.date.month;
+        final transactionYear = transaction.date.year;
+
+        // Hanya hitung 6 bulan terakhir
+        if (transactionYear == now.year &&
+            transactionMonth >= (now.month - 5) &&
+            transactionMonth <= now.month) {
+          
+          // Hitung total setelah diskon
+          final totalAfterDiscount = transaction.totalPrice -
+              (transaction.voucherDiscount ?? 0) -
+              (transaction.poinCashUsed ?? 0);
+              
+          spending[transactionMonth] = 
+              (spending[transactionMonth] ?? 0) + totalAfterDiscount;
+        }
+      }
+    }
+
+    setState(() {
+      _monthlySpending = spending;
+    });
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+    ];
+    return months[month];
+  }
+
+  // ✅ TAMBAHKAN METHOD BARU: Get total spending bulan ini
+  double _getCurrentMonthSpending() {
+    final currentMonth = DateTime.now().month;
+    return _monthlySpending[currentMonth] ?? 0;
+  }
+
+  // ✅ TAMBAHKAN METHOD BARU: Get jumlah transaksi bulan ini
+  int _getCurrentMonthTransactionCount() {
+    final now = DateTime.now();
+    return _transactions.where((t) {
+      return t.status == 'Selesai' &&
+          t.deliveryOption != 'poin_cash_usage' &&
+          t.deliveryOption != 'topup' &&
+          t.date.year == now.year &&
+          t.date.month == now.month;
+    }).length;
+  }
+
+  // ✅ TAMBAHKAN METHOD BARU: Get total hemat (voucher + poin cash)
+  double _getCurrentMonthSavings() {
+    final now = DateTime.now();
+    double totalSavings = 0;
+
+    for (var transaction in _transactions) {
+      if (transaction.status == 'Selesai' &&
+          transaction.date.year == now.year &&
+          transaction.date.month == now.month) {
+        totalSavings += (transaction.voucherDiscount ?? 0);
+        totalSavings += (transaction.poinCashUsed ?? 0);
+      }
+    }
+
+    return totalSavings;
+  }
+
+  List<Transaction> _getTransactionsByMonth(int month) {
+    final now = DateTime.now();
+    return _transactions.where((t) {
+      return t.status == 'Selesai' &&
+          t.deliveryOption != 'poin_cash_usage' &&
+          t.deliveryOption != 'topup' &&
+          t.date.year == now.year &&
+          t.date.month == month;
+    }).toList()..sort((a, b) => b.date.compareTo(a.date));
   }
 
   int _calculatePoints(double amount) {
@@ -1713,52 +1810,811 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
     }
   }
 
-  Widget _buildStrukContent() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+  // ✅ WIDGET 1: Grafik Collapsed
+Widget _buildSpendingChartCollapsed() {
+  final currentSpending = _getCurrentMonthSpending();
+  
+  return GestureDetector(
+    onTap: () {
+      setState(() {
+        _isChartExpanded = true;
+      });
+    },
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.indigo[50]!, Colors.indigo[100]!],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.indigo[200]!, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.indigo.withOpacity(0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.indigo[700],
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.indigo.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.show_chart,
+              color: Colors.white,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Pengeluaran Bulan Ini',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  formatCurrency(currentSpending.toInt()),
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.indigo[900],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  'Lihat Detail',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.indigo[700],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.keyboard_arrow_down,
+                  color: Colors.indigo[700],
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
-    if (_transactions.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+// ✅ WIDGET 2: Grafik Expanded
+Widget _buildSpendingChartExpanded() {
+  final currentSpending = _getCurrentMonthSpending();
+  final transactionCount = _getCurrentMonthTransactionCount();
+  final savings = _getCurrentMonthSavings();
+  
+  return Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 80,
-              color: Colors.grey[400],
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.indigo[50],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.show_chart,
+                    color: Colors.indigo[700],
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Pengeluaran Bulanan',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Belum ada transaksi',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isChartExpanded = false;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.keyboard_arrow_up,
+                  color: Colors.grey[600],
+                  size: 20,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Yuk mulai belanja!',
-              style: TextStyle(color: Colors.grey[500], fontSize: 14),
             ),
           ],
         ),
-      );
+        
+        const SizedBox(height: 18),
+        
+        Container(
+          height: 140,
+          child: _buildBarChart(),
+        ),
+        
+        const SizedBox(height: 18),
+        
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                'Total',
+                formatCurrency(currentSpending.toInt()),
+                Icons.account_balance_wallet,
+                Colors.indigo,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildSummaryCard(
+                'Transaksi',
+                '$transactionCount kali',
+                Icons.shopping_bag,
+                Colors.green,
+              ),
+            ),
+            const SizedBox(width: 10),
+          ],
+        ),
+        
+        const SizedBox(height: 14),
+        
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.blue[200]!, width: 1),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, size: 18, color: Colors.blue[700]),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Data berdasarkan transaksi yang sudah selesai',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: Colors.blue[900],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// ✅ WIDGET 3: Bar Chart
+  Widget _buildBarChart() {
+    if (_monthlySpending.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadTransactions,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _transactions.length,
-        itemBuilder: (context, index) {
-          final transaction = _transactions[index];
-          return _buildStrukItem(transaction);
+    final sortedMonths = _monthlySpending.keys.toList()..sort();
+    final maxSpending = _monthlySpending.values.reduce((a, b) => a > b ? a : b);
+    
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: sortedMonths.map((month) {
+        final spending = _monthlySpending[month] ?? 0;
+        final heightPercentage = maxSpending > 0 ? spending / maxSpending : 0;
+        final isCurrentMonth = month == DateTime.now().month;
+        final transactions = _getTransactionsByMonth(month);  // ✅ BARU
+        
+        return Expanded(
+          child: GestureDetector(  // ✅ BARU: Tambah GestureDetector
+            onTap: () {  // ✅ BARU
+              if (spending > 0) {
+                _showMonthDetailBottomSheet(month, spending, transactions);
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (spending > 0)
+                  Text(
+                    '${(spending / 1000).toStringAsFixed(0)}k',
+                    style: GoogleFonts.poppins(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: isCurrentMonth ? Colors.indigo[700] : Colors.grey[600],
+                    ),
+                  ),
+                const SizedBox(height: 4),
+                
+                Container(
+                  width: double.infinity,
+                  height: heightPercentage * 100,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isCurrentMonth
+                          ? [Colors.indigo[400]!, Colors.indigo[700]!]
+                          : [Colors.grey[300]!, Colors.grey[400]!],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(6),
+                    ),
+                    boxShadow: isCurrentMonth
+                        ? [
+                            BoxShadow(
+                              color: Colors.indigo.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : [],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                
+                Text(
+                  _getMonthName(month),
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: isCurrentMonth ? FontWeight.bold : FontWeight.w500,
+                    color: isCurrentMonth ? Colors.indigo[700] : Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )
+      );
+    }).toList(),
+  );
+}
+
+// ✅ WIDGET 4: Summary Card
+Widget _buildSummaryCard(
+  String label,
+  String value,
+  IconData icon,
+  MaterialColor color,
+) {
+  return Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: color[50],
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: color[200]!, width: 1),
+    ),
+    child: Column(
+      children: [
+        Icon(icon, color: color[700], size: 18),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 10,
+            color: color[700],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: color[900],
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    ),
+  );
+}
+
+// ✅ METHOD BARU: Show Detail Bulan
+// ✅ METHOD BARU: Show Detail Bulan (DESIGN DIPERBAIKI)
+void _showMonthDetailBottomSheet(
+  int month,
+  double totalSpending,
+  List<Transaction> transactions,
+) {
+  final monthNames = [
+    '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.5,
+        maxChildSize: 0.92,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                // Header dengan Gradient
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.indigo[600]!, Colors.indigo[800]!],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.indigo.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: SafeArea(
+                    bottom: false,
+                    child: Column(
+                      children: [
+                        // Drag Handle
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Header Content
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Icon(
+                                  Icons.calendar_month,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      monthNames[month],
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${transactions.length} transaksi selesai',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: IconButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  icon: const Icon(
+                                    Icons.close_rounded,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                  padding: const EdgeInsets.all(8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Summary Card dengan Total Belanja
+                Transform.translate(
+                  offset: const Offset(0, -20),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.indigo[50],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.account_balance_wallet,
+                                  color: Colors.indigo[700],
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Total Pengeluaran',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    formatCurrency(totalSpending.toInt()),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.indigo[900],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Judul List
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.receipt_long, size: 18, color: Colors.grey[700]),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Rincian Transaksi',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // List Transaksi
+                Expanded(
+                  child: transactions.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.receipt_long_outlined,
+                                size: 64,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Tidak ada transaksi',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: scrollController,
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                          itemCount: transactions.length,
+                          itemBuilder: (context, index) {
+                            final transaction = transactions[index];
+                            final totalAfterDiscount = transaction.totalPrice -
+                                (transaction.voucherDiscount ?? 0) -
+                                (transaction.poinCashUsed ?? 0);
+
+                            return InkWell(
+                              onTap: () {
+                                Navigator.pop(context);
+                                _showStrukDetail(transaction);
+                              },
+                              borderRadius: BorderRadius.circular(14),
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: Colors.grey[200]!,
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.04),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    // Icon Produk
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green[50],
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(
+                                        Icons.shopping_bag,
+                                        color: Colors.green[700],
+                                        size: 22,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    
+                                    // Info Transaksi
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            transaction.items.isNotEmpty
+                                                ? transaction.items.first.name
+                                                : 'Produk',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black87,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.access_time,
+                                                size: 12,
+                                                color: Colors.grey[500],
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                _formatDate(transaction.date),
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    
+                                    // Harga
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          formatCurrency(totalAfterDiscount.toInt()),
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        if ((transaction.voucherDiscount ?? 0) > 0 ||
+                                            (transaction.poinCashUsed ?? 0) > 0) ...[
+                                          const SizedBox(height: 4),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.green[50],
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              'Hemat ${formatCurrency(((transaction.voucherDiscount ?? 0) + (transaction.poinCashUsed ?? 0)).toInt())}',
+                                              style: TextStyle(
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.green[700],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          );
         },
+      );
+    },
+  );
+}
+
+Widget _buildStrukContent() {
+  if (_isLoading) {
+    return const Center(child: CircularProgressIndicator());
+  }
+
+  if (_transactions.isEmpty) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.receipt_long_outlined,
+            size: 80,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Belum ada transaksi',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Yuk mulai belanja!',
+            style: TextStyle(color: Colors.grey[500], fontSize: 14),
+          ),
+        ],
       ),
     );
   }
+
+  return RefreshIndicator(
+    onRefresh: _loadTransactions,
+    child: ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _transactions.length + 1, // ✅ +1 untuk grafik
+      itemBuilder: (context, index) {
+        // ✅ ITEM PERTAMA = GRAFIK
+        if (index == 0) {
+          return _isChartExpanded
+              ? _buildSpendingChartExpanded()
+              : _buildSpendingChartCollapsed();
+        }
+        
+        // Item selanjutnya = transaksi
+        final transaction = _transactions[index - 1]; // ✅ index - 1
+        return _buildStrukItem(transaction);
+      },
+    ),
+  );
+}
 
   Widget _buildStrukItem(Transaction transaction) {
     final points = _calculatePoints(transaction.totalPrice);
