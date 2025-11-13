@@ -1192,6 +1192,14 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
     }).toList()..sort((a, b) => b.date.compareTo(a.date));
   }
 
+  String _getCurrentMonthName() {
+  const monthNames = [
+    '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+  return monthNames[DateTime.now().month];
+}
+
   int _calculatePoints(double amount) {
     return (amount / 1000).floor();
   }
@@ -1866,7 +1874,7 @@ Widget _buildSpendingChartCollapsed() {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Pengeluaran Bulan Ini',
+                  'Pengeluaran Bulan ${_getCurrentMonthName()}',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.grey[700],
